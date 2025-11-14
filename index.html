@@ -1,0 +1,2484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <div class="login-box">
+            <div class="login-header">
+                <i class="fas fa-car-side"></i>
+                <h1>Vehicle Management System</h1>
+                <p>Welcome back! Please login to continue</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" value="admin@vehicle.com" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" value="password123" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-user-tag"></i> Login As</label>
+                    <select id="roleSelect">
+                        <option value="admin">Administrator</option>
+                        <option value="purchase">Purchase Manager</option>
+                        <option value="sales">Sales Manager</option>
+                        <option value="delivery">Delivery Manager</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            <div class="login-footer">
+                <p>Demo Credentials: Use any email with password "password123"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="dashboard" id="adminDashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-car-side"></i>
+                <h2>Vehicle Mgmt</h2>
+                <div class="user-info">
+                    <div class="user-role">Administrator</div>
+                    <div class="user-email" id="adminEmail">admin@vehicle.com</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="admin-overview">
+                    <i class="fas fa-chart-line"></i> Overview
+                </li>
+                <li class="nav-item" data-section="admin-inventory">
+                    <i class="fas fa-warehouse"></i> Inventory
+                </li>
+                <li class="nav-item" data-section="admin-users">
+                    <i class="fas fa-users-cog"></i> User Management
+                </li>
+                <li class="nav-item" data-section="admin-expenses">
+                    <i class="fas fa-file-invoice-dollar"></i> Expenses & Commission
+                </li>
+                <li class="nav-item" data-section="admin-profit">
+                    <i class="fas fa-chart-pie"></i> Profit & Loss
+                </li>
+                <li class="nav-item" data-section="admin-reports">
+                    <i class="fas fa-file-alt"></i> Reports
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="topbar">
+                <h1 id="pageTitle">Dashboard Overview</h1>
+                <div class="topbar-actions">
+                    <div class="quick-stats-mini">
+                        <div class="mini-stat">
+                            <i class="fas fa-car"></i>
+                            <span>42</span>
+                        </div>
+                        <div class="mini-stat">
+                            <i class="fas fa-rupee-sign"></i>
+                            <span>₹1.2Cr</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon" title="Dark Mode" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn-icon" title="Notifications" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge-dot">3</span>
+                    </button>
+                    <div class="user-profile" onclick="toggleProfileMenu()">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=667eea&color=fff" alt="Admin">
+                        <div class="profile-dropdown" id="profileMenu">
+                            <div class="profile-info">
+                                <strong>Administrator</strong>
+                                <span>admin@vehicle.com</span>
+                            </div>
+                            <hr>
+                            <a href="#"><i class="fas fa-user"></i> Profile</a>
+                            <a href="#"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notification Panel -->
+                <div class="notification-panel" id="notificationPanel">
+                    <div class="notification-header">
+                        <h3><i class="fas fa-bell"></i> Notifications</h3>
+                        <button class="btn-icon-small" onclick="toggleNotifications()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="notification-list">
+                        <div class="notification-item unread">
+                            <div class="notification-icon blue">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="notification-content">
+                                <strong>New Vehicle Added</strong>
+                                <p>Honda City 2022 - MH12AB1234</p>
+                                <span class="notification-time">2 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="notification-item unread">
+                            <div class="notification-icon green">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="notification-content">
+                                <strong>Vehicle Sold</strong>
+                                <p>Maruti Swift 2021 - Profit: ₹69,000</p>
+                                <span class="notification-time">5 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-icon orange">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="notification-content">
+                                <strong>Documents Pending</strong>
+                                <p>3 vehicles have incomplete documents</p>
+                                <span class="notification-time">1 day ago</span>
+                            </div>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-icon purple">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="notification-content">
+                                <strong>Delivery Scheduled</strong>
+                                <p>Toyota Innova - Tomorrow at 10 AM</p>
+                                <span class="notification-time">1 day ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="notification-footer">
+                        <a href="#" class="view-all-link">View All Notifications</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Overview Section -->
+            <div class="content-section active" id="admin-overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Vehicles</h3>
+                            <div class="stat-number">42</div>
+                            <div class="stat-label">
+                                <span class="trend up"><i class="fas fa-arrow-up"></i> 12%</span>
+                                vs last month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Revenue</h3>
+                            <div class="stat-number">₹1.2Cr</div>
+                            <div class="stat-label">
+                                <span class="trend up"><i class="fas fa-arrow-up"></i> 8%</span>
+                                this month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Net Profit</h3>
+                            <div class="stat-number">₹18.5L</div>
+                            <div class="stat-label">
+                                <span class="trend up"><i class="fas fa-arrow-up"></i> 15%</span>
+                                vs last month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Sales Count</h3>
+                            <div class="stat-number">28</div>
+                            <div class="stat-label">
+                                <span class="trend up"><i class="fas fa-arrow-up"></i> 5</span>
+                                this month
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <h3>Monthly Sales Trend</h3>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Vehicle Status Distribution</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon blue">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="activity-details">
+                                <strong>New Vehicle Added</strong>
+                                <p>Honda City 2022 - MH12AB1234</p>
+                                <span class="activity-time">2 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon green">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="activity-details">
+                                <strong>Vehicle Sold</strong>
+                                <p>Maruti Swift 2021 - MH14CD5678</p>
+                                <span class="activity-time">5 hours ago</span>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon orange">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="activity-details">
+                                <strong>Delivery Completed</strong>
+                                <p>Toyota Innova 2020 - MH10XY9876</p>
+                                <span class="activity-time">1 day ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Inventory Section -->
+            <div class="content-section" id="admin-inventory">
+                <div class="section-header">
+                    <div>
+                        <h2>Vehicle Inventory</h2>
+                        <p>Manage and view all vehicles</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search vehicles..." id="inventorySearch">
+                        </div>
+                        <select class="filter-select" id="statusFilter">
+                            <option>All Status</option>
+                            <option>In Stock</option>
+                            <option>Reserved</option>
+                            <option>Sold</option>
+                        </select>
+                        <div class="view-toggle">
+                            <button class="btn-icon-small active" onclick="switchView('grid')" title="Grid View">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button class="btn-icon-small" onclick="switchView('table')" title="Table View">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" onclick="showModal('compareModal')">
+                            <i class="fas fa-exchange-alt"></i> Compare
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid View -->
+                <div class="vehicle-grid active" id="vehicleGrid">
+                    <div class="vehicle-card">
+                        <div class="vehicle-card-image">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/134287/city-exterior-right-front-three-quarter-77.jpeg" alt="Honda City">
+                            <div class="vehicle-card-badge green">In Stock</div>
+                            <div class="vehicle-card-overlay">
+                                <button class="btn btn-sm btn-primary" onclick="viewVehicleDetails('MH12AB1234')">
+                                    <i class="fas fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        </div>
+                        <div class="vehicle-card-content">
+                            <div class="vehicle-card-header">
+                                <h3>Honda City 2022</h3>
+                                <span class="vehicle-number">MH12AB1234</span>
+                            </div>
+                            <div class="vehicle-card-specs">
+                                <span><i class="fas fa-tachometer-alt"></i> 45,000 km</span>
+                                <span><i class="fas fa-gas-pump"></i> Petrol</span>
+                                <span><i class="fas fa-palette"></i> White</span>
+                            </div>
+                            <div class="vehicle-card-pricing">
+                                <div class="price-item">
+                                    <label>Purchase</label>
+                                    <strong>₹8.5L</strong>
+                                </div>
+                                <div class="price-item">
+                                    <label>Asking</label>
+                                    <strong>₹10.2L</strong>
+                                </div>
+                                <div class="price-item">
+                                    <label>Last Price</label>
+                                    <strong class="text-success">₹9.8L</strong>
+                                </div>
+                            </div>
+                            <div class="vehicle-card-actions">
+                                <button class="btn-icon-small" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-icon-small" title="Documents">
+                                    <i class="fas fa-file-alt"></i>
+                                </button>
+                                <button class="btn-icon-small" title="History">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                <button class="btn-icon-small" title="More">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vehicle-card">
+                        <div class="vehicle-card-image">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/144681/swift-exterior-right-front-three-quarter-2.png" alt="Maruti Swift">
+                            <div class="vehicle-card-badge orange">Reserved</div>
+                            <div class="vehicle-card-overlay">
+                                <button class="btn btn-sm btn-primary" onclick="viewVehicleDetails('MH14CD5678')">
+                                    <i class="fas fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        </div>
+                        <div class="vehicle-card-content">
+                            <div class="vehicle-card-header">
+                                <h3>Maruti Swift 2021</h3>
+                                <span class="vehicle-number">MH14CD5678</span>
+                            </div>
+                            <div class="vehicle-card-specs">
+                                <span><i class="fas fa-tachometer-alt"></i> 32,000 km</span>
+                                <span><i class="fas fa-gas-pump"></i> Petrol</span>
+                                <span><i class="fas fa-palette"></i> Red</span>
+                            </div>
+                            <div class="vehicle-card-pricing">
+                                <div class="price-item">
+                                    <label>Purchase</label>
+                                    <strong>₹5.8L</strong>
+                                </div>
+                                <div class="price-item">
+                                    <label>Asking</label>
+                                    <strong>₹7.1L</strong>
+                                </div>
+                                <div class="price-item">
+                                    <label>Last Price</label>
+                                    <strong class="text-success">₹6.9L</strong>
+                                </div>
+                            </div>
+                            <div class="vehicle-card-actions">
+                                <button class="btn-icon-small" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-icon-small" title="Documents">
+                                    <i class="fas fa-file-alt"></i>
+                                </button>
+                                <button class="btn-icon-small" title="History">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                <button class="btn-icon-small" title="More">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vehicle-card">
+                        <div class="vehicle-card-image">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/115025/innova-crysta-exterior-right-front-three-quarter-5.jpeg" alt="Toyota Innova">
+                            <div class="vehicle-card-badge blue">Sold</div>
+                            <div class="vehicle-card-overlay">
+                                <button class="btn btn-sm btn-primary" onclick="viewVehicleDetails('MH10XY9876')">
+                                    <i class="fas fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        </div>
+                        <div class="vehicle-card-content">
+                            <div class="vehicle-card-header">
+                                <h3>Toyota Innova 2020</h3>
+                                <span class="vehicle-number">MH10XY9876</span>
+                            </div>
+                            <div class="vehicle-card-specs">
+                                <span><i class="fas fa-tachometer-alt"></i> 58,000 km</span>
+                                <span><i class="fas fa-gas-pump"></i> Diesel</span>
+                                <span><i class="fas fa-palette"></i> Silver</span>
+                            </div>
+                            <div class="vehicle-card-pricing">
+                                <div class="price-item">
+                                    <label>Purchase</label>
+                                    <strong>₹12.5L</strong>
+                                </div>
+                                <div class="price-item">
+                                    <label>Sold At</label>
+                                    <strong class="text-success">₹14.8L</strong>
+                                </div>
+                                <div class="price-item">
+                                    <label>Profit</label>
+                                    <strong class="text-success">₹95K</strong>
+                                </div>
+                            </div>
+                            <div class="vehicle-card-actions">
+                                <button class="btn-icon-small" title="View Report">
+                                    <i class="fas fa-file-pdf"></i>
+                                </button>
+                                <button class="btn-icon-small" title="Documents">
+                                    <i class="fas fa-file-alt"></i>
+                                </button>
+                                <button class="btn-icon-small" title="History">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                <button class="btn-icon-small" title="More">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table View -->
+                <div class="data-table-container" id="vehicleTable">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle No.</th>
+                                <th>Make/Model</th>
+                                <th>Year</th>
+                                <th>Purchase Price</th>
+                                <th>Asking Price</th>
+                                <th>Last Price</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminInventoryTable">
+                            <tr>
+                                <td><strong>MH12AB1234</strong></td>
+                                <td>Honda City</td>
+                                <td>2022</td>
+                                <td>₹8,50,000</td>
+                                <td>₹10,20,000</td>
+                                <td>
+                                    <span class="price-toggle">
+                                        <span class="price-value">₹9,80,000</span>
+                                        <i class="fas fa-edit edit-price" title="Edit Price"></i>
+                                    </span>
+                                </td>
+                                <td><span class="badge badge-success">In Stock</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH12AB1234')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH14CD5678</strong></td>
+                                <td>Maruti Swift</td>
+                                <td>2021</td>
+                                <td>₹5,80,000</td>
+                                <td>₹7,10,000</td>
+                                <td>
+                                    <span class="price-toggle">
+                                        <span class="price-value">₹6,90,000</span>
+                                        <i class="fas fa-edit edit-price" title="Edit Price"></i>
+                                    </span>
+                                </td>
+                                <td><span class="badge badge-warning">Reserved</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH14CD5678')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH10XY9876</strong></td>
+                                <td>Toyota Innova</td>
+                                <td>2020</td>
+                                <td>₹12,50,000</td>
+                                <td>₹14,80,000</td>
+                                <td>
+                                    <span class="price-toggle">
+                                        <span class="price-value">₹14,50,000</span>
+                                        <i class="fas fa-edit edit-price" title="Edit Price"></i>
+                                    </span>
+                                </td>
+                                <td><span class="badge badge-info">Sold</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH10XY9876')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="View Report">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin User Management Section -->
+            <div class="content-section" id="admin-users">
+                <div class="section-header">
+                    <div>
+                        <h2>User Management</h2>
+                        <p>Manage user access and permissions</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showModal('userModal')">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Last Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <img src="https://ui-avatars.com/api/?name=Rajesh+Kumar&background=3498db&color=fff" alt="Rajesh">
+                                        <strong>Rajesh Kumar</strong>
+                                    </div>
+                                </td>
+                                <td>rajesh@vehicle.com</td>
+                                <td><span class="badge badge-purple">Purchase Manager</span></td>
+                                <td>+91 98765 43210</td>
+                                <td><span class="badge badge-success">Active</span></td>
+                                <td>2 hours ago</td>
+                                <td>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Deactivate">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <img src="https://ui-avatars.com/api/?name=Priya+Sharma&background=e74c3c&color=fff" alt="Priya">
+                                        <strong>Priya Sharma</strong>
+                                    </div>
+                                </td>
+                                <td>priya@vehicle.com</td>
+                                <td><span class="badge badge-blue">Sales Manager</span></td>
+                                <td>+91 87654 32109</td>
+                                <td><span class="badge badge-success">Active</span></td>
+                                <td>1 day ago</td>
+                                <td>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Deactivate">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <img src="https://ui-avatars.com/api/?name=Amit+Patil&background=27ae60&color=fff" alt="Amit">
+                                        <strong>Amit Patil</strong>
+                                    </div>
+                                </td>
+                                <td>amit@vehicle.com</td>
+                                <td><span class="badge badge-orange">Delivery Manager</span></td>
+                                <td>+91 76543 21098</td>
+                                <td><span class="badge badge-success">Active</span></td>
+                                <td>3 hours ago</td>
+                                <td>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Deactivate">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Expenses Section -->
+            <div class="content-section" id="admin-expenses">
+                <div class="section-header">
+                    <div>
+                        <h2>Expenses & Commission Report</h2>
+                        <p>Track all expenses and commissions</p>
+                    </div>
+                    <div class="header-actions">
+                        <select class="filter-select">
+                            <option>This Month</option>
+                            <option>Last Month</option>
+                            <option>Last 3 Months</option>
+                            <option>This Year</option>
+                        </select>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Expenses</h3>
+                            <div class="stat-number">₹12.4L</div>
+                            <div class="stat-label">This month</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Agent Commission</h3>
+                            <div class="stat-number">₹3.2L</div>
+                            <div class="stat-label">This month</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Modifications</h3>
+                            <div class="stat-number">₹6.8L</div>
+                            <div class="stat-label">This month</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Other Expenses</h3>
+                            <div class="stat-number">₹2.4L</div>
+                            <div class="stat-label">This month</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Vehicle</th>
+                                <th>Expense Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Payment Mode</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>15 Nov 2024</td>
+                                <td>MH12AB1234</td>
+                                <td><span class="badge badge-purple">Commission</span></td>
+                                <td>Agent Commission - Purchase</td>
+                                <td>₹25,000</td>
+                                <td>Bank Transfer</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Receipt">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>14 Nov 2024</td>
+                                <td>MH14CD5678</td>
+                                <td><span class="badge badge-blue">Modification</span></td>
+                                <td>Paint Job & Dent Repair</td>
+                                <td>₹45,000</td>
+                                <td>Cash</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Receipt">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>12 Nov 2024</td>
+                                <td>MH10XY9876</td>
+                                <td><span class="badge badge-orange">Other</span></td>
+                                <td>RTO Transfer Charges</td>
+                                <td>₹8,500</td>
+                                <td>Online</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Receipt">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Profit & Loss Section -->
+            <div class="content-section" id="admin-profit">
+                <div class="section-header">
+                    <div>
+                        <h2>Profit & Loss Statement</h2>
+                        <p>Detailed profit analysis per vehicle</p>
+                    </div>
+                    <div class="header-actions">
+                        <select class="filter-select">
+                            <option>All Vehicles</option>
+                            <option>Sold Only</option>
+                            <option>This Month</option>
+                        </select>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Download Report
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profit-summary">
+                    <div class="profit-card">
+                        <h4>Total Revenue</h4>
+                        <p class="profit-amount">₹1.2Cr</p>
+                    </div>
+                    <div class="profit-card">
+                        <h4>Total Costs</h4>
+                        <p class="profit-amount cost">₹1.01Cr</p>
+                    </div>
+                    <div class="profit-card highlight">
+                        <h4>Net Profit</h4>
+                        <p class="profit-amount profit">₹18.5L</p>
+                        <span class="profit-margin">15.4% margin</span>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Purchase Price</th>
+                                <th>Modifications</th>
+                                <th>Commission</th>
+                                <th>Other Costs</th>
+                                <th>Total Cost</th>
+                                <th>Selling Price</th>
+                                <th>Net Profit</th>
+                                <th>Margin %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>MH12AB1234</strong></td>
+                                <td>₹8,50,000</td>
+                                <td>₹45,000</td>
+                                <td>₹25,000</td>
+                                <td>₹10,000</td>
+                                <td>₹9,30,000</td>
+                                <td>₹10,20,000</td>
+                                <td class="profit-positive">₹90,000</td>
+                                <td>8.8%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH14CD5678</strong></td>
+                                <td>₹5,80,000</td>
+                                <td>₹35,000</td>
+                                <td>₹18,000</td>
+                                <td>₹8,000</td>
+                                <td>₹6,41,000</td>
+                                <td>₹7,10,000</td>
+                                <td class="profit-positive">₹69,000</td>
+                                <td>9.7%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH10XY9876</strong></td>
+                                <td>₹12,50,000</td>
+                                <td>₹80,000</td>
+                                <td>₹40,000</td>
+                                <td>₹15,000</td>
+                                <td>₹13,85,000</td>
+                                <td>₹14,80,000</td>
+                                <td class="profit-positive">₹95,000</td>
+                                <td>6.4%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Reports Section -->
+            <div class="content-section" id="admin-reports">
+                <div class="section-header">
+                    <div>
+                        <h2>Reports & Analytics</h2>
+                        <p>Generate comprehensive business reports</p>
+                    </div>
+                </div>
+
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <div class="report-icon blue">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h3>Sales Report</h3>
+                        <p>Monthly sales performance and trends</p>
+                        <button class="btn btn-secondary btn-sm">Generate</button>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-icon green">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <h3>Purchase Report</h3>
+                        <p>Vehicle purchase history and costs</p>
+                        <button class="btn btn-secondary btn-sm">Generate</button>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-icon purple">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h3>Financial Report</h3>
+                        <p>Comprehensive financial statements</p>
+                        <button class="btn btn-secondary btn-sm">Generate</button>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-icon orange">
+                            <i class="fas fa-warehouse"></i>
+                        </div>
+                        <h3>Inventory Report</h3>
+                        <p>Current stock and valuation</p>
+                        <button class="btn btn-secondary btn-sm">Generate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Manager Dashboard -->
+    <div class="dashboard" id="purchaseDashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-car-side"></i>
+                <h2>Vehicle Mgmt</h2>
+                <div class="user-info">
+                    <div class="user-role">Purchase Manager</div>
+                    <div class="user-email" id="purchaseEmail">purchase@vehicle.com</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="purchase-overview">
+                    <i class="fas fa-chart-line"></i> Overview
+                </li>
+                <li class="nav-item" data-section="purchase-add">
+                    <i class="fas fa-plus-circle"></i> Add Vehicle
+                </li>
+                <li class="nav-item" data-section="purchase-inventory">
+                    <i class="fas fa-warehouse"></i> Inventory
+                </li>
+                <li class="nav-item" data-section="purchase-notes">
+                    <i class="fas fa-file-invoice"></i> Purchase Notes
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="topbar">
+                <h1 id="purchasePageTitle">Purchase Overview</h1>
+                <div class="topbar-actions">
+                    <button class="btn-icon" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Purchase+Manager&background=3498db&color=fff" alt="Purchase">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase Overview -->
+            <div class="content-section active" id="purchase-overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Purchased This Month</h3>
+                            <div class="stat-number">15</div>
+                            <div class="stat-label">Vehicles</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Investment</h3>
+                            <div class="stat-number">₹95.2L</div>
+                            <div class="stat-label">This month</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Pending Documents</h3>
+                            <div class="stat-number">7</div>
+                            <div class="stat-label">Vehicles</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-purchases">
+                    <h3><i class="fas fa-clock"></i> Recent Purchases</h3>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Vehicle No.</th>
+                                    <th>Make/Model</th>
+                                    <th>Purchase Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>MH12AB1234</strong></td>
+                                    <td>Honda City 2022</td>
+                                    <td>15 Nov 2024</td>
+                                    <td>₹8,50,000</td>
+                                    <td><span class="badge badge-success">Complete</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>MH14CD5678</strong></td>
+                                    <td>Maruti Swift 2021</td>
+                                    <td>14 Nov 2024</td>
+                                    <td>₹5,80,000</td>
+                                    <td><span class="badge badge-warning">Pending Docs</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase Add Vehicle -->
+            <div class="content-section" id="purchase-add">
+                <div class="section-header">
+                    <div>
+                        <h2>Add New Vehicle</h2>
+                        <p>Enter complete vehicle purchase details</p>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <form id="addVehicleForm">
+                        <div class="form-section">
+                            <h3><i class="fas fa-car"></i> Vehicle Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Vehicle Number <span class="required">*</span></label>
+                                    <input type="text" placeholder="MH12AB1234" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Chassis Number <span class="required">*</span></label>
+                                    <input type="text" placeholder="MA3XXXXXXXXX" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Make <span class="required">*</span></label>
+                                    <input type="text" placeholder="Honda" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Model <span class="required">*</span></label>
+                                    <input type="text" placeholder="City" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Year <span class="required">*</span></label>
+                                    <input type="number" placeholder="2022" min="2000" max="2024" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Color</label>
+                                    <input type="text" placeholder="White">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Fuel Type</label>
+                                    <select>
+                                        <option>Petrol</option>
+                                        <option>Diesel</option>
+                                        <option>CNG</option>
+                                        <option>Electric</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Kilometers Driven</label>
+                                    <input type="number" placeholder="50000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3><i class="fas fa-rupee-sign"></i> Purchase Details</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Purchase Price <span class="required">*</span></label>
+                                    <input type="number" placeholder="850000" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Purchase Date <span class="required">*</span></label>
+                                    <input type="date" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Payment Method <span class="required">*</span></label>
+                                    <select required>
+                                        <option value="">Select Method</option>
+                                        <option>Cash</option>
+                                        <option>Bank Transfer</option>
+                                        <option>Cheque</option>
+                                        <option>Online Payment</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Agent Commission</label>
+                                    <input type="number" placeholder="25000">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Seller Name</label>
+                                <input type="text" placeholder="Enter seller name">
+                            </div>
+                            <div class="form-group">
+                                <label>Seller Contact</label>
+                                <input type="tel" placeholder="+91 98765 43210">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3><i class="fas fa-images"></i> Vehicle Images</h3>
+                            <div class="upload-area" id="imageUpload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Click to upload or drag and drop</p>
+                                <small>PNG, JPG up to 10MB (Multiple files allowed)</small>
+                                <input type="file" multiple accept="image/*" hidden id="imageInput">
+                            </div>
+                            <div class="image-preview" id="imagePreview"></div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3><i class="fas fa-file-alt"></i> Documents</h3>
+                            <div class="document-upload-grid">
+                                <div class="document-upload-item">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <label>Insurance Certificate</label>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="document-upload-item">
+                                    <i class="fas fa-id-card"></i>
+                                    <label>RC Book</label>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="document-upload-item">
+                                    <i class="fas fa-building"></i>
+                                    <label>Bank NOC</label>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="document-upload-item">
+                                    <i class="fas fa-user-check"></i>
+                                    <label>KYC Documents</label>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="document-upload-item">
+                                    <i class="fas fa-file-contract"></i>
+                                    <label>TT Form</label>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="document-upload-item">
+                                    <i class="fas fa-folder-open"></i>
+                                    <label>Papers on Hold</label>
+                                    <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Vehicle
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Reset Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Purchase Inventory -->
+            <div class="content-section" id="purchase-inventory">
+                <div class="section-header">
+                    <div>
+                        <h2>Vehicle Inventory</h2>
+                        <p>View all purchased vehicles</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search vehicles...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle No.</th>
+                                <th>Make/Model</th>
+                                <th>Purchase Price</th>
+                                <th>Purchase Date</th>
+                                <th>Documents</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>MH12AB1234</strong></td>
+                                <td>Honda City 2022</td>
+                                <td>₹8,50,000</td>
+                                <td>15 Nov 2024</td>
+                                <td><span class="badge badge-success">Complete</span></td>
+                                <td><span class="badge badge-success">In Stock</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH12AB1234')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH14CD5678</strong></td>
+                                <td>Maruti Swift 2021</td>
+                                <td>₹5,80,000</td>
+                                <td>14 Nov 2024</td>
+                                <td><span class="badge badge-warning">Incomplete</span></td>
+                                <td><span class="badge badge-warning">Processing</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH14CD5678')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Purchase Notes -->
+            <div class="content-section" id="purchase-notes">
+                <div class="section-header">
+                    <div>
+                        <h2>Purchase Notes</h2>
+                        <p>Generate and manage purchase notes</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showModal('purchaseNoteModal')">
+                        <i class="fas fa-plus"></i> Generate New Note
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Note No.</th>
+                                <th>Vehicle</th>
+                                <th>Seller Name</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>PN-2024-001</strong></td>
+                                <td>MH12AB1234</td>
+                                <td>Amit Patil</td>
+                                <td>15 Nov 2024</td>
+                                <td>₹8,50,000</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Email">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>PN-2024-002</strong></td>
+                                <td>MH14CD5678</td>
+                                <td>Suresh Mehta</td>
+                                <td>14 Nov 2024</td>
+                                <td>₹5,80,000</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Email">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Manager Dashboard -->
+    <div class="dashboard" id="salesDashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-car-side"></i>
+                <h2>Vehicle Mgmt</h2>
+                <div class="user-info">
+                    <div class="user-role">Sales Manager</div>
+                    <div class="user-email" id="salesEmail">sales@vehicle.com</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="sales-overview">
+                    <i class="fas fa-chart-line"></i> Overview
+                </li>
+                <li class="nav-item" data-section="sales-inventory">
+                    <i class="fas fa-warehouse"></i> Inventory
+                </li>
+                <li class="nav-item" data-section="sales-records">
+                    <i class="fas fa-handshake"></i> Sales Records
+                </li>
+                <li class="nav-item" data-section="sales-customers">
+                    <i class="fas fa-users"></i> Customers
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="topbar">
+                <h1 id="salesPageTitle">Sales Overview</h1>
+                <div class="topbar-actions">
+                    <button class="btn-icon" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Sales+Manager&background=e74c3c&color=fff" alt="Sales">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Overview -->
+            <div class="content-section active" id="sales-overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Sales This Month</h3>
+                            <div class="stat-number">18</div>
+                            <div class="stat-label">Vehicles sold</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Revenue Generated</h3>
+                            <div class="stat-number">₹1.2Cr</div>
+                            <div class="stat-label">This month</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Available Stock</h3>
+                            <div class="stat-number">24</div>
+                            <div class="stat-label">Vehicles</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Sales Performance</h3>
+                    <canvas id="salesPerformanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sales Inventory -->
+            <div class="content-section" id="sales-inventory">
+                <div class="section-header">
+                    <div>
+                        <h2>Available Inventory</h2>
+                        <p>View vehicles available for sale</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search vehicles...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle No.</th>
+                                <th>Make/Model</th>
+                                <th>Year</th>
+                                <th>Asking Price</th>
+                                <th>Last Price (Admin)</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>MH12AB1234</strong></td>
+                                <td>Honda City</td>
+                                <td>2022</td>
+                                <td>₹10,20,000</td>
+                                <td>
+                                    <div class="price-hidden-container">
+                                        <span class="price-hidden" data-price="₹9,80,000">••••••</span>
+                                        <i class="fas fa-eye toggle-price" title="Show Price"></i>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-success">Available</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH12AB1234')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" onclick="showModal('markSoldModal')" title="Mark Sold">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH14CD5678</strong></td>
+                                <td>Maruti Swift</td>
+                                <td>2021</td>
+                                <td>₹7,10,000</td>
+                                <td>
+                                    <div class="price-hidden-container">
+                                        <span class="price-hidden" data-price="₹6,90,000">••••••</span>
+                                        <i class="fas fa-eye toggle-price" title="Show Price"></i>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-warning">Reserved</span></td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH14CD5678')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" onclick="showModal('markSoldModal')" title="Mark Sold">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales Records -->
+            <div class="content-section" id="sales-records">
+                <div class="section-header">
+                    <div>
+                        <h2>Sales Records</h2>
+                        <p>View completed sales transactions</p>
+                    </div>
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Sale Date</th>
+                                <th>Vehicle</th>
+                                <th>Customer</th>
+                                <th>Sale Price</th>
+                                <th>Payment Mode</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>10 Nov 2024</td>
+                                <td><strong>MH10XY9876</strong></td>
+                                <td>Suresh Mehta</td>
+                                <td>₹14,80,000</td>
+                                <td>Bank Transfer</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Invoice">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>08 Nov 2024</td>
+                                <td><strong>MH08ZZ4321</strong></td>
+                                <td>Priya Joshi</td>
+                                <td>₹9,50,000</td>
+                                <td>Cheque</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Invoice">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Customers -->
+            <div class="content-section" id="sales-customers">
+                <div class="section-header">
+                    <div>
+                        <h2>Customer Database</h2>
+                        <p>Manage customer information</p>
+                    </div>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Add Customer
+                    </button>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Email</th>
+                                <th>Vehicle Purchased</th>
+                                <th>Purchase Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Suresh Mehta</td>
+                                <td>+91 98765 43210</td>
+                                <td>suresh@email.com</td>
+                                <td>Toyota Innova 2020</td>
+                                <td>10 Nov 2024</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Manager Dashboard -->
+    <div class="dashboard" id="deliveryDashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-car-side"></i>
+                <h2>Vehicle Mgmt</h2>
+                <div class="user-info">
+                    <div class="user-role">Delivery Manager</div>
+                    <div class="user-email" id="deliveryEmail">delivery@vehicle.com</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-section="delivery-overview">
+                    <i class="fas fa-chart-line"></i> Overview
+                </li>
+                <li class="nav-item" data-section="delivery-pending">
+                    <i class="fas fa-truck"></i> Pending Deliveries
+                </li>
+                <li class="nav-item" data-section="delivery-completed">
+                    <i class="fas fa-check-circle"></i> Completed
+                </li>
+                <li class="nav-item" data-section="delivery-notes">
+                    <i class="fas fa-file-invoice"></i> Delivery Notes
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="topbar">
+                <h1 id="deliveryPageTitle">Delivery Overview</h1>
+                <div class="topbar-actions">
+                    <button class="btn-icon" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Delivery+Manager&background=27ae60&color=fff" alt="Delivery">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Overview -->
+            <div class="content-section active" id="delivery-overview">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-truck-loading"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Pending Deliveries</h3>
+                            <div class="stat-number">6</div>
+                            <div class="stat-label">Vehicles</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Completed This Month</h3>
+                            <div class="stat-number">22</div>
+                            <div class="stat-label">Deliveries</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Scheduled Today</h3>
+                            <div class="stat-number">3</div>
+                            <div class="stat-label">Deliveries</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upcoming-deliveries">
+                    <h3><i class="fas fa-calendar-alt"></i> Upcoming Deliveries</h3>
+                    <div class="delivery-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <strong>Honda City 2022</strong>
+                                <p>Customer: Rahul Desai</p>
+                                <span class="timeline-date">Today, 2:00 PM</span>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <strong>Maruti Swift 2021</strong>
+                                <p>Customer: Priya Joshi</p>
+                                <span class="timeline-date">Tomorrow, 10:00 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Deliveries -->
+            <div class="content-section" id="delivery-pending">
+                <div class="section-header">
+                    <div>
+                        <h2>Pending Deliveries</h2>
+                        <p>Vehicles scheduled for delivery</p>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle No.</th>
+                                <th>Make/Model</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Scheduled Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>MH12AB1234</strong></td>
+                                <td>Honda City 2022</td>
+                                <td>Rahul Desai</td>
+                                <td>+91 98765 43210</td>
+                                <td>20 Nov 2024</td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH12AB1234')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" onclick="showModal('deliveryNoteModal')" title="Generate Note">
+                                        <i class="fas fa-file-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH14CD5678</strong></td>
+                                <td>Maruti Swift 2021</td>
+                                <td>Priya Joshi</td>
+                                <td>+91 87654 32109</td>
+                                <td>21 Nov 2024</td>
+                                <td>
+                                    <button class="btn-icon-small" onclick="viewVehicleDetails('MH14CD5678')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-small" onclick="showModal('deliveryNoteModal')" title="Generate Note">
+                                        <i class="fas fa-file-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Completed Deliveries -->
+            <div class="content-section" id="delivery-completed">
+                <div class="section-header">
+                    <div>
+                        <h2>Completed Deliveries</h2>
+                        <p>Successfully delivered vehicles</p>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle No.</th>
+                                <th>Customer</th>
+                                <th>Delivery Date</th>
+                                <th>Note No.</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>MH10XY9876</strong></td>
+                                <td>Suresh Mehta</td>
+                                <td>15 Nov 2024</td>
+                                <td>DN-2024-015</td>
+                                <td><span class="badge badge-success">Delivered</span></td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Note">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>MH08ZZ4321</strong></td>
+                                <td>Amit Kumar</td>
+                                <td>12 Nov 2024</td>
+                                <td>DN-2024-014</td>
+                                <td><span class="badge badge-success">Delivered</span></td>
+                                <td>
+                                    <button class="btn-icon-small" title="View Note">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Delivery Notes -->
+            <div class="content-section" id="delivery-notes">
+                <div class="section-header">
+                    <div>
+                        <h2>Delivery Notes</h2>
+                        <p>Generated delivery documentation</p>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Note No.</th>
+                                <th>Vehicle</th>
+                                <th>Customer</th>
+                                <th>Generated Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>DN-2024-015</strong></td>
+                                <td>MH10XY9876</td>
+                                <td>Suresh Mehta</td>
+                                <td>15 Nov 2024</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Email">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>DN-2024-014</strong></td>
+                                <td>MH08ZZ4321</td>
+                                <td>Amit Kumar</td>
+                                <td>12 Nov 2024</td>
+                                <td>
+                                    <button class="btn-icon-small" title="View PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn-icon-small" title="Email">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Vehicle Details Modal -->
+    <div class="modal" id="vehicleModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-car"></i> Vehicle Details</h2>
+                <span class="close-btn" onclick="closeModal('vehicleModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="vehicle-details-grid">
+                    <div class="vehicle-images-section">
+                        <div class="main-image">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRb2o8a2hDnve_CaZdOQU79uL8Ytl2TwnnQoG2oa03_EVApfdTJVto2ZxrLBRNoczS8z0&usqp=CAU" alt="Vehicle">
+                        </div>
+                        <div class="thumbnail-grid">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/42355/xuv700-exterior-right-front-three-quarter-2.png?isig=0&q=80" alt="Front">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/42355/xuv700-exterior-right-rear-three-quarter.jpeg?isig=0&q=80" alt="Back">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/42355/xuv700-interior-third-row-seats.jpeg?isig=0&q=80" alt="Side">
+                            <img src="https://imgd.aeplcdn.com/664x374/n/cw/ec/42355/xuv700-interior-bootspace-rear-seat-folded-2.jpeg?isig=0&q=80" alt="Interior">
+                        </div>
+                    </div>
+                    <div class="vehicle-info-section">
+                        <h3>Basic Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Vehicle Number</label>
+                                <strong>MH12AB1234</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Chassis Number</label>
+                                <strong>MA3XXXXXXXXX</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Make/Model</label>
+                                <strong>Honda City 2022</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Color</label>
+                                <strong>White Pearl</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Fuel Type</label>
+                                <strong>Petrol</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Kilometers</label>
+                                <strong>45,000 km</strong>
+                            </div>
+                        </div>
+
+                        <h3>Financial Details</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Purchase Price</label>
+                                <strong>₹8,50,000</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Modifications</label>
+                                <strong>₹45,000</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Asking Price</label>
+                                <strong>₹10,20,000</strong>
+                            </div>
+                            <div class="info-item">
+                                <label>Last Price</label>
+                                <strong>₹9,80,000</strong>
+                            </div>
+                        </div>
+
+                        <h3>Documents</h3>
+                        <div class="document-list">
+                            <div class="document-item">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Insurance Certificate</span>
+                                <button class="btn-icon-small"><i class="fas fa-download"></i></button>
+                            </div>
+                            <div class="document-item">
+                                <i class="fas fa-id-card"></i>
+                                <span>RC Book</span>
+                                <button class="btn-icon-small"><i class="fas fa-download"></i></button>
+                            </div>
+                            <div class="document-item">
+                                <i class="fas fa-building"></i>
+                                <span>Bank NOC</span>
+                                <button class="btn-icon-small"><i class="fas fa-download"></i></button>
+                            </div>
+                            <div class="document-item">
+                                <i class="fas fa-user-check"></i>
+                                <span>KYC Documents</span>
+                                <button class="btn-icon-small"><i class="fas fa-download"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> Add New User</h2>
+                <span class="close-btn" onclick="closeModal('userModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>Full Name <span class="required">*</span></label>
+                        <input type="text" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" placeholder="user@vehicle.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role <span class="required">*</span></label>
+                        <select required>
+                            <option value="">Select Role</option>
+                            <option>Purchase Manager</option>
+                            <option>Sales Manager</option>
+                            <option>Delivery Manager</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="tel" placeholder="+91 98765 43210">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Create User</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('userModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Note Modal -->
+    <div class="modal" id="purchaseNoteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-invoice"></i> Generate Purchase Note</h2>
+                <span class="close-btn" onclick="closeModal('purchaseNoteModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>Vehicle Number <span class="required">*</span></label>
+                        <select required>
+                            <option value="">Select Vehicle</option>
+                            <option>MH12AB1234 - Honda City 2022</option>
+                            <option>MH14CD5678 - Maruti Swift 2021</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Seller Name <span class="required">*</span></label>
+                        <input type="text" placeholder="Enter seller name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="tel" placeholder="+91 98765 43210">
+                    </div>
+                    <div class="form-group">
+                        <label>Purchase Amount <span class="required">*</span></label>
+                        <input type="number" placeholder="850000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Terms & Conditions</label>
+                        <textarea rows="4" placeholder="Enter terms and conditions"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('purchaseNoteModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Note Modal -->
+    <div class="modal" id="deliveryNoteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-truck"></i> Generate Delivery Note</h2>
+                <span class="close-btn" onclick="closeModal('deliveryNoteModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>Vehicle Number <span class="required">*</span></label>
+                        <input type="text" value="MH12AB1234" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Name <span class="required">*</span></label>
+                        <input type="text" value="Rahul Desai" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Delivery Date <span class="required">*</span></label>
+                        <input type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Delivery Time</label>
+                        <input type="time">
+                    </div>
+                    <div class="form-group">
+                        <label>Delivery Address <span class="required">*</span></label>
+                        <textarea rows="3" placeholder="Enter complete delivery address" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Special Instructions</label>
+                        <textarea rows="2" placeholder="Any special instructions for delivery"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Terms & Conditions</label>
+                        <textarea rows="3" placeholder="Enter terms and conditions"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('deliveryNoteModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mark Sold Modal -->
+    <div class="modal" id="markSoldModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-check-circle"></i> Mark Vehicle as Sold</h2>
+                <span class="close-btn" onclick="closeModal('markSoldModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>Customer Name <span class="required">*</span></label>
+                        <input type="text" placeholder="Enter customer name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number <span class="required">*</span></label>
+                        <input type="tel" placeholder="+91 98765 43210" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" placeholder="customer@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Sale Price <span class="required">*</span></label>
+                        <input type="number" placeholder="980000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Mode <span class="required">*</span></label>
+                        <select required>
+                            <option value="">Select Payment Mode</option>
+                            <option>Cash</option>
+                            <option>Bank Transfer</option>
+                            <option>Cheque</option>
+                            <option>Online Payment</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sale Date <span class="required">*</span></label>
+                        <input type="date" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Mark as Sold</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('markSoldModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Comparison Modal -->
+    <div class="modal" id="compareModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-exchange-alt"></i> Compare Vehicles</h2>
+                <span class="close-btn" onclick="closeModal('compareModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="compare-selection">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Select Vehicle 1</label>
+                            <select id="compareVehicle1">
+                                <option value="">Choose a vehicle...</option>
+                                <option value="MH12AB1234">MH12AB1234 - Honda City 2022</option>
+                                <option value="MH14CD5678">MH14CD5678 - Maruti Swift 2021</option>
+                                <option value="MH10XY9876">MH10XY9876 - Toyota Innova 2020</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Vehicle 2</label>
+                            <select id="compareVehicle2">
+                                <option value="">Choose a vehicle...</option>
+                                <option value="MH12AB1234">MH12AB1234 - Honda City 2022</option>
+                                <option value="MH14CD5678">MH14CD5678 - Maruti Swift 2021</option>
+                                <option value="MH10XY9876">MH10XY9876 - Toyota Innova 2020</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadComparison()">
+                        <i class="fas fa-sync"></i> Load Comparison
+                    </button>
+                </div>
+
+                <div class="comparison-table-wrapper" id="comparisonResult" style="display: none; margin-top: 30px;">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Specification</th>
+                                <th>Honda City 2022</th>
+                                <th>Maruti Swift 2021</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Vehicle Number</strong></td>
+                                <td>MH12AB1234</td>
+                                <td>MH14CD5678</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Year</strong></td>
+                                <td class="winner">2022</td>
+                                <td>2021</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Kilometers Driven</strong></td>
+                                <td>45,000 km</td>
+                                <td class="winner">32,000 km</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Fuel Type</strong></td>
+                                <td>Petrol</td>
+                                <td>Petrol</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Purchase Price</strong></td>
+                                <td>₹8,50,000</td>
+                                <td class="winner">₹5,80,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Asking Price</strong></td>
+                                <td>₹10,20,000</td>
+                                <td>₹7,10,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Price</strong></td>
+                                <td>₹9,80,000</td>
+                                <td>₹6,90,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Estimated Profit</strong></td>
+                                <td class="winner text-success">₹90,000</td>
+                                <td class="text-success">₹69,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Documents Status</strong></td>
+                                <td><span class="badge badge-success">Complete</span></td>
+                                <td><span class="badge badge-warning">Incomplete</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Tracking Modal -->
+    <div class="modal" id="maintenanceModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-tools"></i> Maintenance & Modifications</h2>
+                <span class="close-btn" onclick="closeModal('maintenanceModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="maintenance-header">
+                    <h3>Honda City 2022 - MH12AB1234</h3>
+                    <button class="btn btn-primary" onclick="showModal('addMaintenanceModal')">
+                        <i class="fas fa-plus"></i> Add Entry
+                    </button>
+                </div>
+
+                <div class="maintenance-timeline">
+                    <div class="maintenance-item">
+                        <div class="maintenance-date">
+                            <div class="date-badge">
+                                <span class="day">15</span>
+                                <span class="month">Nov</span>
+                            </div>
+                        </div>
+                        <div class="maintenance-content">
+                            <div class="maintenance-header-row">
+                                <h4>Paint Job & Dent Repair</h4>
+                                <span class="maintenance-cost">₹45,000</span>
+                            </div>
+                            <p>Complete exterior paint job with dent removal. Front bumper replaced.</p>
+                            <div class="maintenance-meta">
+                                <span><i class="fas fa-user"></i> Rajesh Kumar</span>
+                                <span><i class="fas fa-wrench"></i> Body Work</span>
+                                <span><i class="fas fa-clock"></i> Completed</span>
+                            </div>
+                            <div class="maintenance-images">
+                                <img src="https://via.placeholder.com/100" alt="Before">
+                                <img src="https://via.placeholder.com/100" alt="After">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item">
+                        <div class="maintenance-date">
+                            <div class="date-badge">
+                                <span class="day">12</span>
+                                <span class="month">Nov</span>
+                            </div>
+                        </div>
+                        <div class="maintenance-content">
+                            <div class="maintenance-header-row">
+                                <h4>Engine Oil Change & Service</h4>
+                                <span class="maintenance-cost">₹8,500</span>
+                            </div>
+                            <p>Complete engine service with oil and filter replacement.</p>
+                            <div class="maintenance-meta">
+                                <span><i class="fas fa-user"></i> Service Center</span>
+                                <span><i class="fas fa-wrench"></i> Engine Service</span>
+                                <span><i class="fas fa-clock"></i> Completed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-item">
+                        <div class="maintenance-date">
+                            <div class="date-badge">
+                                <span class="day">10</span>
+                                <span class="month">Nov</span>
+                            </div>
+                        </div>
+                        <div class="maintenance-content">
+                            <div class="maintenance-header-row">
+                                <h4>Tire Replacement</h4>
+                                <span class="maintenance-cost">₹18,000</span>
+                            </div>
+                            <p>All four tires replaced with premium brand.</p>
+                            <div class="maintenance-meta">
+                                <span><i class="fas fa-user"></i> Tire Shop</span>
+                                <span><i class="fas fa-wrench"></i> Tires</span>
+                                <span><i class="fas fa-clock"></i> Completed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="maintenance-summary">
+                    <div class="summary-card">
+                        <label>Total Expenses</label>
+                        <strong>₹71,500</strong>
+                    </div>
+                    <div class="summary-card">
+                        <label>Number of Services</label>
+                        <strong>3</strong>
+                    </div>
+                    <div class="summary-card">
+                        <label>Last Service</label>
+                        <strong>3 days ago</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Maintenance Entry Modal -->
+    <div class="modal" id="addMaintenanceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Add Maintenance Entry</h2>
+                <span class="close-btn" onclick="closeModal('addMaintenanceModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label>Service Type <span class="required">*</span></label>
+                        <select required>
+                            <option value="">Select Type</option>
+                            <option>Engine Service</option>
+                            <option>Body Work</option>
+                            <option>Paint Job</option>
+                            <option>Tire Replacement</option>
+                            <option>Interior Cleaning</option>
+                            <option>Electrical Work</option>
+                            <option>AC Service</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description <span class="required">*</span></label>
+                        <textarea rows="3" placeholder="Describe the work done" required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cost <span class="required">*</span></label>
+                            <input type="number" placeholder="Enter cost" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Service Date <span class="required">*</span></label>
+                            <input type="date" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Service Provider</label>
+                        <input type="text" placeholder="Service center name">
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Photos</label>
+                        <div class="upload-area-small">
+                            <i class="fas fa-camera"></i>
+                            <span>Click to upload before/after photos</span>
+                            <input type="file" multiple accept="image/*" hidden>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Entry
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addMaintenanceModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Purchase Note Print Template -->
+    <div class="print-template" id="purchaseNotePrint" style="display: none;">
+        <div class="note-header">
+            <div class="company-info">
+                <h1>Your Company Name</h1>
+                <p>Vehicle Trading & Sales</p>
+                <p>Address Line 1, City, State - PIN</p>
+                <p>Phone: +91 98765 43210 | Email: info@company.com</p>
+            </div>
+            <div class="note-title">
+                <h2>PURCHASE NOTE</h2>
+                <p>Note No.: PN-2024-001</p>
+                <p>Date: 15 November 2024</p>
+            </div>
+        </div>
+
+        <div class="note-section">
+            <h3>Seller Information</h3>
+            <table class="info-table">
+                <tr>
+                    <td><strong>Name:</strong></td>
+                    <td>Amit Patil</td>
+                </tr>
+                <tr>
+                    <td><strong>Contact:</strong></td>
+                    <td>+91 98765 43210</td>
+                </tr>
+                <tr>
+                    <td><strong>Address:</strong></td>
+                    <td>123, Sample Street, Mumbai, Maharashtra - 400001</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="note-section">
+            <h3>Vehicle Details</h3>
+            <table class="info-table">
+                <tr>
+                    <td><strong>Vehicle Number:</strong></td>
+                    <td>MH12AB1234</td>
+                </tr>
+                <tr>
+                    <td><strong>Make/Model:</strong></td>
+                    <td>Honda City 2022</td>
+                </tr>
+                <tr>
+                    <td><strong>Chassis Number:</strong></td>
+                    <td>MA3XXXXXXXXX</td>
+                </tr>
+                <tr>
+                    <td><strong>Color:</strong></td>
+                    <td>White Pearl</td>
+                </tr>
+                <tr>
+                    <td><strong>Fuel Type:</strong></td>
+                    <td>Petrol</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="note-section">
+            <h3>Purchase Details</h3>
+            <table class="amount-table">
+                <tr>
+                    <td>Purchase Amount:</td>
+                    <td class="amount">₹8,50,000</td>
+                </tr>
+                <tr>
+                    <td>Payment Method:</td>
+                    <td>Bank Transfer</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Total Amount Paid:</strong></td>
+                    <td class="amount"><strong>₹8,50,000</strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="note-section">
+            <h3>Terms & Conditions</h3>
+            <ol>
+                <li>The vehicle is purchased in as-is condition.</li>
+                <li>All documents related to the vehicle will be transferred to the buyer.</li>
+                <li>The seller confirms that the vehicle is free from any legal disputes.</li>
+                <li>Payment has been received in full as mentioned above.</li>
+            </ol>
+        </div>
+
+        <div class="note-signatures">
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <p>Seller's Signature</p>
+                <p>Date: ___________</p>
+            </div>
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <p>Buyer's Signature</p>
+                <p>Date: ___________</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
