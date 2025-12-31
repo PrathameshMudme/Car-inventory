@@ -6,7 +6,7 @@ let currentUser = {
 };
 
 // Initialize Application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeApp();
 });
 
@@ -39,20 +39,20 @@ function initializeApp() {
 // Login Handler
 function handleLogin(e) {
     e.preventDefault();
-    
+
     const email = document.getElementById('loginEmail').value;
     const role = document.getElementById('roleSelect').value;
-    
+
     currentUser.email = email;
     currentUser.role = role;
     currentRole = role;
-    
+
     // Hide login page
     document.getElementById('loginPage').style.display = 'none';
-    
+
     // Show appropriate dashboard
     showDashboard(role);
-    
+
     // Show success toast
     showToast('Login successful!', 'success');
 }
@@ -63,10 +63,10 @@ function showDashboard(role) {
     document.querySelectorAll('.dashboard').forEach(d => {
         d.classList.remove('active');
     });
-    
+
     // Show selected dashboard
     let dashboardId = '';
-    switch(role) {
+    switch (role) {
         case 'admin':
             dashboardId = 'adminDashboard';
             break;
@@ -80,11 +80,11 @@ function showDashboard(role) {
             dashboardId = 'deliveryDashboard';
             break;
     }
-    
+
     const dashboard = document.getElementById(dashboardId);
     if (dashboard) {
         dashboard.classList.add('active');
-        
+
         // Update user email in sidebar
         const emailElement = dashboard.querySelector('.user-email');
         if (emailElement) {
@@ -99,13 +99,13 @@ function logout() {
     document.querySelectorAll('.dashboard').forEach(d => {
         d.classList.remove('active');
     });
-    
+
     // Show login page
     document.getElementById('loginPage').style.display = 'flex';
-    
+
     // Reset form
     document.getElementById('loginForm').reset();
-    
+
     // Show info toast
     showToast('Logged out successfully', 'info');
 }
@@ -113,7 +113,7 @@ function logout() {
 // Navigation Menu Handler
 function setupNavigationHandlers() {
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function () {
             const sectionId = this.getAttribute('data-section');
             if (sectionId) {
                 showSection(sectionId, this);
@@ -125,26 +125,26 @@ function setupNavigationHandlers() {
 function showSection(sectionId, clickedItem) {
     // Get parent dashboard
     const parentDashboard = clickedItem.closest('.dashboard');
-    
+
     // Hide all sections in current dashboard
     parentDashboard.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
     });
-    
+
     // Remove active class from all nav items
     parentDashboard.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     // Show selected section
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
     }
-    
+
     // Add active class to clicked nav item
     clickedItem.classList.add('active');
-    
+
     // Update page title
     updatePageTitle(parentDashboard, clickedItem.textContent.trim());
 }
@@ -160,12 +160,12 @@ function updatePageTitle(dashboard, title) {
 
 // Price Toggle Handler for Sales Manager
 function setupPriceToggleHandlers() {
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (e.target.classList.contains('toggle-price')) {
             const container = e.target.closest('.price-hidden-container');
             const priceSpan = container.querySelector('.price-hidden');
             const actualPrice = priceSpan.getAttribute('data-price');
-            
+
             if (priceSpan.classList.contains('visible')) {
                 priceSpan.textContent = '••••••';
                 priceSpan.classList.remove('visible');
@@ -186,20 +186,20 @@ function setupImageUploadHandler() {
     const imageUploadArea = document.getElementById('imageUpload');
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
-    
+
     if (imageUploadArea && imageInput) {
         imageUploadArea.addEventListener('click', () => {
             imageInput.click();
         });
-        
-        imageInput.addEventListener('change', function(e) {
+
+        imageInput.addEventListener('change', function (e) {
             const files = Array.from(e.target.files);
             imagePreview.innerHTML = '';
-            
+
             files.forEach(file => {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         const img = document.createElement('img');
                         img.src = e.target.result;
                         imagePreview.appendChild(img);
@@ -207,13 +207,13 @@ function setupImageUploadHandler() {
                     reader.readAsDataURL(file);
                 }
             });
-            
+
             if (files.length > 0) {
                 showToast(`${files.length} image(s) uploaded`, 'success');
             }
         });
     }
-    
+
     // Document upload handlers
     document.querySelectorAll('.document-upload-item').forEach(item => {
         const input = item.querySelector('input[type="file"]');
@@ -221,8 +221,8 @@ function setupImageUploadHandler() {
             item.addEventListener('click', () => {
                 input.click();
             });
-            
-            input.addEventListener('change', function(e) {
+
+            input.addEventListener('change', function (e) {
                 if (this.files.length > 0) {
                     const fileName = this.files[0].name;
                     const label = item.querySelector('label');
@@ -250,15 +250,15 @@ function closeModal(modalId) {
 
 function setupModalHandlers() {
     // Close modal on outside click
-    window.addEventListener('click', function(e) {
+    window.addEventListener('click', function (e) {
         if (e.target.classList.contains('modal')) {
             e.target.classList.remove('active');
         }
     });
-    
+
     // Close button handlers
     document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const modal = this.closest('.modal');
             if (modal) {
                 modal.classList.remove('active');
@@ -279,27 +279,27 @@ function setupFormHandlers() {
     // Add Vehicle Form
     const addVehicleForm = document.getElementById('addVehicleForm');
     if (addVehicleForm) {
-        addVehicleForm.addEventListener('submit', function(e) {
+        addVehicleForm.addEventListener('submit', function (e) {
             e.preventDefault();
             showToast('Vehicle added successfully!', 'success');
             this.reset();
             document.getElementById('imagePreview').innerHTML = '';
         });
     }
-    
+
     // Handle all form submissions in modals
     document.querySelectorAll('.modal form').forEach(form => {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             const modalTitle = this.closest('.modal').querySelector('.modal-header h2').textContent;
             showToast(`${modalTitle} completed successfully!`, 'success');
-            
+
             // Close modal
             const modal = this.closest('.modal');
             if (modal) {
                 modal.classList.remove('active');
             }
-            
+
             // Reset form
             this.reset();
         });
@@ -313,14 +313,14 @@ function showToast(message, type = 'info') {
     if (existingToast) {
         existingToast.remove();
     }
-    
+
     // Create toast element
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     // Icon based on type
     let icon = 'fa-info-circle';
-    switch(type) {
+    switch (type) {
         case 'success':
             icon = 'fa-check-circle';
             break;
@@ -331,15 +331,15 @@ function showToast(message, type = 'info') {
             icon = 'fa-exclamation-triangle';
             break;
     }
-    
+
     toast.innerHTML = `
         <i class="fas ${icon}" style="font-size: 24px; color: var(--${type}-color);"></i>
         <span style="flex: 1;">${message}</span>
         <i class="fas fa-times" style="cursor: pointer; color: var(--text-muted);" onclick="this.parentElement.remove()"></i>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     // Auto remove after 3 seconds
     setTimeout(() => {
         if (toast.parentElement) {
@@ -357,7 +357,7 @@ function initializeCharts() {
         loadChartJS();
         return;
     }
-    
+
     createCharts();
 }
 
@@ -372,7 +372,7 @@ function createCharts() {
     if (typeof Chart === 'undefined') {
         return;
     }
-    
+
     // Sales Chart
     const salesChartCanvas = document.getElementById('salesChart');
     if (salesChartCanvas) {
@@ -406,7 +406,7 @@ function createCharts() {
             }
         });
     }
-    
+
     // Status Chart
     const statusChartCanvas = document.getElementById('statusChart');
     if (statusChartCanvas) {
@@ -436,7 +436,7 @@ function createCharts() {
             }
         });
     }
-    
+
     // Sales Performance Chart
     const salesPerformanceCanvas = document.getElementById('salesPerformanceChart');
     if (salesPerformanceCanvas) {
@@ -470,11 +470,11 @@ function createCharts() {
 }
 
 // Search Functionality
-document.addEventListener('input', function(e) {
+document.addEventListener('input', function (e) {
     if (e.target.matches('.search-box input')) {
         const searchTerm = e.target.value.toLowerCase();
         const table = e.target.closest('.section-header').nextElementSibling.querySelector('table');
-        
+
         if (table) {
             const rows = table.querySelectorAll('tbody tr');
             rows.forEach(row => {
@@ -486,11 +486,11 @@ document.addEventListener('input', function(e) {
 });
 
 // Filter Functionality
-document.addEventListener('change', function(e) {
+document.addEventListener('change', function (e) {
     if (e.target.matches('.filter-select')) {
         const filterValue = e.target.value.toLowerCase();
         const table = e.target.closest('.section-header').nextElementSibling.querySelector('table');
-        
+
         if (table) {
             const rows = table.querySelectorAll('tbody tr');
             rows.forEach(row => {
@@ -557,14 +557,14 @@ function formatDate(date) {
 }
 
 // Keyboard Shortcuts
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     // Escape key closes modals
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal.active').forEach(modal => {
             modal.classList.remove('active');
         });
     }
-    
+
     // Ctrl/Cmd + S prevents default and shows save toast
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -578,7 +578,7 @@ const observerOptions = {
     rootMargin: '0px 0px -50px 0px'
 };
 
-const observer = new IntersectionObserver(function(entries) {
+const observer = new IntersectionObserver(function (entries) {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.style.animation = 'fadeInUp 0.5s ease forwards';
@@ -627,7 +627,7 @@ function loadDarkModePreference() {
 }
 
 // Call on load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadDarkModePreference();
 });
 
@@ -636,7 +636,7 @@ function toggleNotifications() {
     const panel = document.getElementById('notificationPanel');
     if (panel) {
         panel.classList.toggle('active');
-        
+
         // Mark notifications as read when panel is opened
         if (panel.classList.contains('active')) {
             setTimeout(() => {
@@ -653,10 +653,10 @@ function toggleNotifications() {
 }
 
 // Close notification panel when clicking outside
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const panel = document.getElementById('notificationPanel');
     const notificationBtn = document.querySelector('.btn-icon[title="Notifications"]');
-    
+
     if (panel && panel.classList.contains('active')) {
         if (!panel.contains(e.target) && e.target !== notificationBtn && !notificationBtn.contains(e.target)) {
             panel.classList.remove('active');
@@ -673,10 +673,10 @@ function toggleProfileMenu() {
 }
 
 // Close profile menu when clicking outside
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const menu = document.getElementById('profileMenu');
     const profileTrigger = document.querySelector('.user-profile');
-    
+
     if (menu && menu.classList.contains('active')) {
         if (!profileTrigger.contains(e.target)) {
             menu.classList.remove('active');
@@ -690,7 +690,7 @@ function switchView(viewType) {
     const tableView = document.getElementById('vehicleTable');
     const gridBtn = document.querySelector('.view-toggle .btn-icon-small:first-child');
     const tableBtn = document.querySelector('.view-toggle .btn-icon-small:last-child');
-    
+
     if (viewType === 'grid') {
         gridView.classList.add('active');
         tableView.classList.remove('active');
@@ -709,24 +709,18 @@ function switchView(viewType) {
 // Load Vehicle Comparison
 function loadComparison() {
     const vehicle1 = document.getElementById('compareVehicle1').value;
-    const vehicle2 = document.getElementById('compareVehicle2').value;
-    
-    if (!vehicle1 || !vehicle2) {
-        showToast('Please select both vehicles to compare', 'warning');
+
+    if (!vehicle1) {
+        showToast('Please select a vehicle to view before/after images', 'warning');
         return;
     }
-    
-    if (vehicle1 === vehicle2) {
-        showToast('Please select different vehicles', 'warning');
-        return;
-    }
-    
+
     // Show comparison result
     const comparisonResult = document.getElementById('comparisonResult');
     if (comparisonResult) {
         comparisonResult.style.display = 'block';
-        showToast('Comparison loaded successfully!', 'success');
-        
+        showToast('Before/After images loaded successfully!', 'success');
+
         // Scroll to comparison
         comparisonResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -736,7 +730,7 @@ function loadComparison() {
 function viewVehicleDetails(vehicleNo) {
     showModal('vehicleModal');
     console.log('Viewing details for vehicle:', vehicleNo);
-    
+
     // In a real app, you would fetch vehicle data here
     // For demo, we'll just show a success message
     setTimeout(() => {
@@ -754,15 +748,15 @@ function viewMaintenance(vehicleNo) {
 function setupAdvancedSearch() {
     const searchInput = document.getElementById('inventorySearch');
     const statusFilter = document.getElementById('statusFilter');
-    
+
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             filterVehicles();
         });
     }
-    
+
     if (statusFilter) {
-        statusFilter.addEventListener('change', function() {
+        statusFilter.addEventListener('change', function () {
             filterVehicles();
         });
     }
@@ -771,28 +765,28 @@ function setupAdvancedSearch() {
 function filterVehicles() {
     const searchTerm = document.getElementById('inventorySearch')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('statusFilter')?.value.toLowerCase() || 'all status';
-    
+
     // Filter grid view
     const gridCards = document.querySelectorAll('.vehicle-card');
     gridCards.forEach(card => {
         const text = card.textContent.toLowerCase();
         const badge = card.querySelector('.vehicle-card-badge')?.textContent.toLowerCase() || '';
-        
+
         const matchesSearch = text.includes(searchTerm);
         const matchesStatus = statusFilter === 'all status' || badge.includes(statusFilter.replace('all ', ''));
-        
+
         card.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
     });
-    
+
     // Filter table view
     const tableRows = document.querySelectorAll('#vehicleTable tbody tr');
     tableRows.forEach(row => {
         const text = row.textContent.toLowerCase();
         const badge = row.querySelector('.badge')?.textContent.toLowerCase() || '';
-        
+
         const matchesSearch = text.includes(searchTerm);
         const matchesStatus = statusFilter === 'all status' || badge.includes(statusFilter.replace('all ', ''));
-        
+
         row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
     });
 }
@@ -800,7 +794,7 @@ function filterVehicles() {
 // Print Purchase/Delivery Note
 function printNote(noteType, noteId) {
     showToast(`Preparing ${noteType} note for printing...`, 'info');
-    
+
     setTimeout(() => {
         const printWindow = window.open('', '', 'height=800,width=900');
         printWindow.document.write('<html><head><title>Print Note</title>');
@@ -831,7 +825,7 @@ function printNote(noteType, noteId) {
         printWindow.document.write(document.getElementById('purchaseNotePrint').innerHTML);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
-        
+
         setTimeout(() => {
             printWindow.print();
             showToast('Print dialog opened', 'success');
@@ -854,10 +848,10 @@ function quickActionMaintenance(vehicleNo) {
 function validateForm(formId) {
     const form = document.getElementById(formId);
     if (!form) return false;
-    
+
     const requiredFields = form.querySelectorAll('[required]');
     let isValid = true;
-    
+
     requiredFields.forEach(field => {
         if (!field.value.trim()) {
             isValid = false;
@@ -867,7 +861,7 @@ function validateForm(formId) {
             field.style.borderColor = '';
         }
     });
-    
+
     return isValid;
 }
 
@@ -876,10 +870,10 @@ let autoSaveTimeout;
 function enableAutoSave(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
-    
+
     const inputs = form.querySelectorAll('input, textarea, select');
     inputs.forEach(input => {
-        input.addEventListener('input', function() {
+        input.addEventListener('input', function () {
             clearTimeout(autoSaveTimeout);
             autoSaveTimeout = setTimeout(() => {
                 saveFormData(formId);
@@ -891,25 +885,25 @@ function enableAutoSave(formId) {
 function saveFormData(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
-    
+
     const formData = new FormData(form);
     const data = {};
-    
+
     for (let [key, value] of formData.entries()) {
         data[key] = value;
     }
-    
+
     localStorage.setItem(`form_${formId}`, JSON.stringify(data));
     showToast('Progress saved', 'success');
 }
 
 // Initialize advanced features
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     setupAdvancedSearch();
-    
+
     // Enable auto-save for vehicle form
     enableAutoSave('addVehicleForm');
-    
+
     // Add smooth scrolling
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -930,7 +924,7 @@ function showPerformanceMetrics() {
         profit: '₹18.5L',
         avgMargin: '15.4%'
     };
-    
+
     console.table(metrics);
     showToast('Performance metrics logged to console', 'info');
 }
@@ -938,7 +932,7 @@ function showPerformanceMetrics() {
 // Export to Excel (Demo)
 function exportToExcel(tableId) {
     showToast('Generating Excel file...', 'info');
-    
+
     setTimeout(() => {
         showToast('Excel file downloaded successfully!', 'success');
         console.log('Would download Excel file with data from:', tableId);
@@ -948,7 +942,7 @@ function exportToExcel(tableId) {
 // PDF Generation for Reports
 function generatePDFReport(reportType) {
     showToast(`Generating ${reportType} PDF report...`, 'info');
-    
+
     setTimeout(() => {
         showToast('PDF report generated successfully!', 'success');
         console.log('Would generate PDF for:', reportType);
@@ -956,7 +950,7 @@ function generatePDFReport(reportType) {
 }
 
 // Keyboard Shortcuts Enhancement
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     // Ctrl/Cmd + K: Focus search
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -966,7 +960,7 @@ document.addEventListener('keydown', function(e) {
             showToast('Search focused', 'info');
         }
     }
-    
+
     // Ctrl/Cmd + N: New vehicle (if on inventory page)
     if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
@@ -976,7 +970,7 @@ document.addEventListener('keydown', function(e) {
             showToast('Opening add vehicle form', 'info');
         }
     }
-    
+
     // Ctrl/Cmd + P: Print
     if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
         e.preventDefault();
@@ -1039,3 +1033,12 @@ window.exportToExcel = exportToExcel;
 window.generatePDFReport = generatePDFReport;
 window.startRealtimeUpdates = startRealtimeUpdates;
 window.stopRealtimeUpdates = stopRealtimeUpdates;
+// View Dealer Details
+function viewDealerDetails(dealerId) {
+    // In a real app, this would fetch dealer data from backend
+    showModal('dealerDetailsModal');
+    showToast('Loading dealer details...', 'info');
+}
+
+// Make it global
+window.viewDealerDetails = viewDealerDetails;
