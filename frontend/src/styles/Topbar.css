@@ -1,0 +1,143 @@
+/* Topbar */
+.topbar {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.topbar h1 {
+    font-size: 28px;
+    color: var(--dark-color);
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-profile {
+    position: relative;
+    cursor: pointer;
+}
+
+.user-profile img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    min-width: 220px;
+    z-index: 1000;
+    animation: dropdownSlide 0.3s ease;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-dropdown.active {
+    display: block;
+}
+
+.profile-info {
+    padding: 15px;
+    border-bottom: 1px solid var(--light-color);
+}
+
+.profile-info strong {
+    display: block;
+    font-size: 15px;
+    color: var(--dark-color);
+    margin-bottom: 3px;
+}
+
+.profile-info span {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.profile-dropdown hr {
+    margin: 0;
+    border: none;
+    border-top: 1px solid var(--light-color);
+}
+
+.profile-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.profile-dropdown a:hover {
+    background: var(--light-color);
+    color: var(--primary-color);
+}
+
+.quick-stats-mini {
+    display: flex;
+    gap: 15px;
+    margin-right: 15px;
+}
+
+.mini-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.mini-stat i {
+    font-size: 16px;
+    color: var(--primary-color);
+}
+
+.mini-stat span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+@media (max-width: 768px) {
+    .topbar {
+        padding: 15px;
+    }
+    
+    .topbar h1 {
+        font-size: 20px;
+    }
+    
+    .quick-stats-mini {
+        display: none;
+    }
+}

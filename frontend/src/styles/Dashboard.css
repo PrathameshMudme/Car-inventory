@@ -1,0 +1,46 @@
+/* Dashboard Layout */
+.dashboard {
+    display: flex;
+}
+
+.dashboard.active {
+    display: flex;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 260px;
+    padding: 20px;
+    min-height: 100vh;
+    max-width: calc(100vw - 260px);
+    width: 100%;
+}
+
+/* When topbar is hidden (e.g., User Management) */
+.main-content:has(.content-section:not(:has(.topbar))) {
+    padding-top: 20px;
+}
+
+@media (max-width: 1400px) {
+    .main-content {
+        max-width: 100%;
+    }
+}
+
+/* Content Sections */
+.content-section {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 70px;
+    }
+}

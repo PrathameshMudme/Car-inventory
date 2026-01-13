@@ -1,0 +1,26 @@
+.chart-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chart-card h3 {
+    font-size: 18px;
+    color: var(--dark-color);
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    flex: 1;
+    min-height: 300px;
+    max-height: 400px;
+    position: relative;
+}
+
+.chart-container canvas {
+    max-height: 100% !important;
+}
