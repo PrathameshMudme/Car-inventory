@@ -3,6 +3,7 @@ import VehicleDetails from '../VehicleDetails'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -16,6 +17,7 @@ const PurchaseInventory = () => {
   const [showVehicleModal, setShowVehicleModal] = useState(false)
   const { showToast } = useToast()
   const { token, user } = useAuth()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     loadVehicles()
@@ -40,6 +42,7 @@ const PurchaseInventory = () => {
 
       const data = await response.json()
       setVehicles(data)
+      
     } catch (error) {
       console.error('Error loading vehicles:', error)
       showToast('Failed to load vehicles', 'error')
@@ -123,7 +126,7 @@ const PurchaseInventory = () => {
             <option value="Reserved">Reserved</option>
             <option value="Sold">Sold</option>
           </select>
-          <button className="btn btn-primary" onClick={loadVehicles}>
+          <button className="btn btn-primary" onClick={() => loadVehicles(true)}>
             <i className="fas fa-sync-alt"></i> Refresh
           </button>
         </div>
@@ -141,64 +144,64 @@ const PurchaseInventory = () => {
           <p>Add your first vehicle using the "Add Vehicle" menu</p>
         </div>
       ) : (
-        <div className="data-table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Vehicle No.</th>
-                <th>Make/Model</th>
-                <th>Year</th>
-                <th>Purchase Price</th>
-                <th>Purchase Date</th>
-                <th>Documents</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredVehicles.length === 0 ? (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
-                    <i className="fas fa-search" style={{ fontSize: '32px', color: '#ccc', marginBottom: '10px', display: 'block' }}></i>
-                    No vehicles match your search criteria
-                  </td>
-                </tr>
-              ) : (
-                filteredVehicles.map((vehicle) => {
-                  const docStatus = getDocumentStatus(vehicle)
-                  return (
-                    <tr key={vehicle._id}>
-                      <td><strong>{vehicle.vehicleNo}</strong></td>
-                      <td>{vehicle.make} {vehicle.model || ''}</td>
-                      <td>{vehicle.year || 'N/A'}</td>
-                      <td>{formatPrice(vehicle.purchasePrice)}</td>
-                      <td>{formatDate(vehicle.purchaseDate)}</td>
-                      <td>
-                        <span className={`badge ${docStatus.badge}`}>
-                          {docStatus.status}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge ${getStatusBadgeClass(vehicle.status)}`}>
-                          {vehicle.status}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn-icon-small"
-                          onClick={() => handleViewDetails(vehicle)}
-                          title="View Details"
-                        >
-                          <i className="fas fa-eye"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table sx={{ minWidth: 700 }} aria-label="purchase inventory table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Vehicle No.</TableCell>
+              <TableCell>Make/Model</TableCell>
+              <TableCell>Year</TableCell>
+              {isAdmin && <TableCell>Purchase Price</TableCell>}
+              <TableCell>Purchase Date</TableCell>
+              <TableCell>Documents</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="center">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredVehicles.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={isAdmin ? 8 : 7} sx={{ textAlign: 'center', padding: '40px' }}>
+                  <i className="fas fa-search" style={{ fontSize: '32px', color: '#ccc', marginBottom: '10px', display: 'block' }}></i>
+                  No vehicles match your search criteria
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredVehicles.map((vehicle) => {
+                const docStatus = getDocumentStatus(vehicle)
+                return (
+                  <TableRow key={vehicle._id}>
+                    <TableCell><strong>{vehicle.vehicleNo}</strong></TableCell>
+                    <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
+                    <TableCell>{vehicle.year || 'N/A'}</TableCell>
+                    {isAdmin && (
+                      <TableCell>{formatPrice(vehicle.purchasePrice)}</TableCell>
+                    )}
+                    <TableCell>{formatDate(vehicle.purchaseDate)}</TableCell>
+                    <TableCell>
+                      <span className={`badge ${docStatus.badge}`}>
+                        {docStatus.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`badge ${getStatusBadgeClass(vehicle.status)}`}>
+                        {vehicle.status}
+                      </span>
+                    </TableCell>
+                    <TableCell align="center">
+                      <button
+                        className="btn-icon-small"
+                        onClick={() => handleViewDetails(vehicle)}
+                        title="View Details"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
       )}
 
       <Modal

@@ -4,6 +4,7 @@ import VehicleDetails from '../VehicleDetails'
 import EditVehicle from '../EditVehicle'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -48,6 +49,7 @@ const AdminInventory = () => {
 
       const data = await response.json()
       setVehicles(data)
+    
     } catch (error) {
       console.error('Error loading vehicles:', error)
       showToast('Failed to load vehicles', 'error')
@@ -216,7 +218,7 @@ const AdminInventory = () => {
       }
 
       const result = await response.json()
-      showToast('Prices updated successfully!', 'success')
+      showToast(`Prices updated successfully for ${selectedVehicle.vehicleNo}!`, 'success')
       setShowEditPriceModal(false)
       setEditPriceData({ askingPrice: '', lastPrice: '' })
       loadVehicles()
@@ -276,7 +278,7 @@ const AdminInventory = () => {
           >
             <i className="fas fa-images"></i> Compare
           </button>
-          <button className="btn btn-secondary" onClick={loadVehicles}>
+          <button className="btn btn-secondary" onClick={() => loadVehicles(true)}>
             <i className="fas fa-sync-alt"></i>
           </button>
         </div>
@@ -359,61 +361,73 @@ const AdminInventory = () => {
 
           {/* Table View */}
           {viewType === 'table' && (
-            <div className="data-table-container active" style={{ display: 'block' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Vehicle No.</th>
-                    <th>Make/Model</th>
-                    <th>Year</th>
-                    <th>Purchase Price</th>
-                    <th>Asking Price</th>
-                    <th>Last Price</th>
-                    <th>Documents</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredVehicles.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" style={{ textAlign: 'center', padding: '40px' }}>
-                        No vehicles match your criteria
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredVehicles.map((vehicle) => (
-                      <tr key={vehicle._id}>
-                        <td><strong>{vehicle.vehicleNo}</strong></td>
-                        <td>{vehicle.make} {vehicle.model || ''}</td>
-                        <td>{vehicle.year || 'N/A'}</td>
-                        <td>{formatPrice(vehicle.purchasePrice)}</td>
-                        <td>{formatPrice(vehicle.askingPrice)}</td>
-                        <td>
-                          <div className="price-hidden-container">
-                            <span
-                              className={`price-hidden ${visibleLastPrices[vehicle._id] ? 'visible' : ''}`}
-                            >
-                              {visibleLastPrices[vehicle._id] ? formatPrice(vehicle.lastPrice || vehicle.askingPrice || vehicle.purchasePrice) : '••••••'}
-                            </span>
-                            <i
-                              className={`fas ${visibleLastPrices[vehicle._id] ? 'fa-eye-slash' : 'fa-eye'} toggle-price`}
-                              title={visibleLastPrices[vehicle._id] ? 'Hide Last Price' : 'Show Last Price'}
-                              onClick={() => toggleLastPriceVisibility(vehicle._id)}
-                            ></i>
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`badge ${vehicle.missingDocuments?.length > 0 ? 'badge-warning' : 'badge-success'}`}>
-                            {vehicle.missingDocuments?.length > 0 ? `${vehicle.missingDocuments.length} Missing` : 'Complete'}
+            <Table sx={{ minWidth: 700 }} aria-label="admin inventory table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Vehicle No.</TableCell>
+                  <TableCell>Make/Model</TableCell>
+                  <TableCell>Year</TableCell>
+                  <TableCell>Purchase Price</TableCell>
+                  <TableCell>Asking Price</TableCell>
+                  <TableCell>Last Price</TableCell>
+                  <TableCell>Documents</TableCell>
+                  <TableCell>Status</TableCell>
+                  {vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) && (
+                    <TableCell>Remaining Amount</TableCell>
+                  )}
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredVehicles.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) ? 10 : 9} sx={{ textAlign: 'center', padding: '40px' }}>
+                      No vehicles match your criteria
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredVehicles.map((vehicle) => (
+                    <TableRow key={vehicle._id}>
+                      <TableCell><strong>{vehicle.vehicleNo}</strong></TableCell>
+                      <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
+                      <TableCell>{vehicle.year || 'N/A'}</TableCell>
+                      <TableCell>{formatPrice(vehicle.purchasePrice)}</TableCell>
+                      <TableCell>{formatPrice(vehicle.askingPrice)}</TableCell>
+                      <TableCell>
+                        <div className="price-hidden-container">
+                          <span
+                            className={`price-hidden ${visibleLastPrices[vehicle._id] ? 'visible' : ''}`}
+                          >
+                            {visibleLastPrices[vehicle._id] ? formatPrice(vehicle.lastPrice || vehicle.askingPrice || vehicle.purchasePrice) : '••••••'}
                           </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${getStatusBadgeClass(vehicle.status)}`}>
-                            {vehicle.status}
-                          </span>
-                        </td>
-                        <td>
+                          <i
+                            className={`fas ${visibleLastPrices[vehicle._id] ? 'fa-eye-slash' : 'fa-eye'} toggle-price`}
+                            title={visibleLastPrices[vehicle._id] ? 'Hide Last Price' : 'Show Last Price'}
+                            onClick={() => toggleLastPriceVisibility(vehicle._id)}
+                          ></i>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`badge ${vehicle.missingDocuments?.length > 0 ? 'badge-warning' : 'badge-success'}`}>
+                          {vehicle.missingDocuments?.length > 0 ? `${vehicle.missingDocuments.length} Missing` : 'Complete'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`badge ${getStatusBadgeClass(vehicle.status)}`}>
+                          {vehicle.status}
+                        </span>
+                      </TableCell>
+                      {vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) && (
+                        <TableCell>
+                          {vehicle.status === 'Sold' && vehicle.remainingAmount > 0 ? (
+                            <strong style={{ color: '#dc3545' }}>{formatPrice(vehicle.remainingAmount)}</strong>
+                          ) : (
+                            <span style={{ color: '#6c757d' }}>-</span>
+                          )}
+                        </TableCell>
+                      )}
+                      <TableCell align="center">
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                           <button
                             className="btn-icon-small"
                             onClick={() => handleViewDetails(vehicle)}
@@ -435,13 +449,13 @@ const AdminInventory = () => {
                           >
                             <i className="fas fa-dollar-sign"></i>
                           </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           )}
         </>
       )}

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const SalesRecords = () => {
@@ -29,9 +30,6 @@ const SalesRecords = () => {
     }, 1500)
   }
 
-  const handleViewInvoice = (vehicle) => {
-    showToast(`Opening invoice for ${vehicle}`, 'info')
-  }
 
   return (
     <div>
@@ -45,40 +43,28 @@ const SalesRecords = () => {
         </button>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Sale Date</th>
-              <th>Vehicle</th>
-              <th>Customer</th>
-              <th>Sale Price</th>
-              <th>Payment Mode</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {salesRecords.map((record, index) => (
-              <tr key={index}>
-                <td>{record.saleDate}</td>
-                <td><strong>{record.vehicle}</strong></td>
-                <td>{record.customer}</td>
-                <td>{record.salePrice}</td>
-                <td>{record.paymentMode}</td>
-                <td>
-                  <button
-                    className="btn-icon-small"
-                    title="View Invoice"
-                    onClick={() => handleViewInvoice(record.vehicle)}
-                  >
-                    <i className="fas fa-file-invoice"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table sx={{ minWidth: 700 }} aria-label="sales records table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Sale Date</TableCell>
+            <TableCell>Vehicle</TableCell>
+            <TableCell>Customer</TableCell>
+            <TableCell>Sale Price</TableCell>
+            <TableCell>Payment Mode</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {salesRecords.map((record, index) => (
+            <TableRow key={index}>
+              <TableCell>{record.saleDate}</TableCell>
+              <TableCell><strong>{record.vehicle}</strong></TableCell>
+              <TableCell>{record.customer}</TableCell>
+              <TableCell>{record.salePrice}</TableCell>
+              <TableCell>{record.paymentMode}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

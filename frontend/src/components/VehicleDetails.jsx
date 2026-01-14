@@ -10,6 +10,8 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
   const { showToast } = useToast()
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
+  const isSalesManager = user?.role === 'sales'
+  const isPurchaseManager = user?.role === 'purchase'
 
   if (!vehicle) {
     return <div className="vehicle-details-empty">No vehicle data available</div>
@@ -167,29 +169,37 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
 
         <h3><i className="fas fa-rupee-sign"></i> Financial Details</h3>
         <div className="info-grid">
-          <div className="info-item">
-            <label>Purchase Price</label>
-            <strong>{formatPrice(vehicle.purchasePrice)}</strong>
-          </div>
-          <div className="info-item">
-            <label>Asking Price</label>
-            <strong>{formatPrice(vehicle.askingPrice)}</strong>
-          </div>
+          {isAdmin && vehicle.purchasePrice !== undefined && (
+            <div className="info-item">
+              <label>Purchase Price</label>
+              <strong>{formatPrice(vehicle.purchasePrice)}</strong>
+            </div>
+          )}
+          {!isPurchaseManager && (
+            <div className="info-item">
+              <label>Asking Price</label>
+              <strong>{formatPrice(vehicle.askingPrice)}</strong>
+            </div>
+          )}
           <div className="info-item">
             <label>Purchase Date</label>
             <strong>{formatDate(vehicle.purchaseDate)}</strong>
           </div>
-          <div className="info-item">
-            <label>Payment Method</label>
-            <strong>{vehicle.paymentMethod || 'N/A'}</strong>
-          </div>
-          <div className="info-item">
-            <label>Agent Commission</label>
-            <strong>{formatPrice(vehicle.agentCommission)}</strong>
-          </div>
+          {!isSalesManager && !isPurchaseManager && (
+            <>
+              <div className="info-item">
+                <label>Payment Method</label>
+                <strong>{vehicle.paymentMethod || 'N/A'}</strong>
+              </div>
+              <div className="info-item">
+                <label>Agent Commission</label>
+                <strong>{formatPrice(vehicle.agentCommission)}</strong>
+              </div>
+            </>
+          )}
         </div>
 
-        {(vehicle.sellerName || vehicle.dealerName) && (
+        {!isSalesManager && !isPurchaseManager && (vehicle.sellerName || vehicle.dealerName) && (
           <>
             <h3><i className="fas fa-user-tie"></i> Seller / Dealer</h3>
             <div className="info-grid">

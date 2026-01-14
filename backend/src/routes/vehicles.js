@@ -122,6 +122,16 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       return res.status(400).json({ message: 'Vehicle with this number already exists' })
     }
 
+    // Helper function to capitalize first letter of each word
+    const capitalizeName = (name) => {
+      if (!name) return ''
+      return name
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    }
+
     // Create vehicle with all required fields
     const vehicleData = {
       vehicleNo: vehicleNo.toUpperCase(),
@@ -135,9 +145,9 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       purchasePrice: parseFloat(purchasePrice),
       purchaseDate,
       paymentMethod,
-      sellerName,
+      sellerName: capitalizeName(sellerName),
       sellerContact,
-      dealerName,
+      dealerName: capitalizeName(dealerName),
       dealerPhone,
       status: 'On Modification',
       createdBy: req.user._id
@@ -277,8 +287,15 @@ router.get('/', authenticate, async (req, res) => {
         const uploadedDocTypes = documents.map(doc => doc.documentType)
         const missingDocuments = allDocumentTypes.filter(docType => !uploadedDocTypes.includes(docType))
         
+        const vehicleObj = vehicle.toObject()
+        
+        // Hide purchase price from non-admin users
+        if (req.user.role !== 'admin') {
+          delete vehicleObj.purchasePrice
+        }
+        
         return {
-          ...vehicle.toObject(),
+          ...vehicleObj,
           images,
           documents,
           missingDocuments
@@ -314,8 +331,15 @@ router.get('/:id', authenticate, async (req, res) => {
     const uploadedDocTypes = documents.map(doc => doc.documentType)
     const missingDocuments = allDocumentTypes.filter(docType => !uploadedDocTypes.includes(docType))
 
+    const vehicleObj = vehicle.toObject()
+    
+    // Hide purchase price from non-admin users
+    if (req.user.role !== 'admin') {
+      delete vehicleObj.purchasePrice
+    }
+
     res.json({
-      ...vehicle.toObject(),
+      ...vehicleObj,
       images,
       documents,
       missingDocuments
@@ -352,25 +376,68 @@ router.put('/:id', authenticate, authorize('admin'), upload.fields([
       return res.status(404).json({ message: 'Vehicle not found' })
     }
 
+    // Helper function to capitalize first letter of each word
+    const capitalizeName = (name) => {
+      if (!name) return ''
+      return name
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    }
+
     // Update vehicle fields
     const updateFields = [
       'make', 'model', 'year', 'color', 'fuelType', 'kilometers',
       'purchasePrice', 'askingPrice', 'lastPrice', 'purchaseDate', 'paymentMethod',
       'agentCommission', 'sellerName', 'sellerContact', 'dealerName',
-      'dealerPhone', 'notes', 'status'
+      'dealerPhone', 'notes', 'status',
+      // Customer information
+      'customerName', 'customerContact', 'customerAlternateContact', 'customerEmail',
+      'customerAddress', 'customerAadhaar', 'customerPAN', 'customerSource', 'saleDate',
+      // Payment details
+      'paymentType', 'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan',
+      'remainingAmount', 'saleNotes'
     ]
 
     updateFields.forEach(field => {
       if (req.body[field] !== undefined) {
         if (field === 'year') {
           vehicle[field] = parseInt(req.body[field])
-        } else if (['purchasePrice', 'askingPrice', 'lastPrice', 'agentCommission'].includes(field)) {
+        } else if (['purchasePrice', 'askingPrice', 'lastPrice', 'agentCommission', 
+                     'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan', 
+                     'remainingAmount'].includes(field)) {
           vehicle[field] = parseFloat(req.body[field])
+        } else if (field === 'dealerName' || field === 'sellerName' || field === 'customerName') {
+          // Normalize dealer, seller, and customer names
+          vehicle[field] = capitalizeName(req.body[field])
+        } else if (field === 'saleDate' || field === 'purchaseDate') {
+          vehicle[field] = req.body[field] ? new Date(req.body[field]) : undefined
         } else {
           vehicle[field] = req.body[field]
         }
       }
     })
+
+    // Handle security cheque payment
+    if (req.body['paymentSecurityCheque[enabled]'] === 'true') {
+      vehicle.paymentSecurityCheque = {
+        enabled: true,
+        bankName: req.body['paymentSecurityCheque[bankName]'] || '',
+        accountNumber: req.body['paymentSecurityCheque[accountNumber]'] || '',
+        chequeNumber: req.body['paymentSecurityCheque[chequeNumber]'] || '',
+        amount: parseFloat(req.body['paymentSecurityCheque[amount]']) || 0
+      }
+    } else if (req.body['paymentSecurityCheque[enabled]'] === 'false' || req.body.status === 'Sold') {
+      // Reset security cheque if disabled or if marking as sold without it
+      vehicle.paymentSecurityCheque = {
+        enabled: false,
+        bankName: '',
+        accountNumber: '',
+        chequeNumber: '',
+        amount: 0
+      }
+    }
 
     vehicle.modifiedBy = req.user._id
     await vehicle.save()
@@ -466,7 +533,7 @@ router.put('/:id', authenticate, authorize('admin'), upload.fields([
 
 // @route   GET /api/vehicles/:id/purchase-note
 // @desc    Generate and download purchase note PDF
-// @access  Private (Purchase Manager, Admin)
+// @access  Private (Purchase Manager for own vehicles, Admin for all)
 router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id)
@@ -475,6 +542,14 @@ router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), a
 
     if (!vehicle) {
       return res.status(404).json({ message: 'Vehicle not found' })
+    }
+
+    // Check if purchase manager can access this vehicle (only their own vehicles)
+    if (req.user.role === 'purchase') {
+      const createdById = vehicle.createdBy?._id?.toString() || vehicle.createdBy?.toString()
+      if (createdById !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'You can only generate purchase notes for vehicles you added' })
+      }
     }
 
     // Create PDF

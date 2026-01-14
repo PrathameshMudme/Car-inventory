@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import StatCard from '../StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -9,8 +10,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 const PurchaseOverview = () => {
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const { showToast } = useToast()
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     if (token) {
@@ -57,9 +59,11 @@ const PurchaseOverview = () => {
 
     const purchasedThisMonth = thisMonthVehicles.length
 
-    const totalInvestment = thisMonthVehicles.reduce((sum, vehicle) => {
-      return sum + (parseFloat(vehicle.purchasePrice) || 0)
-    }, 0)
+    const totalInvestment = isAdmin 
+      ? thisMonthVehicles.reduce((sum, vehicle) => {
+          return sum + (parseFloat(vehicle.purchasePrice) || 0)
+        }, 0)
+      : 0
 
     // Count vehicles with missing documents (using missingDocuments array from API)
     const pendingDocs = vehicles.filter(vehicle => {
@@ -91,11 +95,13 @@ const PurchaseOverview = () => {
           year: 'numeric'
         })
 
-        const amount = new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-          maximumFractionDigits: 0
-        }).format(vehicle.purchasePrice || 0)
+        const amount = isAdmin && vehicle.purchasePrice !== undefined
+          ? new Intl.NumberFormat('en-IN', {
+              style: 'currency',
+              currency: 'INR',
+              maximumFractionDigits: 0
+            }).format(vehicle.purchasePrice || 0)
+          : 'N/A'
 
         let status = vehicle.status || 'On Modification'
         let badgeClass = 'badge-warning'
@@ -151,13 +157,15 @@ const PurchaseOverview = () => {
           value={stats.purchasedThisMonth.toString()}
           label="Vehicles"
         />
-        <StatCard
-          icon="fas fa-rupee-sign"
-          iconClass="green"
-          title="Total Investment"
-          value={formatCurrency(stats.totalInvestment)}
-          label="This month"
-        />
+        {isAdmin && (
+          <StatCard
+            icon="fas fa-rupee-sign"
+            iconClass="green"
+            title="Total Investment"
+            value={formatCurrency(stats.totalInvestment)}
+            label="This month"
+          />
+        )}
         <StatCard
           icon="fas fa-file-alt"
           iconClass="orange"
@@ -175,34 +183,32 @@ const PurchaseOverview = () => {
             <p>No purchases found</p>
           </div>
         ) : (
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Vehicle No.</th>
-                  <th>Make/Model</th>
-                  <th>Purchase Date</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentPurchases.map((purchase, index) => (
-                  <tr key={index}>
-                    <td><strong>{purchase.vehicleNo}</strong></td>
-                    <td>{purchase.makeModel}</td>
-                    <td>{purchase.purchaseDate}</td>
-                    <td>{purchase.amount}</td>
-                    <td>
-                      <span className={`badge ${purchase.badgeClass}`}>
-                        {purchase.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table sx={{ minWidth: 700 }} aria-label="recent purchases table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Vehicle No.</TableCell>
+                <TableCell>Make/Model</TableCell>
+                <TableCell>Purchase Date</TableCell>
+                {isAdmin && <TableCell>Amount</TableCell>}
+                <TableCell>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {recentPurchases.map((purchase, index) => (
+                <TableRow key={index}>
+                  <TableCell><strong>{purchase.vehicleNo}</strong></TableCell>
+                  <TableCell>{purchase.makeModel}</TableCell>
+                  <TableCell>{purchase.purchaseDate}</TableCell>
+                  {isAdmin && <TableCell>{purchase.amount}</TableCell>}
+                  <TableCell>
+                    <span className={`badge ${purchase.badgeClass}`}>
+                      {purchase.status}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>

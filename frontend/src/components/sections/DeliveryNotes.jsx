@@ -1,5 +1,6 @@
 import React from 'react'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const DeliveryNotes = () => {
@@ -47,25 +48,25 @@ const DeliveryNotes = () => {
         </div>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Note No.</th>
-              <th>Vehicle</th>
-              <th>Customer</th>
-              <th>Generated Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deliveryNotes.map((note, index) => (
-              <tr key={index}>
-                <td><strong>{note.noteNo}</strong></td>
-                <td>{note.vehicle}</td>
-                <td>{note.customer}</td>
-                <td>{note.generatedDate}</td>
-                <td>
+      <Table sx={{ minWidth: 700 }} aria-label="delivery notes table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Note No.</TableCell>
+            <TableCell>Vehicle</TableCell>
+            <TableCell>Customer</TableCell>
+            <TableCell>Generated Date</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {deliveryNotes.map((note, index) => (
+            <TableRow key={index}>
+              <TableCell><strong>{note.noteNo}</strong></TableCell>
+              <TableCell>{note.vehicle}</TableCell>
+              <TableCell>{note.customer}</TableCell>
+              <TableCell>{note.generatedDate}</TableCell>
+              <TableCell align="center">
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                   <button
                     className="btn-icon-small"
                     title="View PDF"
@@ -87,12 +88,12 @@ const DeliveryNotes = () => {
                   >
                     <i className="fas fa-envelope"></i>
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

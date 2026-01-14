@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import StatCard from '../StatCard'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const AdminExpenses = () => {
@@ -102,42 +103,40 @@ const AdminExpenses = () => {
         />
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Vehicle</th>
-              <th>Expense Type</th>
-              <th>Description</th>
-              <th>Amount</th>
-              <th>Payment Mode</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map((expense) => (
-              <tr key={expense.id}>
-                <td>{expense.date}</td>
-                <td>{expense.vehicle}</td>
-                <td>
-                  <span className={`badge ${expense.badgeClass}`}>
-                    {expense.expenseType}
-                  </span>
-                </td>
-                <td>{expense.description}</td>
-                <td>{expense.amount}</td>
-                <td>{expense.paymentMode}</td>
-                <td>
-                  <button className="btn-icon-small" title="View Receipt">
-                    <i className="fas fa-file-pdf"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table sx={{ minWidth: 700 }} aria-label="expenses table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Date</TableCell>
+            <TableCell>Vehicle</TableCell>
+            <TableCell>Expense Type</TableCell>
+            <TableCell>Description</TableCell>
+            <TableCell>Amount</TableCell>
+            <TableCell>Payment Mode</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {expenses.map((expense) => (
+            <TableRow key={expense.id}>
+              <TableCell>{expense.date}</TableCell>
+              <TableCell>{expense.vehicle}</TableCell>
+              <TableCell>
+                <span className={`badge ${expense.badgeClass}`}>
+                  {expense.expenseType}
+                </span>
+              </TableCell>
+              <TableCell>{expense.description}</TableCell>
+              <TableCell>{expense.amount}</TableCell>
+              <TableCell>{expense.paymentMode}</TableCell>
+              <TableCell align="center">
+                <button className="btn-icon-small" title="View Receipt">
+                  <i className="fas fa-file-pdf"></i>
+                </button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

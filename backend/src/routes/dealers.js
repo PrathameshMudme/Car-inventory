@@ -4,60 +4,62 @@ const { authenticate, authorize } = require('../middleware/auth')
 
 const router = express.Router()
 
+// Helper function to capitalize first letter of each word
+const capitalizeName = (name) => {
+  if (!name) return ''
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 // @route   GET /api/dealers
-// @desc    Get all dealers with vehicle counts
+// @desc    Get all dealers with vehicle counts and commission
 // @access  Private (Admin)
 router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
-    // Aggregate dealers from vehicles
-    const dealers = await Vehicle.aggregate([
-      {
-        // Filter out vehicles without dealer information
-        $match: {
-          dealerName: { $exists: true, $ne: null, $ne: '' }
-        }
-      },
-      {
-        // Group by dealer name and phone to get unique dealers
-        $group: {
-          _id: {
-            name: '$dealerName',
-            phone: '$dealerPhone'
-          },
-          vehicleCount: { $sum: 1 },
-          // Get some additional info
-          firstPurchaseDate: { $min: '$purchaseDate' },
-          lastPurchaseDate: { $max: '$purchaseDate' },
-          totalPurchaseValue: { $sum: '$purchasePrice' }
-        }
-      },
-      {
-        // Project the results in a cleaner format
-        $project: {
-          _id: 0,
-          name: '$_id.name',
-          phone: '$_id.phone',
-          vehicleCount: 1,
-          firstPurchaseDate: 1,
-          lastPurchaseDate: 1,
-          totalPurchaseValue: 1
-        }
-      },
-      {
-        // Sort by vehicle count descending
-        $sort: { vehicleCount: -1 }
-      }
-    ])
+    // First, get all vehicles with dealer info
+    const vehicles = await Vehicle.find({
+      dealerName: { $exists: true, $ne: null, $ne: '' }
+    }).lean()
 
-    // Format the response
-    const formattedDealers = dealers.map(dealer => ({
-      name: dealer.name,
-      phone: dealer.phone || 'N/A',
-      vehicleCount: dealer.vehicleCount,
-      firstPurchaseDate: dealer.firstPurchaseDate,
-      lastPurchaseDate: dealer.lastPurchaseDate,
-      totalPurchaseValue: dealer.totalPurchaseValue || 0
-    }))
+    // Normalize dealer names and group them
+    const dealerMap = new Map()
+
+    vehicles.forEach(vehicle => {
+      // Normalize dealer name (capitalize first letter)
+      const normalizedName = capitalizeName(vehicle.dealerName)
+      const dealerPhone = vehicle.dealerPhone || 'N/A'
+      const key = `${normalizedName}|${dealerPhone}`
+
+      if (!dealerMap.has(key)) {
+        dealerMap.set(key, {
+          name: normalizedName,
+          phone: dealerPhone,
+          vehicleCount: 0,
+          totalCommission: 0
+        })
+      }
+
+      const dealer = dealerMap.get(key)
+      dealer.vehicleCount += 1
+      
+      // Sum up agent commission
+      if (vehicle.agentCommission && !isNaN(parseFloat(vehicle.agentCommission))) {
+        dealer.totalCommission += parseFloat(vehicle.agentCommission)
+      }
+    })
+
+    // Convert map to array and sort by vehicle count
+    const formattedDealers = Array.from(dealerMap.values())
+      .sort((a, b) => b.vehicleCount - a.vehicleCount)
+      .map(dealer => ({
+        name: dealer.name,
+        phone: dealer.phone,
+        vehicleCount: dealer.vehicleCount,
+        totalCommission: dealer.totalCommission || 0
+      }))
 
     res.json(formattedDealers)
   } catch (error) {

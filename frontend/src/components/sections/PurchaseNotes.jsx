@@ -1,45 +1,102 @@
-import React, { useState } from 'react'
-import Modal from '../Modal'
+import React, { useState, useEffect } from 'react'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../context/AuthContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
+
 const PurchaseNotes = () => {
-  const [showPurchaseNoteModal, setShowPurchaseNoteModal] = useState(false)
+  const [vehicles, setVehicles] = useState([])
+  const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
-
-  const purchaseNotes = [
-    {
-      noteNo: 'PN-2024-001',
-      vehicle: 'MH12AB1234',
-      sellerName: 'Amit Patil',
-      date: '15 Nov 2024',
-      amount: '₹8,50,000'
-    },
-    {
-      noteNo: 'PN-2024-002',
-      vehicle: 'MH14CD5678',
-      sellerName: 'Suresh Mehta',
-      date: '14 Nov 2024',
-      amount: '₹5,80,000'
+  const { user, token } = useAuth()
+  
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin'
+  
+  useEffect(() => {
+    if (token) {
+      loadVehicles()
     }
-  ]
+  }, [token])
 
-  const handleViewPDF = (noteNo) => {
-    showToast(`Opening PDF for ${noteNo}`, 'info')
+  const loadVehicles = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`${API_URL}/vehicles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to load vehicles')
+      }
+
+      const data = await response.json()
+      
+      // Filter vehicles: Purchase managers see only their vehicles, Admin sees all
+      const filteredVehicles = isAdmin 
+        ? data 
+        : data.filter(v => v.createdBy?._id === user._id || v.createdBy === user._id)
+      
+      setVehicles(filteredVehicles)
+    } catch (error) {
+      console.error('Error loading vehicles:', error)
+      showToast('Failed to load vehicles', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDownload = (noteNo) => {
-    showToast(`Downloading ${noteNo}...`, 'info')
-    setTimeout(() => {
-      showToast(`${noteNo} downloaded successfully!`, 'success')
-    }, 1500)
+  const formatPrice = (price) => {
+    if (!price) return 'N/A'
+    if (price >= 10000000) {
+      return `₹${(price / 10000000).toFixed(2)}Cr`
+    } else if (price >= 100000) {
+      return `₹${(price / 100000).toFixed(1)}L`
+    }
+    return `₹${price.toLocaleString('en-IN')}`
   }
 
-  const handleEmail = (noteNo) => {
-    showToast(`Emailing ${noteNo}...`, 'info')
-    setTimeout(() => {
-      showToast(`${noteNo} sent successfully!`, 'success')
-    }, 1500)
+  const formatDate = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  const handleGenerateNote = async (vehicleId, vehicleNo) => {
+    try {
+      const response = await fetch(`${API_URL}/vehicles/${vehicleId}/purchase-note`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate purchase note')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Purchase_Note_${vehicleNo}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      showToast('Purchase note downloaded!', 'success')
+    } catch (error) {
+      console.error('Error generating purchase note:', error)
+      showToast(error.message || 'Failed to generate purchase note', 'error')
+    }
   }
 
   return (
@@ -47,113 +104,73 @@ const PurchaseNotes = () => {
       <div className="section-header">
         <div>
           <h2>Purchase Notes</h2>
-          <p>Generate and manage purchase notes</p>
+          <p>
+            {isAdmin 
+              ? 'Generate and manage purchase notes for all vehicles' 
+              : 'Generate purchase notes for vehicles you added'}
+            {vehicles.length > 0 && ` (${vehicles.length} vehicles)`}
+          </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowPurchaseNoteModal(true)}
-        >
-          <i className="fas fa-plus"></i> Generate New Note
+        <button className="btn btn-secondary" onClick={loadVehicles} title="Refresh">
+          <i className="fas fa-sync-alt"></i> Refresh
         </button>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Note No.</th>
-              <th>Vehicle</th>
-              <th>Seller Name</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchaseNotes.map((note, index) => (
-              <tr key={index}>
-                <td><strong>{note.noteNo}</strong></td>
-                <td>{note.vehicle}</td>
-                <td>{note.sellerName}</td>
-                <td>{note.date}</td>
-                <td>{note.amount}</td>
-                <td>
-                  <button
-                    className="btn-icon-small"
-                    title="View PDF"
-                    onClick={() => handleViewPDF(note.noteNo)}
-                  >
-                    <i className="fas fa-file-pdf"></i>
-                  </button>
-                  <button
-                    className="btn-icon-small"
-                    title="Download"
-                    onClick={() => handleDownload(note.noteNo)}
-                  >
-                    <i className="fas fa-download"></i>
-                  </button>
-                  <button
-                    className="btn-icon-small"
-                    title="Email"
-                    onClick={() => handleEmail(note.noteNo)}
-                  >
-                    <i className="fas fa-envelope"></i>
-                  </button>
-                </td>
-              </tr>
+      {loading ? (
+        <div className="loading-container">
+          <i className="fas fa-spinner fa-spin"></i>
+          <p>Loading vehicles...</p>
+        </div>
+      ) : vehicles.length === 0 ? (
+        <div className="empty-state">
+          <i className="fas fa-file-invoice"></i>
+          <h3>No vehicles found</h3>
+          <p>
+            {isAdmin 
+              ? 'No vehicles available for purchase notes' 
+              : 'You haven\'t added any vehicles yet. Add vehicles to generate purchase notes.'}
+          </p>
+        </div>
+      ) : (
+        <Table sx={{ minWidth: 700 }} aria-label="purchase notes table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Vehicle No.</TableCell>
+              <TableCell>Make/Model</TableCell>
+              <TableCell>Seller Name</TableCell>
+              <TableCell>Purchase Date</TableCell>
+              <TableCell>Purchase Price</TableCell>
+              {isAdmin && <TableCell>Added By</TableCell>}
+              <TableCell align="center">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {vehicles.map((vehicle) => (
+              <TableRow key={vehicle._id || vehicle.id}>
+                <TableCell><strong>{vehicle.vehicleNo}</strong></TableCell>
+                <TableCell>{`${vehicle.make} ${vehicle.model || ''}`.trim()}</TableCell>
+                <TableCell>{vehicle.sellerName || 'N/A'}</TableCell>
+                <TableCell>{formatDate(vehicle.purchaseDate)}</TableCell>
+                <TableCell>{formatPrice(vehicle.purchasePrice)}</TableCell>
+                {isAdmin && (
+                  <TableCell>{vehicle.createdBy?.name || 'Unknown'}</TableCell>
+                )}
+                <TableCell align="center">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                    <button
+                      className="btn-icon-small"
+                      title="Generate Purchase Note"
+                      onClick={() => handleGenerateNote(vehicle._id || vehicle.id, vehicle.vehicleNo)}
+                    >
+                      <i className="fas fa-file-pdf"></i>
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      <Modal
-        isOpen={showPurchaseNoteModal}
-        onClose={() => setShowPurchaseNoteModal(false)}
-        title="Generate Purchase Note"
-      >
-        <form onSubmit={(e) => {
-          e.preventDefault()
-          showToast('Purchase note generated successfully!', 'success')
-          setShowPurchaseNoteModal(false)
-        }}>
-          <div className="form-group">
-            <label>Vehicle Number <span className="required">*</span></label>
-            <select required>
-              <option value="">Select Vehicle</option>
-              <option>MH12AB1234 - Honda City 2022</option>
-              <option>MH14CD5678 - Maruti Swift 2021</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Seller Name <span className="required">*</span></label>
-            <input type="text" placeholder="Enter seller name" required />
-          </div>
-          <div className="form-group">
-            <label>Contact Number</label>
-            <input type="tel" placeholder="+91 98765 43210" />
-          </div>
-          <div className="form-group">
-            <label>Purchase Amount <span className="required">*</span></label>
-            <input type="number" placeholder="850000" required />
-          </div>
-          <div className="form-group">
-            <label>Terms & Conditions</label>
-            <textarea rows="4" placeholder="Enter terms and conditions"></textarea>
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              <i className="fas fa-file-pdf"></i> Generate PDF
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setShowPurchaseNoteModal(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
+          </TableBody>
+        </Table>
+      )}
     </div>
   )
 }

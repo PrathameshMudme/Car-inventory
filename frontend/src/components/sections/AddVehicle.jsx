@@ -179,6 +179,7 @@ const AddVehicle = () => {
       const newImages = [...prev[category]]
       URL.revokeObjectURL(newImages[index].preview)
       newImages.splice(index, 1)
+      showToast(`Image removed from ${category}`, 'info')
       return { ...prev, [category]: newImages }
     })
   }
@@ -263,8 +264,10 @@ const AddVehicle = () => {
                   onDelete={(e) => {
                     e.stopPropagation()
                     const newDocs = [...documents[docType]]
+                    const removedFile = newDocs[idx]
                     newDocs.splice(idx, 1)
                     setDocuments(prev => ({ ...prev, [docType]: newDocs }))
+                    showToast(`${removedFile.name} removed`, 'info')
                   }}
                   sx={{ m: 0.25, fontSize: '11px' }}
                 />
@@ -277,7 +280,9 @@ const AddVehicle = () => {
                 variant="outlined"
                 onDelete={(e) => {
                   e.stopPropagation()
+                  const docTypeConfig = documentTypes.find(d => d.key === docType)
                   setDocuments(prev => ({ ...prev, [docType]: null }))
+                  showToast(`${docTypeConfig?.label || docType} removed`, 'info')
                 }}
                 sx={{ fontSize: '11px' }}
               />
@@ -426,6 +431,7 @@ const AddVehicle = () => {
     })
 
     setSavedVehicle(null)
+    showToast('Form reset successfully', 'info')
   }
 
   const handleGeneratePurchaseNote = async () => {
@@ -514,7 +520,7 @@ const AddVehicle = () => {
                   <CarIcon sx={{ color: 'primary.main' }} /> Vehicle Information
                 </Typography>
                 <Grid container spacing={2.5}>
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
                       fullWidth
                       label="Vehicle Number"
@@ -635,7 +641,7 @@ const AddVehicle = () => {
                   <MoneyIcon sx={{ color: 'primary.main' }} /> Purchase Details
                 </Typography>
                 <Grid container spacing={2.5}>
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
                       fullWidth
                       label="Purchase Price (₹)"
@@ -727,7 +733,7 @@ const AddVehicle = () => {
                   <PersonIcon sx={{ color: 'primary.main' }} /> Seller / Dealer Details
                 </Typography>
                 <Grid container spacing={2.5}>
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
                       fullWidth
                       label="Seller Name"
@@ -775,7 +781,7 @@ const AddVehicle = () => {
                       size="medium"
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <TextField
                       fullWidth
                       label="Notes"
@@ -814,7 +820,7 @@ const AddVehicle = () => {
                 </Typography>
                 <Grid container spacing={2.5}>
                   {imageCategories.map(category => (
-                    <Grid item xs={12} sm={6} md={4} key={category.key}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={category.key}>
                       <Box sx={{ 
                         border: '1px solid #e9ecef', 
                         borderRadius: 2, 
@@ -900,7 +906,7 @@ const AddVehicle = () => {
                 </Typography>
                 <Grid container spacing={2}>
                   {documentTypes.map((doc) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={doc.key}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={doc.key}>
                       <DocumentDropzone
                         docType={doc.key}
                         multiple={doc.multiple}

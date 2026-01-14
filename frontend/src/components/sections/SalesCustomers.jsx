@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const SalesCustomers = () => {
@@ -32,36 +33,28 @@ const SalesCustomers = () => {
         </button>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Contact</th>
-              <th>Email</th>
-              <th>Vehicle Purchased</th>
-              <th>Purchase Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((customer, index) => (
-              <tr key={index}>
-                <td>{customer.name}</td>
-                <td>{customer.contact}</td>
-                <td>{customer.email}</td>
-                <td>{customer.vehiclePurchased}</td>
-                <td>{customer.purchaseDate}</td>
-                <td>
-                  <button className="btn-icon-small" title="View">
-                    <i className="fas fa-eye"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table sx={{ minWidth: 700 }} aria-label="customers table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Name</TableCell>
+            <TableCell>Contact</TableCell>
+            <TableCell>Email</TableCell>
+            <TableCell>Vehicle Purchased</TableCell>
+            <TableCell>Purchase Date</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {customers.map((customer, index) => (
+            <TableRow key={index}>
+              <TableCell>{customer.name}</TableCell>
+              <TableCell>{customer.contact}</TableCell>
+              <TableCell>{customer.email}</TableCell>
+              <TableCell>{customer.vehiclePurchased}</TableCell>
+              <TableCell>{customer.purchaseDate}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       <Modal
         isOpen={showAddCustomerModal}

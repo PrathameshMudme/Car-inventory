@@ -137,7 +137,12 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
   const removeDocument = (docType, index) => {
     setDocuments(prev => {
       const newDocs = [...prev[docType]]
+      const removedDoc = newDocs[index]
       newDocs.splice(index, 1)
+      const docTypeConfig = documentTypes.find(d => d.key === docType)
+      if (removedDoc instanceof File) {
+        showToast(`${docTypeConfig?.label || docType} removed`, 'info')
+      }
       return { ...prev, [docType]: newDocs }
     })
   }
@@ -147,6 +152,7 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
       const newImages = [...prev[category]]
       URL.revokeObjectURL(newImages[index].preview)
       newImages.splice(index, 1)
+      showToast(`Image removed from ${category}`, 'info')
       return { ...prev, [category]: newImages }
     })
   }

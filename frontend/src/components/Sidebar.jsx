@@ -1,15 +1,18 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import '../styles/Sidebar.css'
 
 const Sidebar = ({ menuItems, activeSection, onSectionChange }) => {
   const { user, logout } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
+    showToast('Logged out successfully', 'success')
   }
 
   const getRoleDisplayName = (role) => {

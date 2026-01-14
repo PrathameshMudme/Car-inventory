@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useApp } from '../../context/AppContext'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -11,6 +11,7 @@ import '../../styles/Dashboard.css'
 const PurchaseDashboard = () => {
   const { activeSection, setActiveSection } = useApp()
 
+  // Menu items - Purchase Notes available to all purchase managers and admin
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: 'fas fa-chart-line' },
     { id: 'add', label: 'Add Vehicle', icon: 'fas fa-plus-circle' },

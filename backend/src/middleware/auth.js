@@ -35,20 +35,40 @@ const authorize = (...roles) => {
       return res.status(401).json({ message: 'Not authenticated' })
     }
 
-    // Map role names
+    // Map role names to normalized values
+    // Database stores: 'admin', 'purchase', 'sales' (lowercase)
+    // Frontend may display: 'admin', 'Purchase Manager', 'Sales Manager'
     const roleMap = {
       'admin': 'admin',
+      'Admin': 'admin',
+      'ADMIN': 'admin',
       'Purchase Manager': 'purchase',
-      'Sales Manager': 'sales',
+      'purchase manager': 'purchase',
+      'Purchase': 'purchase',
       'purchase': 'purchase',
+      'Sales Manager': 'sales',
+      'sales manager': 'sales',
+      'Sales': 'sales',
       'sales': 'sales'
     }
 
-    const userRole = roleMap[req.user.role] || req.user.role
+    // Normalize user role (case-insensitive lookup)
+    const userRoleRaw = (req.user.role || '').trim()
+    const userRole = roleMap[userRoleRaw] || roleMap[userRoleRaw.toLowerCase()] || userRoleRaw.toLowerCase()
 
-    if (!roles.includes(userRole)) {
+    // Normalize required roles for comparison (also handle 'admin' -> 'admin')
+    const normalizedRoles = roles.map(role => {
+      const normalized = roleMap[role] || roleMap[role.toLowerCase()] || role.toLowerCase()
+      return normalized
+    })
+
+    // Debug logging (remove in production if needed)
+    console.log(`[AUTH] User: ${req.user.email}, Role: "${req.user.role}" (normalized: "${userRole}"), Required: ${roles.join(', ')} (normalized: ${normalizedRoles.join(', ')})`)
+
+    if (!normalizedRoles.includes(userRole)) {
+      console.error(`[AUTH] Authorization failed: User role "${req.user.role}" (mapped to "${userRole}") not in required roles: ${roles.join(', ')} (normalized: ${normalizedRoles.join(', ')})`)
       return res.status(403).json({ 
-        message: `Access denied. Required role: ${roles.join(' or ')}` 
+        message: `Access denied. Required role: ${roles.join(' or ')}. Your role: ${req.user.role}` 
       })
     }
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import VehicleDetails from '../VehicleDetails'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const PendingDeliveries = () => {
@@ -48,27 +49,27 @@ const PendingDeliveries = () => {
         </div>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Vehicle No.</th>
-              <th>Make/Model</th>
-              <th>Customer</th>
-              <th>Contact</th>
-              <th>Scheduled Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingDeliveries.map((delivery, index) => (
-              <tr key={index}>
-                <td><strong>{delivery.vehicleNo}</strong></td>
-                <td>{delivery.makeModel}</td>
-                <td>{delivery.customer}</td>
-                <td>{delivery.contact}</td>
-                <td>{delivery.scheduledDate}</td>
-                <td>
+      <Table sx={{ minWidth: 700 }} aria-label="pending deliveries table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Vehicle No.</TableCell>
+            <TableCell>Make/Model</TableCell>
+            <TableCell>Customer</TableCell>
+            <TableCell>Contact</TableCell>
+            <TableCell>Scheduled Date</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pendingDeliveries.map((delivery, index) => (
+            <TableRow key={index}>
+              <TableCell><strong>{delivery.vehicleNo}</strong></TableCell>
+              <TableCell>{delivery.makeModel}</TableCell>
+              <TableCell>{delivery.customer}</TableCell>
+              <TableCell>{delivery.contact}</TableCell>
+              <TableCell>{delivery.scheduledDate}</TableCell>
+              <TableCell align="center">
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                   <button
                     className="btn-icon-small"
                     onClick={() => handleViewDetails(delivery.vehicleNo)}
@@ -83,12 +84,12 @@ const PendingDeliveries = () => {
                   >
                     <i className="fas fa-file-alt"></i>
                   </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
       <Modal
         isOpen={showVehicleModal}

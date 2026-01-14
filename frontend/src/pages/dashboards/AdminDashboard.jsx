@@ -10,6 +10,8 @@ import AdminExpenses from '../../components/sections/AdminExpenses'
 import AdminProfit from '../../components/sections/AdminProfit'
 import AdminDealers from '../../components/sections/AdminDealers'
 import AdminReports from '../../components/sections/AdminReports'
+import AdminHistory from '../../components/sections/AdminHistory'
+import SalesCustomers from '../../components/sections/SalesCustomers'
 import '../../styles/Dashboard.css'
 
 const AdminDashboard = () => {
@@ -23,6 +25,8 @@ const AdminDashboard = () => {
     { id: 'expenses', label: 'Expenses & Commission', icon: 'fas fa-file-invoice-dollar' },
     { id: 'profit', label: 'Profit & Loss', icon: 'fas fa-chart-pie' },
     { id: 'dealers', label: 'Dealers', icon: 'fas fa-handshake' },
+    { id: 'customers', label: 'Customers', icon: 'fas fa-users' },
+    { id: 'history', label: 'History', icon: 'fas fa-history' },
     { id: 'reports', label: 'Reports', icon: 'fas fa-file-alt' }
   ]
 
@@ -33,6 +37,8 @@ const AdminDashboard = () => {
     expenses: 'Expenses & Commission',
     profit: 'Profit & Loss',
     dealers: 'Dealers',
+    customers: 'Customers',
+    history: 'History',
     reports: 'Reports'
   }
 
@@ -55,6 +61,10 @@ const AdminDashboard = () => {
         return <AdminProfit />
       case 'dealers':
         return <AdminDealers />
+      case 'customers':
+        return <SalesCustomers />
+      case 'history':
+        return <AdminHistory />
       case 'reports':
         return <AdminReports />
       default:

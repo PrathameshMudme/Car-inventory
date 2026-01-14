@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const AdminProfit = () => {
@@ -88,38 +89,36 @@ const AdminProfit = () => {
         </div>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Vehicle</th>
-              <th>Purchase Price</th>
-              <th>Modifications</th>
-              <th>Commission</th>
-              <th>Other Costs</th>
-              <th>Total Cost</th>
-              <th>Selling Price</th>
-              <th>Net Profit</th>
-              <th>Margin %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {profitData.map((row, index) => (
-              <tr key={index}>
-                <td><strong>{row.vehicle}</strong></td>
-                <td>{row.purchasePrice}</td>
-                <td>{row.modifications}</td>
-                <td>{row.commission}</td>
-                <td>{row.otherCosts}</td>
-                <td>{row.totalCost}</td>
-                <td>{row.sellingPrice}</td>
-                <td className="profit-positive">{row.netProfit}</td>
-                <td>{row.margin}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table sx={{ minWidth: 700 }} aria-label="profit table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Vehicle</TableCell>
+            <TableCell>Purchase Price</TableCell>
+            <TableCell>Modifications</TableCell>
+            <TableCell>Commission</TableCell>
+            <TableCell>Other Costs</TableCell>
+            <TableCell>Total Cost</TableCell>
+            <TableCell>Selling Price</TableCell>
+            <TableCell>Net Profit</TableCell>
+            <TableCell>Margin %</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {profitData.map((row, index) => (
+            <TableRow key={index}>
+              <TableCell><strong>{row.vehicle}</strong></TableCell>
+              <TableCell>{row.purchasePrice}</TableCell>
+              <TableCell>{row.modifications}</TableCell>
+              <TableCell>{row.commission}</TableCell>
+              <TableCell>{row.otherCosts}</TableCell>
+              <TableCell>{row.totalCost}</TableCell>
+              <TableCell>{row.sellingPrice}</TableCell>
+              <TableCell className="profit-positive">{row.netProfit}</TableCell>
+              <TableCell>{row.margin}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

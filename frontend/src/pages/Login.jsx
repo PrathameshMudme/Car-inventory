@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import '../styles/Login.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -11,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -23,20 +25,29 @@ const Login = () => {
       
       if (result.success) {
         const userRole = result.user.role
+        const userName = result.user.name || result.user.email
+        
+        // Show success toast
+        showToast(`Welcome back, ${userName}!`, 'success')
         
         // Map role to route
         const roleRoutes = {
           admin: '/admin',
           purchase: '/purchase',
-          sales: '/sales'
+          sales: '/sales',
+          delivery: '/delivery'
         }
         
         navigate(roleRoutes[userRole] || '/admin')
       } else {
-        setError(result.error || 'Login failed')
+        const errorMsg = result.error || 'Login failed'
+        setError(errorMsg)
+        showToast(errorMsg, 'error')
       }
     } catch (err) {
-      setError('An error occurred. Please try again.')
+      const errorMsg = 'An error occurred. Please try again.'
+      setError(errorMsg)
+      showToast(errorMsg, 'error')
       console.error('Login error:', err)
     } finally {
       setLoading(false)

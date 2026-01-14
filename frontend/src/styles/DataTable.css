@@ -8,6 +8,177 @@
     border: 1px solid #e8ecf0;
 }
 
+/* MUI Table Container Styles */
+.MuiTableContainer-root {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 0 !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+    overflow: hidden !important;
+    border: 1px solid #e8ecf0 !important;
+}
+
+/* MUI Table Row Button and Icon Styles */
+.MuiTableRow-root .btn-icon-small {
+    background: transparent !important;
+    border: 1.5px solid #e0e4e8 !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    color: #6c757d !important;
+    transition: all 0.2s ease !important;
+    font-size: 14px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+}
+
+.MuiTableRow-root .btn-icon-small i {
+    font-size: 14px !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: inherit !important;
+}
+
+.MuiTableRow-root .btn-icon-small i.fas {
+    font-family: "Font Awesome 6 Free" !important;
+    -webkit-font-smoothing: antialiased !important;
+    display: inline-block !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+}
+
+.MuiTableRow-root .btn-icon-small:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+.MuiTableRow-root .btn-icon-small:hover i {
+    color: white !important;
+}
+
+/* Font Awesome Icons in MUI Table Cells */
+.MuiTableCell-root i.fas,
+.MuiTableCell-root i.fa {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    display: inline-block !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.MuiTableCell-root a i.fas,
+.MuiTableCell-root a i.fa {
+    color: inherit !important;
+}
+
+.MuiTableCell-root .badge i.fas,
+.MuiTableCell-root .badge i.fa {
+    color: inherit !important;
+}
+
+/* Specific Button Colors for MUI Tables */
+.MuiTableRow-root .btn-icon-small[title="Edit User"],
+.MuiTableRow-root .btn-icon-small[title="View Details"],
+.MuiTableRow-root .btn-icon-small[title="Edit Vehicle"],
+.MuiTableRow-root .btn-icon-small[title="View"] {
+    color: #3498db !important;
+    border-color: rgba(52, 152, 219, 0.3) !important;
+    background: rgba(52, 152, 219, 0.08) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Change Password"] {
+    color: #f39c12 !important;
+    border-color: rgba(243, 156, 18, 0.3) !important;
+    background: rgba(243, 156, 18, 0.08) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Disable User"] {
+    color: #e74c3c !important;
+    border-color: rgba(231, 76, 60, 0.3) !important;
+    background: rgba(231, 76, 60, 0.08) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Enable User"],
+.MuiTableRow-root .btn-icon-small[title="Mark Sold"],
+.MuiTableRow-root .btn-icon-small[title="Edit Prices"] {
+    color: #27ae60 !important;
+    border-color: rgba(39, 174, 96, 0.3) !important;
+    background: rgba(39, 174, 96, 0.08) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="View Note"],
+.MuiTableRow-root .btn-icon-small[title="View Invoice"],
+.MuiTableRow-root .btn-icon-small[title="View PDF"],
+.MuiTableRow-root .btn-icon-small[title="View Receipt"] {
+    color: #3498db !important;
+    border-color: rgba(52, 152, 219, 0.3) !important;
+    background: rgba(52, 152, 219, 0.08) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Download"],
+.MuiTableRow-root .btn-icon-small[title="Email"],
+.MuiTableRow-root .btn-icon-small[title="Generate Note"] {
+    color: #667eea !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+    background: rgba(102, 126, 234, 0.08) !important;
+}
+
+/* Hover states for specific buttons */
+.MuiTableRow-root .btn-icon-small[title="Edit User"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View Details"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Edit Vehicle"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View"]:hover {
+    background: #3498db !important;
+    border-color: #3498db !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Change Password"]:hover {
+    background: #f39c12 !important;
+    border-color: #f39c12 !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Disable User"]:hover {
+    background: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3) !important;
+}
+
+.MuiTableRow-root .btn-icon-small[title="Enable User"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Mark Sold"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Edit Prices"]:hover {
+    background: #27ae60 !important;
+    border-color: #27ae60 !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3) !important;
+}
+
 /* Data Table */
 .data-table {
     width: 100%;
@@ -586,3 +757,15 @@
 .data-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
 .data-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
 .data-table tbody tr:nth-child(6) { animation-delay: 0.3s; }
+
+/* MUI Table Row Animations */
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useToast } from '../../context/ToastContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const CompletedDeliveries = () => {
@@ -35,42 +36,40 @@ const CompletedDeliveries = () => {
         </div>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Vehicle No.</th>
-              <th>Customer</th>
-              <th>Delivery Date</th>
-              <th>Note No.</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {completedDeliveries.map((delivery, index) => (
-              <tr key={index}>
-                <td><strong>{delivery.vehicleNo}</strong></td>
-                <td>{delivery.customer}</td>
-                <td>{delivery.deliveryDate}</td>
-                <td>{delivery.noteNo}</td>
-                <td>
-                  <span className="badge badge-success">{delivery.status}</span>
-                </td>
-                <td>
-                  <button
-                    className="btn-icon-small"
-                    title="View Note"
-                    onClick={() => handleViewNote(delivery.noteNo)}
-                  >
-                    <i className="fas fa-file-pdf"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table sx={{ minWidth: 700 }} aria-label="completed deliveries table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Vehicle No.</TableCell>
+            <TableCell>Customer</TableCell>
+            <TableCell>Delivery Date</TableCell>
+            <TableCell>Note No.</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {completedDeliveries.map((delivery, index) => (
+            <TableRow key={index}>
+              <TableCell><strong>{delivery.vehicleNo}</strong></TableCell>
+              <TableCell>{delivery.customer}</TableCell>
+              <TableCell>{delivery.deliveryDate}</TableCell>
+              <TableCell>{delivery.noteNo}</TableCell>
+              <TableCell>
+                <span className="badge badge-success">{delivery.status}</span>
+              </TableCell>
+              <TableCell align="center">
+                <button
+                  className="btn-icon-small"
+                  title="View Note"
+                  onClick={() => handleViewNote(delivery.noteNo)}
+                >
+                  <i className="fas fa-file-pdf"></i>
+                </button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }

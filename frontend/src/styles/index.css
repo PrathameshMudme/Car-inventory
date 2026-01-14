@@ -109,3 +109,15 @@ body.dark-mode .data-table thead {
 body.dark-mode .data-table tbody tr:hover {
     background: #1c2128;
 }
+
+/* Fade In Row Animation for MUI Tables */
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

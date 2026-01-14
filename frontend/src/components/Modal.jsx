@@ -46,7 +46,14 @@ const Modal = ({ isOpen, onClose, title, children, size = 'medium', actions }) =
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent dividers>
+      <DialogContent 
+        dividers
+        sx={{
+          maxHeight: '70vh',
+          overflowY: 'auto',
+          padding: '24px'
+        }}
+      >
         {children}
       </DialogContent>
       {actions && (

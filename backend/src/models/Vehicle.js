@@ -57,7 +57,8 @@ const vehicleSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['Cash', 'Bank Transfer', 'Cheque', 'Online Payment', '']
+    trim: true
+    // Stores payment method summary string (e.g., "Cash: ₹50,000, Bank Transfer: ₹30,000")
   },
   agentCommission: {
     type: Number,
@@ -97,13 +98,96 @@ const vehicleSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true
+  },
+  // Customer information (when vehicle is sold)
+  customerName: {
+    type: String,
+    trim: true
+  },
+  customerContact: {
+    type: String,
+    trim: true
+  },
+  customerAlternateContact: {
+    type: String,
+    trim: true
+  },
+  customerEmail: {
+    type: String,
+    trim: true
+  },
+  customerAddress: {
+    type: String,
+    trim: true
+  },
+  customerAadhaar: {
+    type: String,
+    trim: true
+  },
+  customerPAN: {
+    type: String,
+    trim: true,
+    uppercase: true
+  },
+  customerSource: {
+    type: String,
+    enum: ['agent', 'walkin', 'online', ''],
+    trim: true
+  },
+  saleDate: {
+    type: Date
+  },
+  // Payment details
+  paymentType: {
+    type: String,
+    enum: ['full', 'custom', ''],
+    trim: true
+  },
+  paymentCash: {
+    type: Number,
+    default: 0,
+    min: [0, 'Cash amount cannot be negative']
+  },
+  paymentBankTransfer: {
+    type: Number,
+    default: 0,
+    min: [0, 'Bank transfer amount cannot be negative']
+  },
+  paymentOnline: {
+    type: Number,
+    default: 0,
+    min: [0, 'Online payment amount cannot be negative']
+  },
+  paymentLoan: {
+    type: Number,
+    default: 0,
+    min: [0, 'Loan amount cannot be negative']
+  },
+  paymentSecurityCheque: {
+    type: {
+      enabled: { type: Boolean, default: false },
+      bankName: { type: String, trim: true },
+      accountNumber: { type: String, trim: true },
+      chequeNumber: { type: String, trim: true },
+      amount: { type: Number, default: 0, min: [0, 'Cheque amount cannot be negative'] }
+    },
+    default: {}
+  },
+  remainingAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Remaining amount cannot be negative']
+  },
+  saleNotes: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true
 })
 
 // Index for faster queries
-vehicleSchema.index({ vehicleNo: 1 })
+// Note: vehicleNo index is automatically created by unique: true, so we don't need to add it here
 vehicleSchema.index({ status: 1 })
 vehicleSchema.index({ createdBy: 1 })
 vehicleSchema.index({ dealerName: 1 })

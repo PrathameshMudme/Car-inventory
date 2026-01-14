@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
-import '../../styles/DataTable.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -57,7 +57,6 @@ const AdminUsers = () => {
       filtered = filtered.filter(user => user.status === statusFilter)
     }
 
-    console.log('Filtered users:', filtered.length, 'out of', users.length)
     setFilteredUsers(filtered)
   }, [users, searchTerm, statusFilter])
 
@@ -71,8 +70,6 @@ const AdminUsers = () => {
 
     try {
       setLoading(true)
-      console.log('Loading users from:', `${API_URL}/users`)
-      console.log('Using token:', token ? 'Token present' : 'No token')
       
       const response = await fetch(`${API_URL}/users`, {
         headers: {
@@ -80,8 +77,6 @@ const AdminUsers = () => {
           'Content-Type': 'application/json'
         }
       })
-
-      console.log('Response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
@@ -99,8 +94,6 @@ const AdminUsers = () => {
       }
 
       const data = await response.json()
-      console.log('Users loaded:', data.length, 'users')
-      console.log('Users data:', data)
       setUsers(data)
       
       if (data.length === 0) {
@@ -219,8 +212,6 @@ const AdminUsers = () => {
     }
 
     try {
-      console.log('Updating user:', selectedUser.id, formData)
-      
       const response = await fetch(`${API_URL}/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
@@ -236,7 +227,6 @@ const AdminUsers = () => {
       })
 
       const data = await response.json()
-      console.log('Update response:', response.status, data)
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to update user')
@@ -271,8 +261,6 @@ const AdminUsers = () => {
     }
 
     try {
-      console.log('Changing password for user:', selectedUser.id)
-      
       const response = await fetch(`${API_URL}/users/${selectedUser.id}/password`, {
         method: 'PUT',
         headers: {
@@ -286,7 +274,6 @@ const AdminUsers = () => {
       })
 
       const data = await response.json()
-      console.log('Password change response:', response.status, data)
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to change password')
@@ -405,22 +392,21 @@ const AdminUsers = () => {
           <p style={{ marginTop: '15px', color: 'var(--text-muted)' }}>Loading users from database...</p>
         </div>
       ) : (
-        <div className={`data-table-container ${loading ? 'loading' : ''}`} style={{ display: 'block' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Contact</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan="6" style={{ 
+        <Table sx={{ minWidth: 700 }} aria-label="users table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Role</TableCell>
+              <TableCell>Contact</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="center">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} sx={{ 
                     textAlign: 'center', 
                     padding: '60px 40px',
                     background: 'linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%)'
@@ -483,65 +469,64 @@ const AdminUsers = () => {
                         </div>
                       )}
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className="user-cell">
-                        <img src={user.avatar} alt={user.name} />
-                        <strong>{user.name}</strong>
-                      </div>
-                    </td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className={`badge ${user.badgeClass}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td>{user.contact}</td>
-                    <td>
-                      <span className={`badge ${user.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
-                        {user.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                        <button
-                          className="btn-icon-small"
-                          title="Edit User"
-                          onClick={() => handleEdit(user)}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="user-cell">
+                      <img src={user.avatar} alt={user.name} />
+                      <strong>{user.name}</strong>
+                    </div>
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <span className={`badge ${user.badgeClass}`}>
+                      {user.role}
+                    </span>
+                  </TableCell>
+                  <TableCell>{user.contact}</TableCell>
+                  <TableCell>
+                    <span className={`badge ${user.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
+                      {user.status}
+                    </span>
+                  </TableCell>
+                  <TableCell align="center">
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                      <button
+                        className="btn-icon-small"
+                        title="Edit User"
+                        onClick={() => handleEdit(user)}
+                        style={{ fontSize: '14px' }}
+                      >
+                        <i className="fas fa-edit" style={{ fontSize: '14px' }}></i>
+                      </button>
+                      <button
+                        className="btn-icon-small"
+                        title="Change Password"
+                        onClick={() => handleChangePassword(user)}
+                        style={{ fontSize: '14px' }}
+                      >
+                        <i className="fas fa-key" style={{ fontSize: '14px' }}></i>
+                      </button>
+                      <button
+                        className="btn-icon-small"
+                        title={user.status === 'Active' ? 'Disable User' : 'Enable User'}
+                        onClick={() => handleToggleStatus(user)}
+                      >
+                        <i 
+                          className={`fas fa-${user.status === 'Active' ? 'ban' : 'check-circle'}`}
                           style={{ fontSize: '14px' }}
-                        >
-                          <i className="fas fa-edit" style={{ fontSize: '14px' }}></i>
-                        </button>
-                        <button
-                          className="btn-icon-small"
-                          title="Change Password"
-                          onClick={() => handleChangePassword(user)}
-                          style={{ fontSize: '14px' }}
-                        >
-                          <i className="fas fa-key" style={{ fontSize: '14px' }}></i>
-                        </button>
-                        <button
-                          className="btn-icon-small"
-                          title={user.status === 'Active' ? 'Disable User' : 'Enable User'}
-                          onClick={() => handleToggleStatus(user)}
-                        >
-                          <i 
-                            className={`fas fa-${user.status === 'Active' ? 'ban' : 'check-circle'}`}
-                            style={{ fontSize: '14px' }}
-                          ></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                        ></i>
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       )}
 
       {/* Add User Modal */}
