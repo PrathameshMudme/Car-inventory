@@ -1,7 +1,6 @@
 import React from 'react'
 import { useApp } from '../../context/AppContext'
 import Sidebar from '../../components/Sidebar'
-import Topbar from '../../components/Topbar'
 import SalesOverview from '../../components/sections/SalesOverview'
 import SalesInventory from '../../components/sections/SalesInventory'
 import SalesRecords from '../../components/sections/SalesRecords'
@@ -48,7 +47,6 @@ const SalesDashboard = () => {
         onSectionChange={setActiveSection}
       />
       <div className="main-content">
-        <Topbar title={sectionTitles[activeSection] || 'Dashboard'} />
         <div className="content-section active">{renderSection()}</div>
       </div>
     </div>

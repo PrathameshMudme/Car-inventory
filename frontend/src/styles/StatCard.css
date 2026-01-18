@@ -30,6 +30,7 @@
 .stat-icon.purple { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
 .stat-icon.orange { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
 .stat-icon.red { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+.stat-icon.teal { background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); }
 .stat-icon.info { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
 .stat-icon.warning { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
 .stat-icon.success { background: linear-gradient(135deg, #27ae60 0%, #229954 100%); }

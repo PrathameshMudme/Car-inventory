@@ -1,14 +1,25 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import NotificationPanel from './NotificationPanel'
 import '../styles/Topbar.css'
 
 const Topbar = ({ title, quickStats }) => {
   const { darkMode, toggleDarkMode, notifications } = useApp()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+    showToast('Logged out successfully', 'success')
+    setShowProfileMenu(false)
+  }
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -58,6 +69,9 @@ const Topbar = ({ title, quickStats }) => {
               </a>
               <a href="#">
                 <i className="fas fa-cog"></i> Settings
+              </a>
+              <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+                <i className="fas fa-sign-out-alt"></i> Logout
               </a>
             </div>
           )}

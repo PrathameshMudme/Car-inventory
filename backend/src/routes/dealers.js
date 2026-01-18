@@ -15,68 +15,80 @@ const capitalizeName = (name) => {
 }
 
 // @route   GET /api/dealers
-// @desc    Get all dealers with vehicle counts and commission
+// @desc    Get all agents with vehicle counts and commission (LEGACY ROUTE - use /api/agents instead)
 // @access  Private (Admin)
+// @note    This route is kept for backward compatibility. New code should use /api/agents
 router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
-    // First, get all vehicles with dealer info
+    // Get all vehicles with agent info (prefer agentName, fallback to dealerName for backward compat)
     const vehicles = await Vehicle.find({
-      dealerName: { $exists: true, $ne: null, $ne: '' }
+      $or: [
+        { agentName: { $exists: true, $ne: null, $ne: '' } },
+        { dealerName: { $exists: true, $ne: null, $ne: '' } }
+      ]
     }).lean()
 
-    // Normalize dealer names and group them
-    const dealerMap = new Map()
+    // Normalize agent names and group them
+    const agentMap = new Map()
 
     vehicles.forEach(vehicle => {
-      // Normalize dealer name (capitalize first letter)
-      const normalizedName = capitalizeName(vehicle.dealerName)
-      const dealerPhone = vehicle.dealerPhone || 'N/A'
-      const key = `${normalizedName}|${dealerPhone}`
+      // Prefer agentName, fallback to dealerName for backward compatibility
+      const agentName = vehicle.agentName || vehicle.dealerName || ''
+      const agentPhone = vehicle.agentPhone || vehicle.dealerPhone || 'N/A'
+      
+      // Normalize agent name (capitalize first letter)
+      const normalizedName = capitalizeName(agentName)
+      const key = `${normalizedName}|${agentPhone}`
 
-      if (!dealerMap.has(key)) {
-        dealerMap.set(key, {
+      if (!agentMap.has(key)) {
+        agentMap.set(key, {
           name: normalizedName,
-          phone: dealerPhone,
+          phone: agentPhone,
           vehicleCount: 0,
           totalCommission: 0
         })
       }
 
-      const dealer = dealerMap.get(key)
-      dealer.vehicleCount += 1
+      const agent = agentMap.get(key)
+      agent.vehicleCount += 1
       
       // Sum up agent commission
       if (vehicle.agentCommission && !isNaN(parseFloat(vehicle.agentCommission))) {
-        dealer.totalCommission += parseFloat(vehicle.agentCommission)
+        agent.totalCommission += parseFloat(vehicle.agentCommission)
       }
     })
 
     // Convert map to array and sort by vehicle count
-    const formattedDealers = Array.from(dealerMap.values())
+    const formattedAgents = Array.from(agentMap.values())
       .sort((a, b) => b.vehicleCount - a.vehicleCount)
-      .map(dealer => ({
-        name: dealer.name,
-        phone: dealer.phone,
-        vehicleCount: dealer.vehicleCount,
-        totalCommission: dealer.totalCommission || 0
+      .map(agent => ({
+        name: agent.name,
+        phone: agent.phone,
+        vehicleCount: agent.vehicleCount,
+        totalCommission: agent.totalCommission || 0
       }))
 
-    res.json(formattedDealers)
+    res.json(formattedAgents)
   } catch (error) {
-    console.error('Get dealers error:', error)
+    console.error('Get agents error:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })
 
 // @route   GET /api/dealers/:name/vehicles
-// @desc    Get all vehicles for a specific dealer
+// @desc    Get all vehicles for a specific agent (LEGACY ROUTE - use /api/agents/:name/vehicles instead)
 // @access  Private (Admin)
+// @note    This route is kept for backward compatibility. New code should use /api/agents/:name/vehicles
 router.get('/:name/vehicles', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const dealerName = decodeURIComponent(req.params.name)
+    const agentName = decodeURIComponent(req.params.name)
     
+    // Search by both agentName and dealerName for backward compatibility
     const vehicles = await Vehicle.find({
-      dealerName: dealerName
+      $or: [
+        { agentName: agentName },
+        { dealerName: agentName }
+      ]
     })
       .populate('createdBy', 'name email')
       .sort({ purchaseDate: -1 })
@@ -89,6 +101,7 @@ router.get('/:name/vehicles', authenticate, authorize('admin'), async (req, res)
     const vehiclesWithDetails = await Promise.all(
       vehicles.map(async (vehicle) => {
         const images = await VehicleImage.find({ vehicleId: vehicle._id })
+          .sort({ stage: 1, order: 1, createdAt: 1 }) // Maintain explicit image order
         const documents = await VehicleDocument.find({ vehicleId: vehicle._id })
         
         return {
@@ -101,7 +114,7 @@ router.get('/:name/vehicles', authenticate, authorize('admin'), async (req, res)
 
     res.json(vehiclesWithDetails)
   } catch (error) {
-    console.error('Get dealer vehicles error:', error)
+    console.error('Get agent vehicles error:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })

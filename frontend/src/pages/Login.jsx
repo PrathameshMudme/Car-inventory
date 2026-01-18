@@ -4,8 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import '../styles/Login.css'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-
 const Login = () => {
   const [email, setEmail] = useState('admin@vehicle.com')
   const [password, setPassword] = useState('admin123')
@@ -15,13 +13,12 @@ const Login = () => {
   const { showToast } = useToast()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const performLogin = async (userEmail, userPassword) => {
     setError('')
     setLoading(true)
 
     try {
-      const result = await login(email, password)
+      const result = await login(userEmail, userPassword)
       
       if (result.success) {
         const userRole = result.user.role
@@ -34,8 +31,7 @@ const Login = () => {
         const roleRoutes = {
           admin: '/admin',
           purchase: '/purchase',
-          sales: '/sales',
-          delivery: '/delivery'
+          sales: '/sales'
         }
         
         navigate(roleRoutes[userRole] || '/admin')
@@ -51,6 +47,26 @@ const Login = () => {
       console.error('Login error:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    await performLogin(email, password)
+  }
+
+  const handleQuickLogin = async (role) => {
+    const credentials = {
+      admin: { email: 'admin@vehicle.com', password: 'admin123' },
+      purchase: { email: 'rajesh@vehicle.com', password: 'password123' },
+      sales: { email: 'priya@vehicle.com', password: 'password123' }
+    }
+
+    const creds = credentials[role]
+    if (creds) {
+      setEmail(creds.email)
+      setPassword(creds.password)
+      await performLogin(creds.email, creds.password)
     }
   }
 
@@ -111,6 +127,46 @@ const Login = () => {
             )}
           </button>
         </form>
+
+        {/* Quick Login Buttons for Testing */}
+        <div className="quick-login-section">
+          <div className="quick-login-divider">
+            <span>Quick Login (Testing)</span>
+          </div>
+          <div className="quick-login-buttons">
+            <button
+              type="button"
+              className="btn-quick-login btn-quick-admin"
+              onClick={() => handleQuickLogin('admin')}
+              disabled={loading}
+              title="Login as Admin"
+            >
+              <i className="fas fa-user-shield"></i>
+              <span>Admin</span>
+            </button>
+            <button
+              type="button"
+              className="btn-quick-login btn-quick-purchase"
+              onClick={() => handleQuickLogin('purchase')}
+              disabled={loading}
+              title="Login as Purchase Manager"
+            >
+              <i className="fas fa-shopping-cart"></i>
+              <span>Purchase</span>
+            </button>
+            <button
+              type="button"
+              className="btn-quick-login btn-quick-sales"
+              onClick={() => handleQuickLogin('sales')}
+              disabled={loading}
+              title="Login as Sales Manager"
+            >
+              <i className="fas fa-handshake"></i>
+              <span>Sales</span>
+            </button>
+          </div>
+        </div>
+
         <div className="login-footer">
           <p><strong>Demo Credentials:</strong></p>
           <p>Admin: admin@vehicle.com / admin123</p>

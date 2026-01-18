@@ -1,123 +1,140 @@
-/* Global Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Action Button Colors - Global Styles */
+/* 
+ * STANDARDIZED BUTTON COLOR SCHEME:
+ * 
+ * PURPLE (#667eea) - Edit/Primary Actions (Theme Color)
+ * BLUE (#3498db) - View Actions
+ * ORANGE (#f39c12) - Warning Actions  
+ * RED (#e74c3c) - Danger/Cancel Actions
+ * GREEN (#27ae60) - Success Actions
+ */
+
+/* PURPLE - Edit Actions (Theme Color) */
+.btn-icon-small[title="Edit User"],
+.btn-icon-small[title="Edit Vehicle"],
+.btn-icon-small[title="Edit Prices"],
+.btn-icon-small[title="Complete Modification"] {
+    color: #667eea !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+    background: rgba(102, 126, 234, 0.08) !important;
 }
 
-:root {
-    --primary-color: #667eea;
-    --secondary-color: #764ba2;
-    --success-color: #27ae60;
-    --danger-color: #e74c3c;
-    --warning-color: #f39c12;
-    --info-color: #3498db;
-    --dark-color: #2c3e50;
-    --light-color: #ecf0f1;
-    --sidebar-bg: #2c3e50;
-    --sidebar-hover: #34495e;
-    --text-color: #333;
-    --text-muted: #7f8c8d;
-    --border-color: #dce1e5;
-    --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
-    --card-bg: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --text-primary: #2c3e50;
-    --text-secondary: #7f8c8d;
+/* BLUE - View Actions */
+.btn-icon-small[title="View Details"],
+.btn-icon-small[title="View"],
+.btn-icon-small[title="View Note"],
+.btn-icon-small[title="View Invoice"],
+.btn-icon-small[title="View PDF"],
+.btn-icon-small[title="View Receipt"],
+.btn-icon-small[title="Generate Purchase Note"] {
+    color: #3498db !important;
+    border-color: rgba(52, 152, 219, 0.3) !important;
+    background: rgba(52, 152, 219, 0.08) !important;
 }
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f5f7fa;
-    color: var(--text-color);
-    line-height: 1.6;
+/* ORANGE - Warning Actions */
+.btn-icon-small[title="Change Password"] {
+    color: #f39c12 !important;
+    border-color: rgba(243, 156, 18, 0.3) !important;
+    background: rgba(243, 156, 18, 0.08) !important;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+/* RED - Danger/Cancel Actions */
+.btn-icon-small[title="Disable User"],
+.btn-icon-small[title="Delete"],
+.btn-icon-small[title="Cancel"],
+.btn-icon-small[title="Logout"] {
+    color: #e74c3c !important;
+    border-color: rgba(231, 76, 60, 0.3) !important;
+    background: rgba(231, 76, 60, 0.08) !important;
 }
 
-::-webkit-scrollbar-track {
-    background: var(--light-color);
+/* GREEN - Success Actions */
+.btn-icon-small[title="Enable User"],
+.btn-icon-small[title="Mark Sold"],
+.btn-icon-small[title="Mark Customer Payment as Paid"],
+.btn-icon-small[title="Mark Seller Payment as Paid"],
+.btn-icon-small[title="Mark Payment as Paid"] {
+    color: #27ae60 !important;
+    border-color: rgba(39, 174, 96, 0.3) !important;
+    background: rgba(39, 174, 96, 0.08) !important;
 }
 
-::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
-    border-radius: 4px;
+/* PURPLE - Primary/Special Actions */
+.btn-icon-small[title="Download"],
+.btn-icon-small[title="Email"],
+.btn-icon-small[title="Generate Note"],
+.btn-icon-small[title="Save"] {
+    color: #667eea !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+    background: rgba(102, 126, 234, 0.08) !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-color);
+/* Hover states for action buttons */
+
+/* PURPLE - Edit Actions Hover (Theme Color) */
+.btn-icon-small[title="Edit User"]:hover,
+.btn-icon-small[title="Edit Vehicle"]:hover,
+.btn-icon-small[title="Edit Prices"]:hover,
+.btn-icon-small[title="Complete Modification"]:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
 }
 
-/* Utility Classes */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-muted { color: var(--text-muted); }
-.text-primary { color: var(--primary-color); }
-.text-success { color: var(--success-color); }
-.text-danger { color: var(--danger-color); }
-.text-warning { color: var(--warning-color); }
-
-.mt-10 { margin-top: 10px; }
-.mt-20 { margin-top: 20px; }
-.mt-30 { margin-top: 30px; }
-.mb-10 { margin-bottom: 10px; }
-.mb-20 { margin-bottom: 20px; }
-.mb-30 { margin-bottom: 30px; }
-
-.p-10 { padding: 10px; }
-.p-20 { padding: 20px; }
-.p-30 { padding: 30px; }
-
-.d-flex { display: flex; }
-.flex-1 { flex: 1; }
-.gap-10 { gap: 10px; }
-.gap-20 { gap: 20px; }
-.align-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-
-.rounded { border-radius: 8px; }
-.rounded-lg { border-radius: 15px; }
-.shadow { box-shadow: var(--shadow); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-
-/* Dark Mode Support */
-body.dark-mode {
-    background: #1a1a1a;
-    color: #e0e0e0;
+/* BLUE - View Actions Hover */
+.btn-icon-small[title="View Details"]:hover,
+.btn-icon-small[title="View"]:hover,
+.btn-icon-small[title="View Note"]:hover,
+.btn-icon-small[title="View Invoice"]:hover,
+.btn-icon-small[title="View PDF"]:hover,
+.btn-icon-small[title="View Receipt"]:hover,
+.btn-icon-small[title="Generate Purchase Note"]:hover {
+    background: #3498db !important;
+    border-color: #3498db !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3) !important;
 }
 
-body.dark-mode .topbar,
-body.dark-mode .stat-card,
-body.dark-mode .chart-card,
-body.dark-mode .data-table-container,
-body.dark-mode .form-card,
-body.dark-mode .vehicle-card,
-body.dark-mode .modal-content {
-    background: #161b22;
-    color: #e0e0e0;
+/* ORANGE - Warning Actions Hover */
+.btn-icon-small[title="Change Password"]:hover {
+    background: #f39c12 !important;
+    border-color: #f39c12 !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3) !important;
 }
 
-body.dark-mode .data-table thead {
-    background: #0d1117;
+/* RED - Danger/Cancel Actions Hover */
+.btn-icon-small[title="Disable User"]:hover,
+.btn-icon-small[title="Delete"]:hover,
+.btn-icon-small[title="Cancel"]:hover,
+.btn-icon-small[title="Logout"]:hover {
+    background: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
 }
 
-body.dark-mode .data-table tbody tr:hover {
-    background: #1c2128;
+/* GREEN - Success Actions Hover */
+.btn-icon-small[title="Enable User"]:hover,
+.btn-icon-small[title="Mark Sold"]:hover,
+.btn-icon-small[title="Mark Customer Payment as Paid"]:hover,
+.btn-icon-small[title="Mark Seller Payment as Paid"]:hover,
+.btn-icon-small[title="Mark Payment as Paid"]:hover {
+    background: #27ae60 !important;
+    border-color: #27ae60 !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3) !important;
 }
 
-/* Fade In Row Animation for MUI Tables */
-@keyframes fadeInRow {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* PURPLE - Primary/Special Actions Hover */
+.btn-icon-small[title="Download"]:hover,
+.btn-icon-small[title="Email"]:hover,
+.btn-icon-small[title="Generate Note"]:hover,
+.btn-icon-small[title="Save"]:hover {
+    background: #667eea !important;
+    border-color: #667eea !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3) !important;
 }

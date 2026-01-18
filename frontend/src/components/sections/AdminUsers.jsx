@@ -2,7 +2,17 @@ import React, { useState, useEffect } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
+import { Box } from '@mui/material'
+import { 
+  SectionHeader, 
+  SearchBar, 
+  FilterSelect, 
+  DataTable, 
+  LoadingState,
+  StatusBadge
+} from '../common'
+import { ActionButton } from '../forms'
+import { Edit as EditIcon, Delete as DeleteIcon, Lock as LockIcon } from '@mui/icons-material'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -308,225 +318,141 @@ const AdminUsers = () => {
 
   return (
     <div>
-      <div className="section-header">
-        <div>
-          <h2>
-            <i className="fas fa-users-cog" style={{ fontSize: '24px', color: 'var(--primary-color)' }}></i>
-            User Management
-          </h2>
-          <p>Manage user access and permissions</p>
-          {!loading && (
-            <p style={{ fontSize: '13px', color: '#6c757d', marginTop: '8px', fontWeight: '500' }}>
-              <i className="fas fa-info-circle" style={{ marginRight: '6px', color: 'var(--primary-color)' }}></i>
-              Total Users: <strong style={{ color: 'var(--dark-color)' }}>{users.length}</strong> | Showing: <strong style={{ color: 'var(--primary-color)' }}>{filteredUsers.length}</strong>
-            </p>
-          )}
-        </div>
-        <div className="header-actions">
-          <div className="search-box">
-            <i className="fas fa-search"></i>
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <select
-            className="filter-select"
+      <SectionHeader
+        title="User Management"
+        description={
+          !loading ? (
+            <>
+              Manage user access and permissions | Total: <strong>{users.length}</strong> | Showing: <strong>{filteredUsers.length}</strong>
+            </>
+          ) : (
+            'Manage user access and permissions'
+          )
+        }
+        actionLabel="Add User"
+        actionIcon={<i className="fas fa-user-plus" />}
+        onAction={handleAddUser}
+      >
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search users..."
+            fullWidth={false}
+            sx={{ minWidth: 250 }}
+          />
+          <FilterSelect
+            label="Status"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option>All</option>
-            <option>Active</option>
-            <option>Disabled</option>
-          </select>
-          <button
-            className="btn btn-secondary"
+            onChange={setStatusFilter}
+            options={[
+              { value: 'All', label: 'All' },
+              { value: 'Active', label: 'Active' },
+              { value: 'Disabled', label: 'Disabled' }
+            ]}
+          />
+          <ActionButton
+            icon={<i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} />}
             onClick={loadUsers}
             title="Refresh Users"
             disabled={loading}
-            style={{ 
-              minWidth: '44px',
-              padding: '11px 14px',
-              borderRadius: '10px',
-              border: '2px solid #e0e4e8',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
-          </button>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleAddUser}
-            style={{
-              borderRadius: '10px',
-              padding: '11px 20px',
-              fontWeight: '600',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)'
-            }}
-          >
-            <i className="fas fa-user-plus"></i> Add User
-          </button>
-        </div>
-      </div>
+            variant="outlined"
+            color="primary"
+          />
+        </Box>
+      </SectionHeader>
 
       {!token ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <i className="fas fa-exclamation-triangle" style={{ fontSize: '48px', color: 'var(--warning-color)', marginBottom: '15px' }}></i>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>Authentication required</p>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Please login to view users</p>
-        </div>
+        <EmptyState
+          icon={<i className="fas fa-exclamation-triangle" style={{ fontSize: 64, color: '#f39c12' }} />}
+          title="Authentication required"
+          message="Please login to view users"
+        />
       ) : loading && users.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: '48px', color: 'var(--primary-color)' }}></i>
-          <p style={{ marginTop: '15px', color: 'var(--text-muted)' }}>Loading users from database...</p>
-        </div>
+        <LoadingState message="Loading users from database..." />
       ) : (
-        <Table sx={{ minWidth: 700 }} aria-label="users table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Contact</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredUsers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} sx={{ 
-                    textAlign: 'center', 
-                    padding: '60px 40px',
-                    background: 'linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%)'
-                  }}>
-                    <div style={{
-                      maxWidth: '500px',
-                      margin: '0 auto'
-                    }}>
-                      <i className="fas fa-users" style={{ 
-                        fontSize: '64px', 
-                        color: '#cbd5e0', 
-                        marginBottom: '20px', 
-                        display: 'block',
-                        opacity: 0.6
-                      }}></i>
-                      <h3 style={{ 
-                        color: 'var(--dark-color)', 
-                        marginBottom: '12px',
-                        fontSize: '18px',
-                        fontWeight: '600'
-                      }}>
-                        {searchTerm || statusFilter !== 'All' 
-                          ? 'No users found' 
-                          : 'No users in database'}
-                      </h3>
-                      <p style={{ 
-                        color: '#6c757d', 
-                        marginBottom: '20px',
-                        fontSize: '14px',
-                        lineHeight: '1.6'
-                      }}>
-                        {searchTerm || statusFilter !== 'All' 
-                          ? 'Try adjusting your search or filter criteria' 
-                          : 'Get started by adding your first user or running the seed script'}
-                      </p>
-                      {!searchTerm && statusFilter === 'All' && users.length === 0 && (
-                        <div style={{ 
-                          marginTop: '20px',
-                          padding: '15px',
-                          background: 'white',
-                          borderRadius: '10px',
-                          border: '1px solid #e0e4e8'
-                        }}>
-                          <p style={{ fontSize: '13px', color: '#6c757d', marginBottom: '12px', fontWeight: '500' }}>
-                            <i className="fas fa-terminal" style={{ marginRight: '8px', color: 'var(--primary-color)' }}></i>
-                            Run the seed script:
-                          </p>
-                          <code style={{ 
-                            background: '#f8f9fa', 
-                            padding: '10px 16px', 
-                            borderRadius: '8px',
-                            fontSize: '13px',
-                            display: 'block',
-                            fontFamily: 'monospace',
-                            color: 'var(--dark-color)',
-                            border: '1px solid #e0e4e8'
-                          }}>
-                            cd backend && npm run seed
-                          </code>
-                        </div>
-                      )}
-                    </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="user-cell">
-                      <img src={user.avatar} alt={user.name} />
-                      <strong>{user.name}</strong>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <span className={`badge ${user.badgeClass}`}>
-                      {user.role}
-                    </span>
-                  </TableCell>
-                  <TableCell>{user.contact}</TableCell>
-                  <TableCell>
-                    <span className={`badge ${user.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
-                      {user.status}
-                    </span>
-                  </TableCell>
-                  <TableCell align="center">
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                      <button
-                        className="btn-icon-small"
-                        title="Edit User"
-                        onClick={() => handleEdit(user)}
+        <DataTable
+          columns={[
+            {
+              key: 'name',
+              label: 'Name',
+              render: (user) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <img 
+                    src={user.avatar} 
+                    alt={user.name}
+                    style={{ width: 32, height: 32, borderRadius: '50%' }}
+                  />
+                  <strong>{user.name}</strong>
+                </Box>
+              )
+            },
+            { key: 'email', label: 'Email' },
+            {
+              key: 'role',
+              label: 'Role',
+              render: (user) => (
+                <span className={`badge ${user.badgeClass}`}>
+                  {user.role}
+                </span>
+              )
+            },
+            { key: 'contact', label: 'Contact' },
+            {
+              key: 'status',
+              label: 'Status',
+              render: (user) => <StatusBadge status={user.status} />
+            },
+            {
+              key: 'actions',
+              label: 'Actions',
+              align: 'center',
+              render: (user) => (
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                  <ActionButton
+                    icon={<EditIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEdit(user)
+                    }}
+                    title="Edit User"
+                    color="primary"
+                  />
+                  <ActionButton
+                    icon={<LockIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleChangePassword(user)
+                    }}
+                    title="Change Password"
+                    color="warning"
+                  />
+                  <ActionButton
+                    icon={
+                      <i 
+                        className={`fas fa-${user.status === 'Active' ? 'ban' : 'check-circle'}`}
                         style={{ fontSize: '14px' }}
-                      >
-                        <i className="fas fa-edit" style={{ fontSize: '14px' }}></i>
-                      </button>
-                      <button
-                        className="btn-icon-small"
-                        title="Change Password"
-                        onClick={() => handleChangePassword(user)}
-                        style={{ fontSize: '14px' }}
-                      >
-                        <i className="fas fa-key" style={{ fontSize: '14px' }}></i>
-                      </button>
-                      <button
-                        className="btn-icon-small"
-                        title={user.status === 'Active' ? 'Disable User' : 'Enable User'}
-                        onClick={() => handleToggleStatus(user)}
-                      >
-                        <i 
-                          className={`fas fa-${user.status === 'Active' ? 'ban' : 'check-circle'}`}
-                          style={{ fontSize: '14px' }}
-                        ></i>
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                      />
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToggleStatus(user)
+                    }}
+                    title={user.status === 'Active' ? 'Disable User' : 'Enable User'}
+                    color={user.status === 'Active' ? 'danger' : 'success'}
+                  />
+                </Box>
+              )
+            }
+          ]}
+          data={filteredUsers}
+          loading={loading}
+          emptyMessage={
+            searchTerm || statusFilter !== 'All' 
+              ? 'No users found matching your criteria' 
+              : 'No users in database'
+          }
+        />
       )}
 
       {/* Add User Modal */}

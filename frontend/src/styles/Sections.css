@@ -99,6 +99,51 @@
     margin-bottom: 30px;
 }
 
+/* Admin Overview Container */
+.admin-overview-container {
+    padding: 0;
+}
+
+@media (max-width: 1600px) {
+    .admin-overview-container > div:first-child {
+        grid-template-columns: repeat(5, 1fr) !important;
+    }
+}
+
+@media (max-width: 1400px) {
+    .admin-overview-container > div:first-child {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    
+    .admin-overview-container > div:nth-child(2) {
+        grid-template-columns: 2fr 1fr !important;
+    }
+    
+    .admin-overview-container > div:nth-child(2) > div:last-child {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .admin-overview-container > div:first-child {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .admin-overview-container > div:nth-child(2) {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .admin-overview-container > div:nth-child(2) > div:last-child {
+        display: flex !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-overview-container > div:first-child {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 @media (max-width: 1400px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -276,6 +321,191 @@
     display: flex;
     gap: 15px;
     margin-top: 30px;
+    padding-top: 24px;
+    border-top: 2px solid #e9ecef;
+    justify-content: flex-end;
+}
+
+/* Standardized Modal Form Styles */
+.MuiDialog-root .form-group {
+    margin-bottom: 24px;
+}
+
+.MuiDialog-root .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.MuiDialog-root .form-group label i {
+    color: #667eea;
+    font-size: 14px;
+}
+
+.MuiDialog-root .form-group input,
+.MuiDialog-root .form-group select,
+.MuiDialog-root .form-group textarea {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    fontSize: 15px;
+    transition: all 0.2s ease;
+    background: #fafbfc;
+    font-family: inherit;
+}
+
+.MuiDialog-root .form-group input:focus,
+.MuiDialog-root .form-group select:focus,
+.MuiDialog-root .form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.MuiDialog-root .form-group input:hover,
+.MuiDialog-root .form-group select:hover,
+.MuiDialog-root .form-group textarea:hover {
+    border-color: #d1d5db;
+}
+
+.MuiDialog-root .form-group input:disabled,
+.MuiDialog-root .form-group select:disabled,
+.MuiDialog-root .form-group textarea:disabled {
+    background: #f5f5f5 !important;
+    cursor: not-allowed;
+    color: #6c757d;
+    border-color: #e9ecef;
+}
+
+.MuiDialog-root .form-group input[disabled] {
+    background: #f5f5f5 !important;
+    cursor: not-allowed;
+}
+
+/* Standardized Modal Buttons */
+.MuiDialog-root .form-actions .btn-primary,
+.MuiDialog-root .MuiDialogActions-root .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    letter-spacing: 0.3px;
+}
+
+.MuiDialog-root .form-actions .btn-primary:hover,
+.MuiDialog-root .MuiDialogActions-root .btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+}
+
+.MuiDialog-root .form-actions .btn-primary:active,
+.MuiDialog-root .MuiDialogActions-root .btn-primary:active {
+    transform: translateY(0) scale(1);
+}
+
+.MuiDialog-root .form-actions .btn-secondary,
+.MuiDialog-root .MuiDialogActions-root .btn-secondary {
+    background: #ffffff;
+    color: #e74c3c;
+    border: 2px solid #e74c3c;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.15);
+}
+
+.MuiDialog-root .form-actions .btn-secondary:hover,
+.MuiDialog-root .MuiDialogActions-root .btn-secondary:hover {
+    background: #e74c3c;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(231, 76, 60, 0.35);
+}
+
+.MuiDialog-root .form-actions .btn-secondary:active,
+.MuiDialog-root .MuiDialogActions-root .btn-secondary:active {
+    transform: translateY(0);
+}
+
+.MuiDialog-root .form-actions .btn:disabled,
+.MuiDialog-root .MuiDialogActions-root .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Modal form small text */
+.MuiDialog-root .form-group small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+/* Required field indicator */
+.MuiDialog-root .required {
+    color: #e74c3c;
+    margin-left: 4px;
+}
+
+/* Info boxes in modals */
+.MuiDialog-root .info-box {
+    padding: 16px 18px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #d0d7ff;
+    font-size: 14px;
+    color: #495057;
+    line-height: 1.6;
+}
+
+/* Image Upload Grid - Modern Card Design */
+.image-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+@media (max-width: 1400px) {
+    .image-upload-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .image-upload-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .image-upload-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 /* Upload Area */
@@ -402,78 +632,6 @@
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-/* Upcoming Deliveries */
-.upcoming-deliveries {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: var(--shadow);
-    margin-bottom: 30px;
-}
-
-.upcoming-deliveries h3 {
-    font-size: 18px;
-    color: var(--dark-color);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.delivery-timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    padding-bottom: 30px;
-}
-
-.timeline-item:last-child {
-    padding-bottom: 0;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -30px;
-    width: 12px;
-    height: 12px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 0 0 2px var(--primary-color);
-}
-
-.timeline-item:not(:last-child)::before {
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 12px;
-    width: 2px;
-    height: calc(100% - 12px);
-    background: var(--border-color);
-}
-
-.timeline-content strong {
-    display: block;
-    font-size: 16px;
-    color: var(--dark-color);
-    margin-bottom: 5px;
-}
-
-.timeline-content p {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 5px;
-}
-
-.timeline-date {
-    font-size: 12px;
-    color: var(--primary-color);
-    font-weight: 600;
 }
 
 /* Vehicle Grid */
@@ -758,78 +916,6 @@
     gap: 10px;
 }
 
-/* Upcoming Deliveries */
-.upcoming-deliveries {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: var(--shadow);
-    margin-bottom: 30px;
-}
-
-.upcoming-deliveries h3 {
-    font-size: 18px;
-    color: var(--dark-color);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.delivery-timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    padding-bottom: 30px;
-}
-
-.timeline-item:last-child {
-    padding-bottom: 0;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -30px;
-    width: 12px;
-    height: 12px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 0 0 2px var(--primary-color);
-}
-
-.timeline-item:not(:last-child)::before {
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 12px;
-    width: 2px;
-    height: calc(100% - 12px);
-    background: var(--border-color);
-}
-
-.timeline-content strong {
-    display: block;
-    font-size: 16px;
-    color: var(--dark-color);
-    margin-bottom: 5px;
-}
-
-.timeline-content p {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 5px;
-}
-
-.timeline-date {
-    font-size: 12px;
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
 /* Price Hidden Container */
 .price-hidden-container {
     display: flex;
@@ -952,6 +1038,25 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Image Upload Scrollbar */
+.image-upload-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.image-upload-scroll::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 10px;
+}
+
+.image-upload-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+.image-upload-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%);
+}
+
 /* Empty State */
 .empty-state {
     display: flex;
@@ -1049,4 +1154,113 @@
     .overview-content-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* AddVehicle Form - Custom CSS Grid Layout for 3 fields per row */
+.add-vehicle-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+    width: 100% !important;
+}
+
+.add-vehicle-form-grid > * {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+/* Responsive: 2 columns on tablets */
+@media (max-width: 960px) {
+    .add-vehicle-form-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* Responsive: 1 column on mobile */
+@media (max-width: 600px) {
+    .add-vehicle-form-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Purchase Overview Styles */
+.purchase-overview-container {
+    padding: 20px;
+    max-width: 100%;
+}
+
+.purchase-overview-container .action-shine:hover::before {
+    left: 100%;
+}
+
+/* Enhanced Quick Actions Animation */
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+.purchase-overview-container .action-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.purchase-overview-container .action-shine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.purchase-overview-container .action-shine:hover::before {
+    left: 100%;
+}
+
+/* Chart Container Enhancements */
+.purchase-overview-container canvas {
+    max-height: 100% !important;
+}
+
+/* Responsive adjustments for purchase overview */
+@media (max-width: 768px) {
+    .purchase-overview-container {
+        padding: 15px;
+    }
+    
+    .purchase-overview-container > div {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Full width fields (for Address Line 1, Notes, etc.) */
+.add-vehicle-form-grid-full {
+    grid-column: 1 / -1 !important;
+}
+
+/* Ensure all form fields have equal width */
+.add-vehicle-form-grid .MuiTextField-root,
+.add-vehicle-form-grid .MuiAutocomplete-root,
+.add-vehicle-form-grid .MuiBox-root {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+/* Ensure Autocomplete components have full width */
+.MuiAutocomplete-root {
+    width: 100% !important;
+}
+
+.MuiAutocomplete-root .MuiTextField-root {
+    width: 100% !important;
+}
+
+.MuiAutocomplete-inputRoot {
+    width: 100% !important;
 }

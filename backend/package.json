@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/scripts/seedUsers.js"
+    "seed": "node src/scripts/seedUsers.js",
+    "seed:dummy": "node src/scripts/seedDummyData.js"
   },
   "dependencies": {
     "express": "^4.21.2",

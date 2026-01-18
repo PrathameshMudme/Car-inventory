@@ -1,4 +1,20 @@
 import React from 'react'
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material'
+import {
+  BarChart as BarChartIcon,
+  ShoppingCart as ShoppingCartIcon,
+  AttachMoney as MoneyIcon,
+  Warehouse as WarehouseIcon,
+} from '@mui/icons-material'
 import { useToast } from '../../context/ToastContext'
 import '../../styles/Sections.css'
 

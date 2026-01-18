@@ -23,9 +23,9 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/users', require('./routes/users'))
 app.use('/api/vehicles', require('./routes/vehicles'))
-app.use('/api/dealers', require('./routes/dealers'))
-// TODO: Add other routes
-// app.use('/api/deliveries', require('./routes/deliveries'))
+app.use('/api/agents', require('./routes/agents'))
+// Keep /api/dealers route for backward compatibility (delegates to agents route)
+app.use('/api/dealers', require('./routes/agents'))
 
 // Health check
 app.get('/api/health', (req, res) => {

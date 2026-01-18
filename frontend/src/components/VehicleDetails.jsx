@@ -17,9 +17,14 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
     return <div className="vehicle-details-empty">No vehicle data available</div>
   }
 
-  // Get images from vehicle data
+  // Get images from vehicle data - sorted by stage and order for consistent display
   const vehicleImages = vehicle.images || []
-  const allImages = vehicleImages.map(img => `${API_URL.replace('/api', '')}${img.imageUrl}`)
+  const sortedImages = [...vehicleImages].sort((a, b) => {
+    // Sort by stage first (after images first), then by order
+    if (a.stage !== b.stage) return a.stage === 'after' ? -1 : 1
+    return (a.order || 0) - (b.order || 0)
+  })
+  const allImages = sortedImages.map(img => `${API_URL.replace('/api', '')}${img.imageUrl}`)
   
   // Fallback placeholder if no images
   const displayImages = allImages.length > 0 ? allImages : [
@@ -195,13 +200,19 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
                 <label>Agent Commission</label>
                 <strong>{formatPrice(vehicle.agentCommission)}</strong>
               </div>
+              {vehicle.agentPhone && (
+                <div className="info-item">
+                  <label>Agent Phone</label>
+                  <strong>{vehicle.agentPhone}</strong>
+                </div>
+              )}
             </>
           )}
         </div>
 
-        {!isSalesManager && !isPurchaseManager && (vehicle.sellerName || vehicle.dealerName) && (
+        {!isSalesManager && !isPurchaseManager && (vehicle.sellerName || vehicle.agentName || vehicle.dealerName) && (
           <>
-            <h3><i className="fas fa-user-tie"></i> Seller / Dealer</h3>
+            <h3><i className="fas fa-user-tie"></i> Seller / Agent</h3>
             <div className="info-grid">
               {vehicle.sellerName && (
                 <>
@@ -215,15 +226,15 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
                   </div>
                 </>
               )}
-              {vehicle.dealerName && (
+              {(vehicle.agentName || vehicle.dealerName) && (
                 <>
                   <div className="info-item">
-                    <label>Dealer Name</label>
-                    <strong>{vehicle.dealerName}</strong>
+                    <label>Agent Name</label>
+                    <strong>{vehicle.agentName || vehicle.dealerName}</strong>
                   </div>
                   <div className="info-item">
-                    <label>Dealer Phone</label>
-                    <strong>{vehicle.dealerPhone || 'N/A'}</strong>
+                    <label>Agent Phone</label>
+                    <strong>{vehicle.agentPhone || vehicle.dealerPhone || 'N/A'}</strong>
                   </div>
                 </>
               )}

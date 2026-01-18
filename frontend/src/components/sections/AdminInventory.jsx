@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react'
+import { Box, Button } from '@mui/material'
 import Modal from '../Modal'
-import VehicleDetails from '../VehicleDetails'
+import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import EditVehicle from '../EditVehicle'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
+import { 
+  SectionHeader, 
+  SearchBar, 
+  FilterSelect, 
+  ViewToggle,
+  LoadingState,
+  EmptyState,
+  StatusBadge,
+  DataTable
+} from '../common'
+import { ActionButton } from '../forms'
+import { Edit as EditIcon, Delete as DeleteIcon, CompareArrows as CompareIcon, Refresh as RefreshIcon } from '@mui/icons-material'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -16,15 +28,13 @@ const AdminInventory = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [selectedVehicle, setSelectedVehicle] = useState(null)
-  const [showVehicleModal, setShowVehicleModal] = useState(false)
+  const [showVehicleFullPage, setShowVehicleFullPage] = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
-  const [showEditPriceModal, setShowEditPriceModal] = useState(false)
   const [showEditVehicleModal, setShowEditVehicleModal] = useState(false)
   const [compareVehicle, setCompareVehicle] = useState('')
   const [visibleLastPrices, setVisibleLastPrices] = useState({})
-  const [editPriceData, setEditPriceData] = useState({ askingPrice: '', lastPrice: '' })
   const { showToast } = useToast()
-  const { token, user } = useAuth()
+  const { token } = useAuth()
 
   useEffect(() => {
     loadVehicles()
@@ -64,17 +74,49 @@ const AdminInventory = () => {
 
   const handleViewDetails = (vehicle) => {
     setSelectedVehicle(vehicle)
-    setShowVehicleModal(true)
+    setShowVehicleFullPage(true)
   }
 
   const handleEditVehicle = (vehicle) => {
     setSelectedVehicle(vehicle)
-    setShowVehicleModal(false)
+    setShowVehicleFullPage(false)
     setShowEditVehicleModal(true)
   }
 
+  const handleDeleteVehicle = async (vehicle, e) => {
+    e.stopPropagation() // Prevent row click from triggering
+    
+    if (!window.confirm(`Are you sure you want to delete vehicle ${vehicle.vehicleNo}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/vehicles/${vehicle._id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete vehicle')
+      }
+
+      showToast('Vehicle deleted successfully', 'success')
+      await loadVehicles()
+      
+      // Close full page if viewing deleted vehicle
+      if (selectedVehicle && selectedVehicle._id === vehicle._id) {
+        setShowVehicleFullPage(false)
+        setSelectedVehicle(null)
+      }
+    } catch (error) {
+      console.error('Error deleting vehicle:', error)
+      showToast('Failed to delete vehicle', 'error')
+    }
+  }
+
   const handleVehicleUpdateSuccess = async (updatedVehicle) => {
-    // Refresh the vehicle list
     await loadVehicles()
     
     // Fetch the updated vehicle with all details (images, documents)
@@ -97,25 +139,7 @@ const AdminInventory = () => {
     }
   }
 
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'In Stock': return 'badge-success'
-      case 'On Modification': return 'badge-warning'
-      case 'Reserved': return 'badge-purple'
-      case 'Sold': return 'badge-info'
-      default: return 'badge-secondary'
-    }
-  }
 
-  const getCardBadgeClass = (status) => {
-    switch (status) {
-      case 'In Stock': return 'green'
-      case 'On Modification': return 'orange'
-      case 'Reserved': return 'purple'
-      case 'Sold': return 'blue'
-      default: return 'gray'
-    }
-  }
 
   const formatPrice = (price) => {
     if (!price) return 'N/A'
@@ -126,15 +150,22 @@ const AdminInventory = () => {
   }
 
   const getVehicleImage = (vehicle) => {
-    // Get primary image or first front image
+    // Get primary image or first front image (prioritize after-modification, then by order)
     const images = vehicle.images || []
-    const primaryImage = images.find(img => img.isPrimary)
-    const frontImage = images.find(img => img.category === 'front')
-    const anyImage = images[0]
+    const sortedImages = [...images].sort((a, b) => {
+      // Prioritize 'after' stage
+      if (a.stage !== b.stage) return a.stage === 'after' ? -1 : 1
+      // Then by order
+      return (a.order || 0) - (b.order || 0)
+    })
+    
+    const primaryImage = sortedImages.find(img => img.isPrimary)
+    const frontImage = sortedImages.find(img => img.category === 'front')
+    const firstImage = sortedImages[0] // First image by order
     
     if (primaryImage) return `${API_URL.replace('/api', '')}${primaryImage.imageUrl}`
     if (frontImage) return `${API_URL.replace('/api', '')}${frontImage.imageUrl}`
-    if (anyImage) return `${API_URL.replace('/api', '')}${anyImage.imageUrl}`
+    if (firstImage) return `${API_URL.replace('/api', '')}${firstImage.imageUrl}`
     
     // Default placeholder
     return `https://via.placeholder.com/400x250?text=${vehicle.make}+${vehicle.model || ''}`
@@ -164,137 +195,156 @@ const AdminInventory = () => {
   }
 
   const getBeforeImages = (vehicle) => {
-    return (vehicle.images || []).filter(img => img.stage === 'before')
+    return (vehicle.images || [])
+      .filter(img => img.stage === 'before')
+      .sort((a, b) => (a.order || 0) - (b.order || 0)) // Maintain explicit order
   }
 
   const getAfterImages = (vehicle) => {
-    return (vehicle.images || []).filter(img => img.stage === 'after')
+    return (vehicle.images || [])
+      .filter(img => img.stage === 'after')
+      .sort((a, b) => (a.order || 0) - (b.order || 0)) // Maintain explicit order
   }
 
-  const toggleLastPriceVisibility = (vehicleId) => {
+  const toggleLastPriceVisibility = (vehicleId, e) => {
+    e.stopPropagation() // Prevent row click from triggering
     setVisibleLastPrices(prev => ({
       ...prev,
       [vehicleId]: !prev[vehicleId]
     }))
   }
 
-  const handleEditPrice = (vehicle) => {
-    setSelectedVehicle(vehicle)
-    setEditPriceData({
-      askingPrice: vehicle.askingPrice ? vehicle.askingPrice.toString() : '',
-      lastPrice: vehicle.lastPrice ? vehicle.lastPrice.toString() : ''
-    })
-    setShowEditPriceModal(true)
-  }
-
-  const handleSavePrices = async (e) => {
-    e.preventDefault()
-    if (!selectedVehicle) return
-
-    try {
-      const formData = new FormData()
-      
-      // Only send askingPrice if it has a value
-      if (editPriceData.askingPrice && editPriceData.askingPrice.trim() !== '') {
-        formData.append('askingPrice', parseFloat(editPriceData.askingPrice))
-      }
-      
-      // Only send lastPrice if it has a value
-      if (editPriceData.lastPrice && editPriceData.lastPrice.trim() !== '') {
-        formData.append('lastPrice', parseFloat(editPriceData.lastPrice))
-      }
-
-      const response = await fetch(`${API_URL}/vehicles/${selectedVehicle._id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to update prices')
-      }
-
-      const result = await response.json()
-      showToast(`Prices updated successfully for ${selectedVehicle.vehicleNo}!`, 'success')
-      setShowEditPriceModal(false)
-      setEditPriceData({ askingPrice: '', lastPrice: '' })
-      loadVehicles()
-    } catch (error) {
-      console.error('Error updating prices:', error)
-      showToast(error.message || 'Failed to update prices', 'error')
+  const tableColumns = [
+    { key: 'vehicleNo', label: 'Vehicle No.', render: (v) => <strong>{v.vehicleNo}</strong> },
+    { key: 'makeModel', label: 'Make/Model', render: (v) => `${v.make} ${v.model || ''}`.trim() },
+    { key: 'year', label: 'Year', render: (v) => v.year || 'N/A' },
+    { key: 'purchasePrice', label: 'Purchase Price', render: (v) => formatPrice(v.purchasePrice) },
+    { key: 'askingPrice', label: 'Asking Price', render: (v) => formatPrice(v.askingPrice) },
+    {
+      key: 'lastPrice',
+      label: 'Last Price',
+      render: (v) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <span style={{ opacity: visibleLastPrices[v._id] ? 1 : 0.3 }}>
+            {visibleLastPrices[v._id] 
+              ? formatPrice(v.lastPrice || v.askingPrice || v.purchasePrice) 
+              : '••••••'}
+          </span>
+          <i
+            className={`fas ${visibleLastPrices[v._id] ? 'fa-eye-slash' : 'fa-eye'}`}
+            style={{ cursor: 'pointer', fontSize: '14px' }}
+            title={visibleLastPrices[v._id] ? 'Hide Last Price' : 'Show Last Price'}
+            onClick={(e) => toggleLastPriceVisibility(v._id, e)}
+          />
+        </Box>
+      )
+    },
+    {
+      key: 'documents',
+      label: 'Documents',
+      render: (v) => (
+        <span className={v.missingDocuments?.length > 0 ? 'text-warning' : 'text-success'}>
+          {v.missingDocuments?.length > 0 ? `${v.missingDocuments.length} Missing` : 'Complete'}
+        </span>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (v) => <StatusBadge status={v.status} />
+    },
+    ...(vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) ? [{
+      key: 'remainingAmount',
+      label: 'Remaining Amount',
+      render: (v) => v.status === 'Sold' && v.remainingAmount > 0 ? formatPrice(v.remainingAmount) : 'N/A'
+    }] : []),
+    {
+      key: 'actions',
+      label: 'Actions',
+      align: 'center',
+      render: (v) => (
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <ActionButton
+            icon={<EditIcon />}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleEditVehicle(v)
+            }}
+            title="Edit Vehicle"
+            color="primary"
+          />
+          <ActionButton
+            icon={<DeleteIcon />}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDeleteVehicle(v, e)
+            }}
+            title="Delete Vehicle"
+            color="danger"
+          />
+        </Box>
+      )
     }
-  }
+  ]
 
   return (
     <div>
-      <div className="section-header">
-        <div>
-          <h2><i className="fas fa-warehouse"></i> Vehicle Inventory</h2>
-          <p>Manage and view all vehicles ({vehicles.length} total)</p>
-        </div>
-        <div className="header-actions">
-          <div className="search-box">
-            <i className="fas fa-search"></i>
-            <input
-              type="text"
-              placeholder="Search vehicles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <select
-            className="filter-select"
+      <SectionHeader
+        title="Vehicle Inventory"
+        description={`Manage and view all vehicles (${vehicles.length} total)`}
+      >
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search vehicles..."
+            fullWidth={false}
+            sx={{ minWidth: 250 }}
+          />
+          <FilterSelect
+            label="Status"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="All">All Status</option>
-            <option value="On Modification">On Modification</option>
-            <option value="In Stock">In Stock</option>
-            <option value="Reserved">Reserved</option>
-            <option value="Sold">Sold</option>
-          </select>
-          <div className="view-toggle">
-            <button
-              className={`btn-icon-small ${viewType === 'grid' ? 'active' : ''}`}
-              onClick={() => handleViewSwitch('grid')}
-              title="Grid View"
-            >
-              <i className="fas fa-th-large"></i>
-            </button>
-            <button
-              className={`btn-icon-small ${viewType === 'table' ? 'active' : ''}`}
-              onClick={() => handleViewSwitch('table')}
-              title="Table View"
-            >
-              <i className="fas fa-list"></i>
-            </button>
-          </div>
-          <button
-            className="btn btn-primary"
+            onChange={setStatusFilter}
+            options={[
+              { value: 'All', label: 'All Status' },
+              { value: 'On Modification', label: 'On Modification' },
+              { value: 'In Stock', label: 'In Stock' },
+              { value: 'Reserved', label: 'Reserved' },
+              { value: 'Sold', label: 'Sold' }
+            ]}
+          />
+          <ViewToggle view={viewType} onChange={handleViewSwitch} />
+          <Button
+            variant="contained"
+            startIcon={<CompareIcon />}
             onClick={() => setShowCompareModal(true)}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+              }
+            }}
           >
-            <i className="fas fa-images"></i> Compare
-          </button>
-          <button className="btn btn-secondary" onClick={() => loadVehicles(true)}>
-            <i className="fas fa-sync-alt"></i>
-          </button>
-        </div>
-      </div>
+            Compare
+          </Button>
+          <ActionButton
+            icon={<RefreshIcon />}
+            onClick={loadVehicles}
+            title="Refresh"
+            variant="outlined"
+            color="primary"
+          />
+        </Box>
+      </SectionHeader>
 
       {loading ? (
-        <div className="loading-container">
-          <i className="fas fa-spinner fa-spin"></i>
-          <p>Loading vehicles...</p>
-        </div>
+        <LoadingState message="Loading vehicles..." />
       ) : vehicles.length === 0 ? (
-        <div className="empty-state">
-          <i className="fas fa-car"></i>
-          <h3>No vehicles found</h3>
-          <p>Vehicles added by purchase managers will appear here</p>
-        </div>
+        <EmptyState
+          icon={<i className="fas fa-car" style={{ fontSize: 64, color: '#bdc3c7' }} />}
+          title="No vehicles found"
+          message="Vehicles added by purchase managers will appear here"
+        />
       ) : (
         <>
           {/* Grid View */}
@@ -302,10 +352,10 @@ const AdminInventory = () => {
             <div className="vehicle-grid active">
               {filteredVehicles.map((vehicle) => (
                 <div key={vehicle._id} className="vehicle-card">
-                  <div className="vehicle-card-image">
+                    <div className="vehicle-card-image">
                     <img src={getVehicleImage(vehicle)} alt={`${vehicle.make} ${vehicle.model || ''}`} />
-                    <div className={`vehicle-card-badge ${getCardBadgeClass(vehicle.status)}`}>
-                      {vehicle.status}
+                    <div style={{ position: 'absolute', top: 10, right: 10 }}>
+                      <StatusBadge status={vehicle.status} />
                     </div>
                     <div className="vehicle-card-overlay">
                       <button
@@ -343,15 +393,24 @@ const AdminInventory = () => {
                       </div>
                     </div>
                     <div className="vehicle-card-actions">
-                      <button className="btn-icon-small" title="Edit Vehicle" onClick={() => handleEditVehicle(vehicle)}>
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button className="btn-icon-small" title="Edit Prices" onClick={() => handleEditPrice(vehicle)}>
-                        <i className="fas fa-dollar-sign"></i>
-                      </button>
-                      <button className="btn-icon-small" title="View Details" onClick={() => handleViewDetails(vehicle)}>
-                        <i className="fas fa-eye"></i>
-                      </button>
+                      <ActionButton
+                        icon={<EditIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditVehicle(vehicle)
+                        }}
+                        title="Edit Vehicle"
+                        color="primary"
+                      />
+                      <ActionButton
+                        icon={<DeleteIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteVehicle(vehicle, e)
+                        }}
+                        title="Delete Vehicle"
+                        color="danger"
+                      />
                     </div>
                   </div>
                 </div>
@@ -361,119 +420,33 @@ const AdminInventory = () => {
 
           {/* Table View */}
           {viewType === 'table' && (
-            <Table sx={{ minWidth: 700 }} aria-label="admin inventory table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Vehicle No.</TableCell>
-                  <TableCell>Make/Model</TableCell>
-                  <TableCell>Year</TableCell>
-                  <TableCell>Purchase Price</TableCell>
-                  <TableCell>Asking Price</TableCell>
-                  <TableCell>Last Price</TableCell>
-                  <TableCell>Documents</TableCell>
-                  <TableCell>Status</TableCell>
-                  {vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) && (
-                    <TableCell>Remaining Amount</TableCell>
-                  )}
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredVehicles.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) ? 10 : 9} sx={{ textAlign: 'center', padding: '40px' }}>
-                      No vehicles match your criteria
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredVehicles.map((vehicle) => (
-                    <TableRow key={vehicle._id}>
-                      <TableCell><strong>{vehicle.vehicleNo}</strong></TableCell>
-                      <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
-                      <TableCell>{vehicle.year || 'N/A'}</TableCell>
-                      <TableCell>{formatPrice(vehicle.purchasePrice)}</TableCell>
-                      <TableCell>{formatPrice(vehicle.askingPrice)}</TableCell>
-                      <TableCell>
-                        <div className="price-hidden-container">
-                          <span
-                            className={`price-hidden ${visibleLastPrices[vehicle._id] ? 'visible' : ''}`}
-                          >
-                            {visibleLastPrices[vehicle._id] ? formatPrice(vehicle.lastPrice || vehicle.askingPrice || vehicle.purchasePrice) : '••••••'}
-                          </span>
-                          <i
-                            className={`fas ${visibleLastPrices[vehicle._id] ? 'fa-eye-slash' : 'fa-eye'} toggle-price`}
-                            title={visibleLastPrices[vehicle._id] ? 'Hide Last Price' : 'Show Last Price'}
-                            onClick={() => toggleLastPriceVisibility(vehicle._id)}
-                          ></i>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`badge ${vehicle.missingDocuments?.length > 0 ? 'badge-warning' : 'badge-success'}`}>
-                          {vehicle.missingDocuments?.length > 0 ? `${vehicle.missingDocuments.length} Missing` : 'Complete'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`badge ${getStatusBadgeClass(vehicle.status)}`}>
-                          {vehicle.status}
-                        </span>
-                      </TableCell>
-                      {vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) && (
-                        <TableCell>
-                          {vehicle.status === 'Sold' && vehicle.remainingAmount > 0 ? (
-                            <strong style={{ color: '#dc3545' }}>{formatPrice(vehicle.remainingAmount)}</strong>
-                          ) : (
-                            <span style={{ color: '#6c757d' }}>-</span>
-                          )}
-                        </TableCell>
-                      )}
-                      <TableCell align="center">
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                          <button
-                            className="btn-icon-small"
-                            onClick={() => handleViewDetails(vehicle)}
-                            title="View Details"
-                          >
-                            <i className="fas fa-eye"></i>
-                          </button>
-                          <button 
-                            className="btn-icon-small" 
-                            title="Edit Vehicle"
-                            onClick={() => handleEditVehicle(vehicle)}
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button 
-                            className="btn-icon-small" 
-                            title="Edit Prices"
-                            onClick={() => handleEditPrice(vehicle)}
-                          >
-                            <i className="fas fa-dollar-sign"></i>
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={tableColumns}
+              data={filteredVehicles}
+              loading={false}
+              emptyMessage="No vehicles match your criteria"
+              onRowClick={handleViewDetails}
+            />
           )}
         </>
       )}
 
-      {/* Vehicle Details Modal */}
-      <Modal
-        isOpen={showVehicleModal}
-        onClose={() => setShowVehicleModal(false)}
-        title="Vehicle Details"
-        size="large"
-      >
-        {selectedVehicle && (
-          <VehicleDetails
-            vehicle={selectedVehicle}
-            onEdit={handleEditVehicle}
-          />
-        )}
-      </Modal>
+      {/* Vehicle Details Full Page */}
+      {showVehicleFullPage && selectedVehicle && (
+        <VehicleDetailsFullPage
+          vehicle={selectedVehicle}
+          onClose={() => {
+            setShowVehicleFullPage(false)
+            setSelectedVehicle(null)
+          }}
+          onEdit={handleEditVehicle}
+          onDelete={async () => {
+            await loadVehicles()
+            setShowVehicleFullPage(false)
+            setSelectedVehicle(null)
+          }}
+        />
+      )}
 
       {/* Edit Vehicle Modal */}
       <Modal
@@ -494,65 +467,6 @@ const AdminInventory = () => {
             }}
             onSuccess={handleVehicleUpdateSuccess}
           />
-        )}
-      </Modal>
-
-      {/* Edit Price Modal */}
-      <Modal
-        isOpen={showEditPriceModal}
-        onClose={() => {
-          setShowEditPriceModal(false)
-          setEditPriceData({ askingPrice: '', lastPrice: '' })
-        }}
-        title="Edit Vehicle Prices"
-      >
-        {selectedVehicle && (
-          <form onSubmit={handleSavePrices}>
-            <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px', marginBottom: '20px' }}>
-              <strong>{selectedVehicle.vehicleNo}</strong> - {selectedVehicle.make} {selectedVehicle.model || ''}
-            </div>
-            <div className="form-group">
-              <label>Asking Price (₹) <span className="required">*</span></label>
-              <input
-                type="number"
-                placeholder="Enter asking price"
-                value={editPriceData.askingPrice}
-                onChange={(e) => setEditPriceData(prev => ({ ...prev, askingPrice: e.target.value }))}
-                required
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div className="form-group">
-              <label>Last Price (₹)</label>
-              <input
-                type="number"
-                placeholder="Enter last price"
-                value={editPriceData.lastPrice}
-                onChange={(e) => setEditPriceData(prev => ({ ...prev, lastPrice: e.target.value }))}
-                min="0"
-                step="1000"
-              />
-              <small style={{ color: '#6c757d', fontSize: '12px', marginTop: '5px', display: 'block' }}>
-                Last price is hidden by default and can be viewed with the eye icon
-              </small>
-            </div>
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                <i className="fas fa-save"></i> Save Prices
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowEditPriceModal(false)
-                  setEditPriceData({ askingPrice: '', lastPrice: '' })
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
         )}
       </Modal>
 

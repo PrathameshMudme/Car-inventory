@@ -168,6 +168,358 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   '& .btn-icon-small:hover i': {
     color: 'white !important',
   },
+  // Specific Button Colors based on title attribute
+  // STANDARDIZED BUTTON COLOR SCHEME - See index.css for full documentation
+  
+  // PURPLE - Edit Actions (Theme Color)
+  '& .btn-icon-small[title="Edit User"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Edit Vehicle"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Edit Prices"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Complete Modification"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  // BLUE - View Actions
+  '& .btn-icon-small[title="View Details"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  '& .btn-icon-small[title="View"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  '& .btn-icon-small[title="View Note"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  '& .btn-icon-small[title="View Invoice"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  '& .btn-icon-small[title="View PDF"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  '& .btn-icon-small[title="View Receipt"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Generate Purchase Note"]': {
+    color: '#3498db !important',
+    borderColor: 'rgba(52, 152, 219, 0.3) !important',
+    background: 'rgba(52, 152, 219, 0.08) !important',
+  },
+  // ORANGE - Warning Actions
+  '& .btn-icon-small[title="Change Password"]': {
+    color: '#f39c12 !important',
+    borderColor: 'rgba(243, 156, 18, 0.3) !important',
+    background: 'rgba(243, 156, 18, 0.08) !important',
+  },
+  // RED - Danger Actions
+  // RED - Danger/Cancel Actions
+  '& .btn-icon-small[title="Disable User"]': {
+    color: '#e74c3c !important',
+    borderColor: 'rgba(231, 76, 60, 0.3) !important',
+    background: 'rgba(231, 76, 60, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Delete"]': {
+    color: '#e74c3c !important',
+    borderColor: 'rgba(231, 76, 60, 0.3) !important',
+    background: 'rgba(231, 76, 60, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Cancel"]': {
+    color: '#e74c3c !important',
+    borderColor: 'rgba(231, 76, 60, 0.3) !important',
+    background: 'rgba(231, 76, 60, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Logout"]': {
+    color: '#e74c3c !important',
+    borderColor: 'rgba(231, 76, 60, 0.3) !important',
+    background: 'rgba(231, 76, 60, 0.08) !important',
+  },
+  // GREEN - Success Actions
+  '& .btn-icon-small[title="Enable User"]': {
+    color: '#27ae60 !important',
+    borderColor: 'rgba(39, 174, 96, 0.3) !important',
+    background: 'rgba(39, 174, 96, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Mark Sold"]': {
+    color: '#27ae60 !important',
+    borderColor: 'rgba(39, 174, 96, 0.3) !important',
+    background: 'rgba(39, 174, 96, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Mark Customer Payment as Paid"]': {
+    color: '#27ae60 !important',
+    borderColor: 'rgba(39, 174, 96, 0.3) !important',
+    background: 'rgba(39, 174, 96, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Mark Seller Payment as Paid"]': {
+    color: '#27ae60 !important',
+    borderColor: 'rgba(39, 174, 96, 0.3) !important',
+    background: 'rgba(39, 174, 96, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Mark Payment as Paid"]': {
+    color: '#27ae60 !important',
+    borderColor: 'rgba(39, 174, 96, 0.3) !important',
+    background: 'rgba(39, 174, 96, 0.08) !important',
+  },
+  // PURPLE - Primary/Special Actions
+  '& .btn-icon-small[title="Download"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Email"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Generate Note"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  '& .btn-icon-small[title="Save"]': {
+    color: '#667eea !important',
+    borderColor: 'rgba(102, 126, 234, 0.3) !important',
+    background: 'rgba(102, 126, 234, 0.08) !important',
+  },
+  // Hover states for specific buttons
+  
+  // PURPLE - Edit Actions Hover (Theme Color)
+  '& .btn-icon-small[title="Edit User"]:hover': {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4) !important',
+  },
+  '& .btn-icon-small[title="Edit Vehicle"]:hover': {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4) !important',
+  },
+  '& .btn-icon-small[title="Edit Prices"]:hover': {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4) !important',
+  },
+  '& .btn-icon-small[title="Complete Modification"]:hover': {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4) !important',
+  },
+  // BLUE - View Actions Hover
+  '& .btn-icon-small[title="View Details"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .btn-icon-small[title="View"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .btn-icon-small[title="View Note"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .btn-icon-small[title="View Invoice"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .btn-icon-small[title="View PDF"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .btn-icon-small[title="View Receipt"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Generate Purchase Note"]:hover': {
+    background: '#3498db !important',
+    borderColor: '#3498db !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(52, 152, 219, 0.3) !important',
+  },
+  // ORANGE - Warning Actions Hover
+  '& .btn-icon-small[title="Change Password"]:hover': {
+    background: '#f39c12 !important',
+    borderColor: '#f39c12 !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(243, 156, 18, 0.3) !important',
+  },
+  // RED - Danger/Cancel Actions Hover
+  '& .btn-icon-small[title="Disable User"]:hover': {
+    background: '#e74c3c !important',
+    borderColor: '#e74c3c !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(231, 76, 60, 0.4) !important',
+  },
+  '& .btn-icon-small[title="Delete"]:hover': {
+    background: '#e74c3c !important',
+    borderColor: '#e74c3c !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(231, 76, 60, 0.4) !important',
+  },
+  '& .btn-icon-small[title="Cancel"]:hover': {
+    background: '#e74c3c !important',
+    borderColor: '#e74c3c !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(231, 76, 60, 0.4) !important',
+  },
+  '& .btn-icon-small[title="Logout"]:hover': {
+    background: '#e74c3c !important',
+    borderColor: '#e74c3c !important',
+    color: 'white !important',
+    boxShadow: '0 4px 12px rgba(231, 76, 60, 0.4) !important',
+  },
+  // GREEN - Success Actions Hover
+  '& .btn-icon-small[title="Enable User"]:hover': {
+    background: '#27ae60 !important',
+    borderColor: '#27ae60 !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(39, 174, 96, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Mark Sold"]:hover': {
+    background: '#27ae60 !important',
+    borderColor: '#27ae60 !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(39, 174, 96, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Mark Customer Payment as Paid"]:hover': {
+    background: '#27ae60 !important',
+    borderColor: '#27ae60 !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(39, 174, 96, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Mark Seller Payment as Paid"]:hover': {
+    background: '#27ae60 !important',
+    borderColor: '#27ae60 !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(39, 174, 96, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Mark Payment as Paid"]:hover': {
+    background: '#27ae60 !important',
+    borderColor: '#27ae60 !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(39, 174, 96, 0.3) !important',
+  },
+  // PURPLE - Primary/Special Actions Hover
+  '& .btn-icon-small[title="Download"]:hover': {
+    background: '#667eea !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Email"]:hover': {
+    background: '#667eea !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Generate Note"]:hover': {
+    background: '#667eea !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.3) !important',
+  },
+  '& .btn-icon-small[title="Save"]:hover': {
+    background: '#667eea !important',
+    borderColor: '#667eea !important',
+    color: 'white !important',
+    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.3) !important',
+  },
+  // Badge styles within table cells
+  '& .badge': {
+    display: 'inline-block !important',
+    padding: '6px 14px !important',
+    borderRadius: '20px !important',
+    fontSize: '12px !important',
+    fontWeight: '600 !important',
+    textAlign: 'center !important',
+    whiteSpace: 'nowrap !important',
+    lineHeight: '1.4 !important',
+  },
+  '& .badge-success': {
+    background: 'rgba(39, 174, 96, 0.15) !important',
+    color: '#27ae60 !important',
+    border: '1px solid rgba(39, 174, 96, 0.3) !important',
+  },
+  '& .badge-warning': {
+    background: 'rgba(243, 156, 18, 0.15) !important',
+    color: '#f39c12 !important',
+    border: '1px solid rgba(243, 156, 18, 0.3) !important',
+  },
+  '& .badge-danger': {
+    background: 'rgba(231, 76, 60, 0.15) !important',
+    color: '#e74c3c !important',
+    border: '1px solid rgba(231, 76, 60, 0.3) !important',
+  },
+  '& .badge-info': {
+    background: 'rgba(52, 152, 219, 0.15) !important',
+    color: '#3498db !important',
+    border: '1px solid rgba(52, 152, 219, 0.3) !important',
+  },
+  '& .badge-purple': {
+    background: 'rgba(155, 89, 182, 0.15) !important',
+    color: '#9b59b6 !important',
+    border: '1px solid rgba(155, 89, 182, 0.3) !important',
+  },
+  '& .badge-secondary': {
+    background: 'rgba(108, 117, 125, 0.15) !important',
+    color: '#6c757d !important',
+    border: '1px solid rgba(108, 117, 125, 0.3) !important',
+  },
+  // Icon styles
+  '& i.fas, & i.far, & i.fal, & i.fab': {
+    fontFamily: '"Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important',
+    fontWeight: '900 !important',
+    fontStyle: 'normal !important',
+    display: 'inline-block !important',
+    textRendering: 'auto !important',
+    WebkitFontSmoothing: 'antialiased !important',
+    MozOsxFontSmoothing: 'grayscale !important',
+    lineHeight: '1 !important',
+  },
+  '& i.far': {
+    fontWeight: '400 !important',
+  },
+  '& i.fab': {
+    fontFamily: '"Font Awesome 6 Brands" !important',
+    fontWeight: '400 !important',
+  },
 }))
 
 const StyledTableComponent = ({ children, ...props }) => {

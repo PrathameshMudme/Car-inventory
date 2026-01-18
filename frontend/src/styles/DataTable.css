@@ -99,63 +99,97 @@
 }
 
 /* Specific Button Colors for MUI Tables */
+/* STANDARDIZED BUTTON COLOR SCHEME - See index.css for full documentation */
+
+/* PURPLE - Edit Actions (Theme Color) */
 .MuiTableRow-root .btn-icon-small[title="Edit User"],
-.MuiTableRow-root .btn-icon-small[title="View Details"],
 .MuiTableRow-root .btn-icon-small[title="Edit Vehicle"],
-.MuiTableRow-root .btn-icon-small[title="View"] {
+.MuiTableRow-root .btn-icon-small[title="Edit Prices"],
+.MuiTableRow-root .btn-icon-small[title="Complete Modification"] {
+    color: #667eea !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+    background: rgba(102, 126, 234, 0.08) !important;
+}
+
+/* BLUE - View Actions */
+.MuiTableRow-root .btn-icon-small[title="View Details"],
+.MuiTableRow-root .btn-icon-small[title="View"],
+.MuiTableRow-root .btn-icon-small[title="View Note"],
+.MuiTableRow-root .btn-icon-small[title="View Invoice"],
+.MuiTableRow-root .btn-icon-small[title="View PDF"],
+.MuiTableRow-root .btn-icon-small[title="View Receipt"],
+.MuiTableRow-root .btn-icon-small[title="Generate Purchase Note"] {
     color: #3498db !important;
     border-color: rgba(52, 152, 219, 0.3) !important;
     background: rgba(52, 152, 219, 0.08) !important;
 }
 
+/* ORANGE - Warning Actions */
 .MuiTableRow-root .btn-icon-small[title="Change Password"] {
     color: #f39c12 !important;
     border-color: rgba(243, 156, 18, 0.3) !important;
     background: rgba(243, 156, 18, 0.08) !important;
 }
 
-.MuiTableRow-root .btn-icon-small[title="Disable User"] {
+/* RED - Danger/Cancel Actions */
+.MuiTableRow-root .btn-icon-small[title="Disable User"],
+.MuiTableRow-root .btn-icon-small[title="Delete"],
+.MuiTableRow-root .btn-icon-small[title="Cancel"],
+.MuiTableRow-root .btn-icon-small[title="Logout"] {
     color: #e74c3c !important;
     border-color: rgba(231, 76, 60, 0.3) !important;
     background: rgba(231, 76, 60, 0.08) !important;
 }
 
+/* GREEN - Success Actions */
 .MuiTableRow-root .btn-icon-small[title="Enable User"],
 .MuiTableRow-root .btn-icon-small[title="Mark Sold"],
-.MuiTableRow-root .btn-icon-small[title="Edit Prices"] {
+.MuiTableRow-root .btn-icon-small[title="Mark Customer Payment as Paid"],
+.MuiTableRow-root .btn-icon-small[title="Mark Seller Payment as Paid"],
+.MuiTableRow-root .btn-icon-small[title="Mark Payment as Paid"] {
     color: #27ae60 !important;
     border-color: rgba(39, 174, 96, 0.3) !important;
     background: rgba(39, 174, 96, 0.08) !important;
 }
 
-.MuiTableRow-root .btn-icon-small[title="View Note"],
-.MuiTableRow-root .btn-icon-small[title="View Invoice"],
-.MuiTableRow-root .btn-icon-small[title="View PDF"],
-.MuiTableRow-root .btn-icon-small[title="View Receipt"] {
-    color: #3498db !important;
-    border-color: rgba(52, 152, 219, 0.3) !important;
-    background: rgba(52, 152, 219, 0.08) !important;
-}
-
+/* PURPLE - Primary/Special Actions */
 .MuiTableRow-root .btn-icon-small[title="Download"],
 .MuiTableRow-root .btn-icon-small[title="Email"],
-.MuiTableRow-root .btn-icon-small[title="Generate Note"] {
+.MuiTableRow-root .btn-icon-small[title="Generate Note"],
+.MuiTableRow-root .btn-icon-small[title="Save"] {
     color: #667eea !important;
     border-color: rgba(102, 126, 234, 0.3) !important;
     background: rgba(102, 126, 234, 0.08) !important;
 }
 
 /* Hover states for specific buttons */
+
+/* PURPLE - Edit Actions Hover (Theme Color) */
 .MuiTableRow-root .btn-icon-small[title="Edit User"]:hover,
-.MuiTableRow-root .btn-icon-small[title="View Details"]:hover,
 .MuiTableRow-root .btn-icon-small[title="Edit Vehicle"]:hover,
-.MuiTableRow-root .btn-icon-small[title="View"]:hover {
+.MuiTableRow-root .btn-icon-small[title="Edit Prices"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Complete Modification"]:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* BLUE - View Actions Hover */
+.MuiTableRow-root .btn-icon-small[title="View Details"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View Note"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View Invoice"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View PDF"]:hover,
+.MuiTableRow-root .btn-icon-small[title="View Receipt"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Generate Purchase Note"]:hover {
     background: #3498db !important;
     border-color: #3498db !important;
     color: white !important;
     box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3) !important;
 }
 
+/* ORANGE - Warning Actions Hover */
 .MuiTableRow-root .btn-icon-small[title="Change Password"]:hover {
     background: #f39c12 !important;
     border-color: #f39c12 !important;
@@ -163,20 +197,38 @@
     box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3) !important;
 }
 
-.MuiTableRow-root .btn-icon-small[title="Disable User"]:hover {
+/* RED - Danger/Cancel Actions Hover */
+.MuiTableRow-root .btn-icon-small[title="Disable User"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Delete"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Cancel"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Logout"]:hover {
     background: #e74c3c !important;
     border-color: #e74c3c !important;
     color: white !important;
-    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
 }
 
+/* GREEN - Success Actions Hover */
 .MuiTableRow-root .btn-icon-small[title="Enable User"]:hover,
 .MuiTableRow-root .btn-icon-small[title="Mark Sold"]:hover,
-.MuiTableRow-root .btn-icon-small[title="Edit Prices"]:hover {
+.MuiTableRow-root .btn-icon-small[title="Mark Customer Payment as Paid"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Mark Seller Payment as Paid"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Mark Payment as Paid"]:hover {
     background: #27ae60 !important;
     border-color: #27ae60 !important;
     color: white !important;
     box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3) !important;
+}
+
+/* PURPLE - Primary/Special Actions Hover */
+.MuiTableRow-root .btn-icon-small[title="Download"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Email"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Generate Note"]:hover,
+.MuiTableRow-root .btn-icon-small[title="Save"]:hover {
+    background: #667eea !important;
+    border-color: #667eea !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3) !important;
 }
 
 /* Data Table */

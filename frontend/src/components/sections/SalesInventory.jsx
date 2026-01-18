@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import VehicleDetails from '../VehicleDetails'
+import { Box, Button } from '@mui/material'
+import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
+import {
+  SectionHeader,
+  SearchBar,
+  FilterSelect,
+  LoadingState,
+  EmptyState,
+  DataTable,
+  StatusBadge,
+  ViewToggle
+} from '../common'
+import { ActionButton } from '../forms'
+import { CompareArrows as CompareIcon, Refresh as RefreshIcon } from '@mui/icons-material'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -15,6 +27,7 @@ const SalesInventory = () => {
   const [statusFilter, setStatusFilter] = useState('All')
   const [selectedVehicle, setSelectedVehicle] = useState(null)
   const [showVehicleModal, setShowVehicleModal] = useState(false)
+  const [showVehicleFullPage, setShowVehicleFullPage] = useState(false)
   const [showMarkSoldModal, setShowMarkSoldModal] = useState(false)
   const [showCompareModal, setShowCompareModal] = useState(false)
   const [compareVehicle, setCompareVehicle] = useState('')
@@ -85,7 +98,7 @@ const SalesInventory = () => {
 
   const handleViewDetails = (vehicle) => {
     setSelectedVehicle(vehicle)
-    setShowVehicleModal(true)
+    setShowVehicleFullPage(true)
   }
 
   const toggleLastPriceVisibility = (vehicleId) => {
@@ -108,11 +121,15 @@ const SalesInventory = () => {
   }
 
   const getBeforeImages = (vehicle) => {
-    return (vehicle.images || []).filter(img => img.stage === 'before')
+    return (vehicle.images || [])
+      .filter(img => img.stage === 'before')
+      .sort((a, b) => (a.order || 0) - (b.order || 0)) // Maintain explicit order
   }
 
   const getAfterImages = (vehicle) => {
-    return (vehicle.images || []).filter(img => img.stage === 'after')
+    return (vehicle.images || [])
+      .filter(img => img.stage === 'after')
+      .sort((a, b) => (a.order || 0) - (b.order || 0)) // Maintain explicit order
   }
 
   const handleSaleFormChange = (field, value) => {
@@ -134,18 +151,27 @@ const SalesInventory = () => {
   }
 
   const calculatePaymentTotal = () => {
+    // Security cheque is NOT included in total payment
+    // It is treated as remaining/pending amount
     const cash = parseFloat(saleFormData.paymentCash) || 0
     const bankTransfer = parseFloat(saleFormData.paymentBankTransfer) || 0
     const online = parseFloat(saleFormData.paymentOnline) || 0
     const loan = parseFloat(saleFormData.paymentLoan) || 0
-    const cheque = saleFormData.securityCheque.enabled ? (parseFloat(saleFormData.securityCheque.amount) || 0) : 0
     
-    return cash + bankTransfer + online + loan + cheque
+    return cash + bankTransfer + online + loan
   }
 
   const calculateRemainingAmount = () => {
     const salePrice = parseFloat(saleFormData.salePrice) || 0
     const totalPaid = calculatePaymentTotal()
+    
+    // If security cheque is enabled, remaining amount = security cheque amount
+    // Otherwise, remaining amount = sale price - total paid
+    if (saleFormData.securityCheque.enabled) {
+      const chequeAmount = parseFloat(saleFormData.securityCheque.amount) || 0
+      return chequeAmount
+    }
+    
     return Math.max(0, salePrice - totalPaid)
   }
 
@@ -221,10 +247,13 @@ const SalesInventory = () => {
         formData.append('paymentSecurityCheque[accountNumber]', saleFormData.securityCheque.accountNumber)
         formData.append('paymentSecurityCheque[chequeNumber]', saleFormData.securityCheque.chequeNumber)
         formData.append('paymentSecurityCheque[amount]', parseFloat(saleFormData.securityCheque.amount) || 0)
+        // When security cheque is enabled, remaining amount = security cheque amount
+        formData.append('remainingAmount', parseFloat(saleFormData.securityCheque.amount) || 0)
+      } else {
+        // No security cheque - remaining amount is calculated normally
+        formData.append('paymentSecurityCheque[enabled]', 'false')
+        formData.append('remainingAmount', remaining)
       }
-      
-      // Remaining amount
-      formData.append('remainingAmount', remaining)
       
       // Payment method summary for history tracking
       formData.append('paymentMethod', getPaymentMethodSummary())
@@ -341,135 +370,155 @@ const SalesInventory = () => {
 
   return (
     <div>
-      <div className="section-header">
-        <div>
-          <h2><i className="fas fa-car-side"></i> Available Inventory</h2>
-          <p>View vehicles available for sale ({vehicles.length} vehicles)</p>
-        </div>
-        <div className="header-actions">
-          <div className="search-box">
-            <i className="fas fa-search"></i>
-            <input
-              type="text"
-              placeholder="Search vehicles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <select
-            className="filter-select"
+      <SectionHeader
+        title="Available Inventory"
+        description={`View vehicles available for sale (${vehicles.length} vehicles)`}
+      >
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search vehicles..."
+            fullWidth={false}
+            sx={{ minWidth: 250 }}
+          />
+          <FilterSelect
+            label="Status"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="All">All Status</option>
-            <option value="In Stock">In Stock</option>
-            <option value="Reserved">Reserved</option>
-          </select>
-          <button
-            className="btn btn-primary"
+            onChange={setStatusFilter}
+            options={[
+              { value: 'All', label: 'All Status' },
+              { value: 'In Stock', label: 'In Stock' },
+              { value: 'Reserved', label: 'Reserved' }
+            ]}
+          />
+          <Button
+            variant="contained"
+            startIcon={<CompareIcon />}
             onClick={() => setShowCompareModal(true)}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+              }
+            }}
           >
-            <i className="fas fa-images"></i> Compare
-          </button>
-          <button className="btn btn-secondary" onClick={() => loadVehicles(true)}>
-            <i className="fas fa-sync-alt"></i>
-          </button>
-        </div>
-      </div>
+            Compare
+          </Button>
+          <ActionButton
+            icon={<RefreshIcon />}
+            onClick={() => loadVehicles(true)}
+            title="Refresh"
+            variant="outlined"
+            color="primary"
+          />
+        </Box>
+      </SectionHeader>
 
       {loading ? (
-        <div className="loading-container">
-          <i className="fas fa-spinner fa-spin"></i>
-          <p>Loading vehicles...</p>
-        </div>
+        <LoadingState message="Loading vehicles..." />
       ) : vehicles.length === 0 ? (
-        <div className="empty-state">
-          <i className="fas fa-car"></i>
-          <h3>No vehicles available for sale</h3>
-          <p>Vehicles with "In Stock" status will appear here</p>
-        </div>
+        <EmptyState
+          icon={<i className="fas fa-car" style={{ fontSize: 64, color: '#bdc3c7' }} />}
+          title="No vehicles available for sale"
+          message="Vehicles with 'In Stock' status will appear here"
+        />
       ) : (
-        <Table sx={{ minWidth: 700 }} aria-label="sales inventory table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Vehicle No.</TableCell>
-              <TableCell>Make/Model</TableCell>
-              <TableCell>Year</TableCell>
-              <TableCell>Asking Price</TableCell>
-              <TableCell>Last Price</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredVehicles.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} sx={{ textAlign: 'center', padding: '40px' }}>
-                  No vehicles match your criteria
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredVehicles.map((vehicle) => (
-                <TableRow key={vehicle._id}>
-                  <TableCell><strong>{vehicle.vehicleNo}</strong></TableCell>
-                  <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
-                  <TableCell>{vehicle.year || 'N/A'}</TableCell>
-                  <TableCell>{formatPrice(vehicle.askingPrice)}</TableCell>
-                  <TableCell>
-                    <div className="price-hidden-container">
-                      <span
-                        className={`price-hidden ${visibleLastPrices[vehicle._id] ? 'visible' : ''}`}
-                      >
-                          {visibleLastPrices[vehicle._id] ? formatPrice(vehicle.lastPrice || vehicle.askingPrice) : '••••••'}
-                      </span>
-                      <i
-                        className={`fas ${visibleLastPrices[vehicle._id] ? 'fa-eye-slash' : 'fa-eye'} toggle-price`}
-                        title={visibleLastPrices[vehicle._id] ? 'Hide Last Price' : 'Show Last Price'}
-                        onClick={() => toggleLastPriceVisibility(vehicle._id)}
-                      ></i>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`badge ${getStatusBadgeClass(vehicle.status)}`}>
-                      {vehicle.status}
-                    </span>
-                  </TableCell>
-                  <TableCell align="center">
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                      <button
-                        className="btn-icon-small"
-                        onClick={() => handleViewDetails(vehicle)}
-                        title="View"
-                      >
-                        <i className="fas fa-eye"></i>
-                      </button>
-                      <button
-                        className="btn-icon-small"
-                        onClick={() => {
-                          setSelectedVehicle(vehicle)
-                          setShowMarkSoldModal(true)
-                        }}
-                        title="Mark Sold"
-                      >
-                        <i className="fas fa-check-circle"></i>
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={[
+            { 
+              key: 'vehicleNo', 
+              label: 'Vehicle No.', 
+              render: (v) => <strong>{v.vehicleNo}</strong> 
+            },
+            { 
+              key: 'makeModel', 
+              label: 'Make/Model', 
+              render: (v) => `${v.make} ${v.model || ''}`.trim() 
+            },
+            { 
+              key: 'year', 
+              label: 'Year', 
+              render: (v) => v.year || 'N/A' 
+            },
+            { 
+              key: 'askingPrice', 
+              label: 'Asking Price', 
+              render: (v) => formatPrice(v.askingPrice) 
+            },
+            {
+              key: 'lastPrice',
+              label: 'Last Price',
+              render: (v) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span style={{ opacity: visibleLastPrices[v._id] ? 1 : 0.3 }}>
+                    {visibleLastPrices[v._id] 
+                      ? formatPrice(v.lastPrice || v.askingPrice) 
+                      : '••••••'}
+                  </span>
+                  <i
+                    className={`fas ${visibleLastPrices[v._id] ? 'fa-eye-slash' : 'fa-eye'}`}
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
+                    title={visibleLastPrices[v._id] ? 'Hide Last Price' : 'Show Last Price'}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleLastPriceVisibility(v._id)
+                    }}
+                  />
+                </Box>
+              )
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              render: (v) => <StatusBadge status={v.status} />
+            },
+            {
+              key: 'actions',
+              label: 'Actions',
+              align: 'center',
+              render: (v) => (
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                  <ActionButton
+                    icon={<i className="fas fa-eye" />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleViewDetails(v)
+                    }}
+                    title="View"
+                    color="view"
+                  />
+                  <ActionButton
+                    icon={<i className="fas fa-check-circle" />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedVehicle(v)
+                      setShowMarkSoldModal(true)
+                    }}
+                    title="Mark Sold"
+                    color="success"
+                  />
+                </Box>
+              )
+            }
+          ]}
+          data={filteredVehicles}
+          loading={false}
+          emptyMessage="No vehicles match your criteria"
+          onRowClick={handleViewDetails}
+        />
       )}
 
-      <Modal
-        isOpen={showVehicleModal}
-        onClose={() => setShowVehicleModal(false)}
-        title="Vehicle Details"
-        size="large"
-      >
-        {selectedVehicle && <VehicleDetails vehicle={selectedVehicle} />}
-      </Modal>
+      {/* Vehicle Details Full Page */}
+      {showVehicleFullPage && selectedVehicle && (
+        <VehicleDetailsFullPage
+          vehicle={selectedVehicle}
+          onClose={() => {
+            setShowVehicleFullPage(false)
+            setSelectedVehicle(null)
+          }}
+        />
+      )}
 
       <Modal
         isOpen={showMarkSoldModal}
@@ -671,6 +720,9 @@ const SalesInventory = () => {
               />
               <span style={{ fontWeight: 500, color: '#333' }}>Security Cheque</span>
             </label>
+            <small style={{ display: 'block', marginTop: '5px', color: '#6c757d', fontStyle: 'italic' }}>
+              Note: Security cheque amount is treated as remaining/pending amount and will be returned when customer pays in cash or other mode.
+            </small>
           </div>
 
           {saleFormData.securityCheque.enabled && (
@@ -863,9 +915,7 @@ const SalesInventory = () => {
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
               <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {selectedVehicle.vehicleNo}</h3>
-              <span className={`badge ${getStatusBadgeClass(selectedVehicle.status)}`}>
-                {selectedVehicle.status}
-              </span>
+              <StatusBadge status={selectedVehicle.status} />
             </div>
 
             <div className="before-after-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>

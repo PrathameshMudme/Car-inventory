@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import '../styles/NotificationPanel.css'
 
 const NotificationPanel = ({ onClose }) => {
   const { notifications, markNotificationAsRead } = useApp()
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Mark notifications as read when panel opens
     const timer = setTimeout(() => {
       notifications.forEach(notif => {

@@ -9,9 +9,6 @@ const connectDB = async () => {
   } catch (error) {
     console.error('❌ Error connecting to MongoDB:', error.message)
     console.error('\n💡 Make sure MongoDB is running!')
-    console.error('   - Open MongoDB Compass and check if it\'s connected')
-    console.error('   - Or start MongoDB service: net start MongoDB (Windows)')
-    console.error('   - Or check if MongoDB is running on a different port\n')
     process.exit(1)
   }
 }

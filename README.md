@@ -17,7 +17,7 @@ A comprehensive vehicle management system built with React.js frontend and Node.
 ## ✨ Features
 
 ### Role-Based Access Control
-- **Admin** - Complete system control, vehicle editing, dealer management, user management
+- **Admin** - Complete system control, vehicle editing, agent management, user management
 - **Purchase Manager** - Vehicle acquisition and documentation
 - **Sales Manager** - Vehicle sales and customer management
 - **Delivery Manager** - Delivery scheduling and execution
@@ -28,7 +28,7 @@ A comprehensive vehicle management system built with React.js frontend and Node.
 - ✅ Vehicle comparison tool (Before/After modification)
 - ✅ Vehicle details editing (Admin only)
 - ✅ Document management and upload
-- ✅ Dealer management with purchase history
+- ✅ Agent management with purchase history
 - ✅ Purchase and delivery notes generation (PDF)
 - ✅ Dashboard analytics with charts
 - ✅ Profit & Loss management
@@ -90,7 +90,8 @@ vehicle-management-system/
 │   │   │   ├── auth.js
 │   │   │   ├── users.js
 │   │   │   ├── vehicles.js
-│   │   │   └── dealers.js
+│   │   │   ├── agents.js
+│   │   │   └── dealers.js (legacy, kept for backward compatibility)
 │   │   ├── models/          # Database models
 │   │   │   ├── User.js
 │   │   │   ├── Vehicle.js

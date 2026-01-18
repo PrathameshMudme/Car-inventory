@@ -1,35 +1,93 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import {
+  Box,
+  Grid,
+  Divider,
+} from '@mui/material'
+import {
+  Save as SaveIcon,
+  DirectionsCar as CarIcon,
+  AttachMoney as MoneyIcon,
+  Person as PersonIcon,
+  CameraAlt as CameraIcon,
+  FolderOpen as FolderIcon,
+} from '@mui/icons-material'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
-import '../styles/AddVehicle.css'
+import { getDistricts, getTalukas } from '../utils/maharashtraData'
+import { captureImageFromCamera } from '../utils/cameraCapture'
+import {
+  IMAGE_CATEGORIES,
+  DOCUMENT_TYPES,
+  FUEL_TYPE_OPTIONS,
+  PURCHASE_PAYMENT_MODE_OPTIONS,
+  STATUS_OPTIONS,
+  OWNER_TYPE_OPTIONS
+} from '../utils/vehicleFormConstants'
+import {
+  FormSectionHeader,
+  FormTextField,
+  FormSelect,
+  FormContainer,
+  FormSection,
+  FormActions,
+  FormGrid,
+  VehicleImageDropzone,
+  VehicleDocumentDropzone
+} from './forms'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
+  const isAdmin = user?.role === 'admin'
 
   const [formData, setFormData] = useState({
+    chassisNo: '',
+    engineNo: '',
     make: '',
     model: '',
-    year: '',
     color: '',
     fuelType: 'Petrol',
     kilometers: '',
     purchasePrice: '',
     askingPrice: '',
     lastPrice: '',
-    purchaseDate: '',
-    paymentMethod: '',
-    agentCommission: '',
+    purchaseDate: null,
+    purchaseMonth: null,
+    purchaseYear: null,
+    ownerType: '',
+    ownerTypeCustom: '',
+    addressLine1: '',
+    district: '',
+    taluka: '',
+    pincode: '',
+    remainingAmountToSeller: '',
     sellerName: '',
     sellerContact: '',
-    dealerName: '',
-    dealerPhone: '',
+    agentName: '',
+    agentCommission: '',
+    agentPhone: '',
     notes: '',
-    status: 'On Modification'
+    status: 'On Modification',
+    // Legacy fields for backward compatibility
+    dealerName: '',
+    dealerPhone: ''
   })
+
+  // Purchase payment modes (matching AddVehicle)
+  const [purchasePaymentModes, setPurchasePaymentModes] = useState({
+    cash: '',
+    bank_transfer: '',
+    deductions: ''
+  })
+  
+  const [deductionsNotes, setDeductionsNotes] = useState('')
+  const [selectedDistrict, setSelectedDistrict] = useState('')
+  const [availableTalukas, setAvailableTalukas] = useState([])
 
   const [documents, setDocuments] = useState({
     insurance: [],
@@ -54,26 +112,69 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
 
   useEffect(() => {
     if (vehicle) {
+      // Handle purchase month and year
+      let purchaseDateValue = null
+      let purchaseMonth = null
+      let purchaseYear = null
+      
+      if (vehicle.purchaseMonth && vehicle.purchaseYear) {
+        purchaseMonth = vehicle.purchaseMonth
+        purchaseYear = vehicle.purchaseYear
+        purchaseDateValue = new Date(purchaseYear, purchaseMonth - 1, 1)
+      } else if (vehicle.purchaseDate) {
+        const date = new Date(vehicle.purchaseDate)
+        purchaseMonth = date.getMonth() + 1
+        purchaseYear = date.getFullYear()
+        purchaseDateValue = new Date(purchaseYear, purchaseMonth - 1, 1)
+      }
+      
+      // Load purchase payment methods from vehicle
+      const paymentMethods = vehicle.purchasePaymentMethods || {}
+      const paymentModes = {
+        cash: paymentMethods.cash ? (paymentMethods.cash === 'NIL' ? '' : paymentMethods.cash.toString()) : '',
+        bank_transfer: paymentMethods.bank_transfer ? (paymentMethods.bank_transfer === 'NIL' ? '' : paymentMethods.bank_transfer.toString()) : '',
+        deductions: paymentMethods.deductions ? (paymentMethods.deductions === 'NIL' ? '' : paymentMethods.deductions.toString()) : ''
+      }
+      setPurchasePaymentModes(paymentModes)
+      setDeductionsNotes(vehicle.deductionsNotes || '')
+      
+      // Set district and talukas
+      if (vehicle.district) {
+        setSelectedDistrict(vehicle.district)
+        setAvailableTalukas(getTalukas(vehicle.district))
+      }
+      
       // Populate form with existing vehicle data
       setFormData({
+        chassisNo: vehicle.chassisNo || '',
+        engineNo: vehicle.engineNo || '',
         make: vehicle.make || '',
         model: vehicle.model || '',
-        year: vehicle.year || '',
         color: vehicle.color || '',
         fuelType: vehicle.fuelType || 'Petrol',
         kilometers: vehicle.kilometers || '',
         purchasePrice: vehicle.purchasePrice || '',
         askingPrice: vehicle.askingPrice || '',
         lastPrice: vehicle.lastPrice || '',
-        purchaseDate: vehicle.purchaseDate ? new Date(vehicle.purchaseDate).toISOString().split('T')[0] : '',
-        paymentMethod: vehicle.paymentMethod || '',
-        agentCommission: vehicle.agentCommission || '',
+        purchaseDate: purchaseDateValue,
+        purchaseMonth: purchaseMonth,
+        purchaseYear: purchaseYear,
+        ownerType: vehicle.ownerType || '',
+        ownerTypeCustom: vehicle.ownerTypeCustom || '',
+        addressLine1: vehicle.addressLine1 || '',
+        district: vehicle.district || '',
+        taluka: vehicle.taluka || '',
+        pincode: vehicle.pincode || '',
+        remainingAmountToSeller: vehicle.remainingAmountToSeller || '',
         sellerName: vehicle.sellerName || '',
         sellerContact: vehicle.sellerContact || '',
-        dealerName: vehicle.dealerName || '',
-        dealerPhone: vehicle.dealerPhone || '',
+        agentName: vehicle.agentName || vehicle.dealerName || '',
+        agentCommission: vehicle.agentCommission || '',
+        agentPhone: vehicle.agentPhone || vehicle.dealerPhone || '',
         notes: vehicle.notes || '',
-        status: vehicle.status || 'On Modification'
+        status: vehicle.status || 'On Modification',
+        dealerName: vehicle.dealerName || '',
+        dealerPhone: vehicle.dealerPhone || ''
       })
 
       // Group existing documents by type (store as objects, not files)
@@ -86,101 +187,142 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
     }
   }, [vehicle])
 
+  // Calculate remaining amount automatically
+  const calculateRemainingAmount = (purchasePrice, paymentModes) => {
+    const purchasePriceNum = parseFloat(purchasePrice) || 0
+    const cashAmount = parseFloat(paymentModes.cash || 0) || 0
+    const bankTransferAmount = parseFloat(paymentModes.bank_transfer || 0) || 0
+    const deductionsAmount = parseFloat(paymentModes.deductions || 0) || 0
+    
+    const totalPaid = cashAmount + bankTransferAmount + deductionsAmount
+    const remaining = purchasePriceNum - totalPaid
+    
+    return remaining > 0 ? remaining : 0
+  }
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleFileChange = (e, docType) => {
-    const files = Array.from(e.target.files)
-    if (files.length === 0) return
-
-    const docTypeConfig = documentTypes.find(d => d.key === docType)
+    const updatedFormData = { ...formData, [name]: value }
+    setFormData(updatedFormData)
     
-    if (docTypeConfig.multiple) {
-      setDocuments(prev => ({
-        ...prev,
-        [docType]: [...(prev[docType] || []), ...files]
-      }))
-      showToast(`${files.length} file(s) added for ${docTypeConfig.label}`, 'success')
-    } else {
-      setDocuments(prev => ({
-        ...prev,
-        [docType]: [files[0]]
-      }))
-      showToast(`${docTypeConfig.label} file added`, 'success')
+    // Auto-calculate remaining amount when purchase price changes
+    if (name === 'purchasePrice') {
+      const remaining = calculateRemainingAmount(value, purchasePaymentModes)
+      setFormData(prev => ({ ...prev, [name]: value, remainingAmountToSeller: remaining.toFixed(2) }))
     }
-    
-    // Reset input
-    e.target.value = ''
   }
 
-  const handleImageChange = (e, category) => {
-    const files = Array.from(e.target.files)
-    if (files.length === 0) return
+  // Handle district change - update available talukas
+  const handleDistrictChange = (event, newValue) => {
+    setSelectedDistrict(newValue || '')
+    setFormData(prev => ({ ...prev, district: newValue || '', taluka: '' }))
+    if (newValue) {
+      setAvailableTalukas(getTalukas(newValue))
+    } else {
+      setAvailableTalukas([])
+    }
+  }
 
-    const imageObjects = files.map(file => ({
+  // Handle pincode validation
+  const handlePincodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6) // Only digits, max 6
+    setFormData(prev => ({ ...prev, pincode: value }))
+  }
+
+  // Handle purchase payment mode amount changes
+  const handlePaymentModeAmountChange = (modeKey, value) => {
+    // Only allow digits and decimal point
+    const numericValue = value.replace(/[^\d.]/g, '')
+    const updatedModes = {
+      ...purchasePaymentModes,
+      [modeKey]: numericValue
+    }
+    setPurchasePaymentModes(updatedModes)
+    
+    // Auto-calculate remaining amount
+    const remaining = calculateRemainingAmount(formData.purchasePrice, updatedModes)
+    setFormData(prev => ({ ...prev, remainingAmountToSeller: remaining.toFixed(2) }))
+  }
+
+  const handlePurchaseDateChange = (newValue) => {
+    if (newValue) {
+      const month = newValue.getMonth() + 1
+      const year = newValue.getFullYear()
+      setFormData(prev => ({ 
+        ...prev, 
+        purchaseMonth: month,
+        purchaseYear: year,
+        purchaseDate: new Date(year, month - 1, 1)
+      }))
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        purchaseMonth: null,
+        purchaseYear: null,
+        purchaseDate: null
+      }))
+    }
+  }
+
+  const onImageDrop = useCallback((category, acceptedFiles) => {
+    if (acceptedFiles.length === 0) return
+    
+    const imageObjects = acceptedFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file)
     }))
-
+    
     setImages(prev => ({
       ...prev,
       [category]: [...prev[category], ...imageObjects]
     }))
-    showToast(`${files.length} image(s) added for ${category}`, 'success')
+    showToast(`${acceptedFiles.length} image(s) added`, 'success')
+  }, [showToast])
+
+  const onDocumentDrop = useCallback((docType, acceptedFiles) => {
+    if (acceptedFiles.length === 0) return
     
-    // Reset input
-    e.target.value = ''
-  }
+    const docTypeConfig = DOCUMENT_TYPES.find(d => d.key === docType)
+    
+    if (docTypeConfig.multiple) {
+      setDocuments(prev => ({
+        ...prev,
+        [docType]: [...(prev[docType] || []), ...acceptedFiles]
+      }))
+      showToast(`${acceptedFiles.length} file(s) added`, 'success')
+    } else {
+      setDocuments(prev => ({
+        ...prev,
+        [docType]: acceptedFiles[0]
+      }))
+      showToast(`${docTypeConfig.label} uploaded`, 'success')
+    }
+  }, [showToast])
 
-  const removeDocument = (docType, index) => {
-    setDocuments(prev => {
-      const newDocs = [...prev[docType]]
-      const removedDoc = newDocs[index]
-      newDocs.splice(index, 1)
-      const docTypeConfig = documentTypes.find(d => d.key === docType)
-      if (removedDoc instanceof File) {
-        showToast(`${docTypeConfig?.label || docType} removed`, 'info')
-      }
-      return { ...prev, [docType]: newDocs }
-    })
-  }
-
-  const removeImage = (category, index) => {
+  const removeImage = useCallback((category, index) => {
     setImages(prev => {
       const newImages = [...prev[category]]
-      URL.revokeObjectURL(newImages[index].preview)
+      if (newImages[index]?.preview) {
+        URL.revokeObjectURL(newImages[index].preview)
+      }
       newImages.splice(index, 1)
       showToast(`Image removed from ${category}`, 'info')
       return { ...prev, [category]: newImages }
     })
-  }
+  }, [showToast])
 
-  const documentTypes = [
-    { key: 'insurance', label: 'Insurance Certificate', multiple: false },
-    { key: 'rc', label: 'RC Book', multiple: false },
-    { key: 'bank_noc', label: 'Bank NOC', multiple: false },
-    { key: 'kyc', label: 'KYC Documents', multiple: true },
-    { key: 'tt_form', label: 'TT Form', multiple: false },
-    { key: 'papers_on_hold', label: 'Papers on Hold', multiple: true },
-    { key: 'puc', label: 'PUC Certificate', multiple: false },
-    { key: 'service_record', label: 'Service Records', multiple: true },
-    { key: 'other', label: 'Other Documents', multiple: true }
-  ]
+  const removeDocument = useCallback((docType) => {
+    const docTypeConfig = DOCUMENT_TYPES.find(d => d.key === docType)
+    setDocuments(prev => ({ ...prev, [docType]: docTypeConfig.multiple ? [] : null }))
+    showToast(`${docTypeConfig?.label || docType} removed`, 'info')
+  }, [showToast])
 
-  const imageCategories = [
-    { key: 'front', label: 'Front View' },
-    { key: 'back', label: 'Back View' },
-    { key: 'right_side', label: 'Right Side' },
-    { key: 'left_side', label: 'Left Side' },
-    { key: 'interior', label: 'Interior' },
-    { key: 'engine', label: 'Engine' }
-  ]
-
-  const fuelTypeOptions = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid']
-  const paymentMethodOptions = ['Cash', 'Bank Transfer', 'Cheque', 'Online Payment']
-  const statusOptions = ['On Modification', 'In Stock', 'Reserved', 'Sold', 'Processing']
+  const handleCameraCapture = useCallback((category) => {
+    captureImageFromCamera(
+      (files) => onImageDrop(category, files),
+      showToast
+    )
+  }, [onImageDrop, showToast])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -189,12 +331,55 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
     try {
       const formDataToSend = new FormData()
 
-      // Add all form fields
+      // Build structured purchase payment methods object
+      const purchasePaymentMethodsObj = {}
+      Object.entries(purchasePaymentModes).forEach(([modeKey, amount]) => {
+        if (amount && amount.trim() !== '') {
+          const amountNum = parseFloat(amount)
+          if (isNaN(amountNum) || amountNum === 0) {
+            purchasePaymentMethodsObj[modeKey] = 'NIL'
+          } else {
+            purchasePaymentMethodsObj[modeKey] = amountNum
+          }
+        }
+      })
+      formDataToSend.append('purchasePaymentMethods', JSON.stringify(purchasePaymentMethodsObj))
+      
+      // Add deductions notes if deductions amount is entered
+      if (deductionsNotes && deductionsNotes.trim() !== '') {
+        formDataToSend.append('deductionsNotes', deductionsNotes.trim())
+      }
+
+      // Set pending payment type if remaining amount to seller exists
+      if (formData.remainingAmountToSeller && parseFloat(formData.remainingAmountToSeller) > 0) {
+        formDataToSend.append('remainingAmountToSeller', formData.remainingAmountToSeller)
+        formDataToSend.append('pendingPaymentType', 'PENDING_TO_SELLER')
+      }
+
+      // Add all form fields (exclude legacy dealerName/dealerPhone)
       Object.keys(formData).forEach(key => {
-        if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
+        if (key === 'dealerName' || key === 'dealerPhone') {
+          return
+        }
+        
+        if (key === 'purchaseDate' && formData[key]) {
+          formDataToSend.append(key, formData[key].toISOString().split('T')[0])
+        } else if (key === 'purchaseMonth' && formData[key]) {
+          formDataToSend.append(key, formData[key])
+        } else if (key === 'purchaseYear' && formData[key]) {
+          formDataToSend.append(key, formData[key])
+        } else if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
           formDataToSend.append(key, formData[key])
         }
       })
+      
+      // Ensure agentName/agentPhone are sent
+      if (!formData.agentName && formData.dealerName) {
+        formDataToSend.append('agentName', formData.dealerName)
+      }
+      if (!formData.agentPhone && formData.dealerPhone) {
+        formDataToSend.append('agentPhone', formData.dealerPhone)
+      }
 
       // Add new images
       imageCategories.forEach(category => {
@@ -207,15 +392,21 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
         })
       })
 
-      // Add new documents (only File objects, not server document objects)
+      // Add new documents (only File objects)
       documentTypes.forEach(docType => {
-        const files = documents[docType.key] || []
-        // Only add new files (File instances), not existing server documents
-        files.forEach(file => {
+        if (docType.multiple) {
+          const files = documents[docType.key] || []
+          files.forEach(file => {
+            if (file instanceof File) {
+              formDataToSend.append(docType.key, file)
+            }
+          })
+        } else {
+          const file = documents[docType.key]
           if (file instanceof File) {
             formDataToSend.append(docType.key, file)
           }
-        })
+        }
       })
 
       const response = await fetch(`${API_URL}/vehicles/${vehicle._id}`, {
@@ -250,392 +441,374 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
   }
 
   return (
-    <div className="add-vehicle-container">
+    <FormContainer>
       <form onSubmit={handleSubmit}>
-        <div className="form-section">
-          <h3><i className="fas fa-car"></i> Basic Information</h3>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Vehicle Number</label>
-              <input
-                type="text"
-                value={vehicle.vehicleNo}
-                disabled
-                style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
-              />
-              <small style={{ color: '#6c757d' }}>Vehicle number cannot be changed</small>
-            </div>
-            <div className="form-group">
-              <label>Chassis Number</label>
-              <input
-                type="text"
-                value={vehicle.chassisNo || ''}
-                disabled
-                style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
-              />
-            </div>
-            <div className="form-group">
-              <label>Make <span className="required">*</span></label>
-              <input
-                type="text"
-                name="make"
-                value={formData.make}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Model</label>
-              <input
-                type="text"
-                name="model"
-                value={formData.model}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Year</label>
-              <input
-                type="number"
-                name="year"
-                value={formData.year}
-                onChange={handleInputChange}
-                min="1900"
-                max={new Date().getFullYear() + 1}
-              />
-            </div>
-            <div className="form-group">
-              <label>Color</label>
-              <input
-                type="text"
-                name="color"
-                value={formData.color}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Fuel Type</label>
-              <select
-                name="fuelType"
-                value={formData.fuelType}
-                onChange={handleInputChange}
-              >
-                {fuelTypeOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Kilometers</label>
-              <input
-                type="text"
-                name="kilometers"
-                value={formData.kilometers}
-                onChange={handleInputChange}
-                placeholder="e.g., 50000 km"
-              />
-            </div>
-          </div>
-        </div>
+        {/* Vehicle Information */}
+        <FormSection>
+          <FormSectionHeader icon={CarIcon} title="Vehicle Information" />
+          <FormGrid>
+            <FormTextField
+              label="Vehicle Number"
+              value={vehicle.vehicleNo}
+              disabled
+              helperText="Vehicle number cannot be changed"
+              sx={{ '& .MuiInputBase-input': { backgroundColor: '#f5f5f5' } }}
+            />
+            <FormTextField
+              label="Chassis Number"
+              name="chassisNo"
+              value={formData.chassisNo}
+              onChange={handleInputChange}
+              disabled={!isAdmin}
+              helperText={!isAdmin ? 'Only admin can edit chassis number' : ''}
+              sx={!isAdmin ? { '& .MuiInputBase-input': { backgroundColor: '#f5f5f5' } } : {}}
+            />
+            <FormTextField
+              label="Engine Number"
+              name="engineNo"
+              value={formData.engineNo}
+              onChange={handleInputChange}
+              disabled={!isAdmin}
+              placeholder="Required for purchase notes"
+              helperText={!isAdmin ? 'Only admin can edit engine number' : ''}
+              sx={!isAdmin ? { '& .MuiInputBase-input': { backgroundColor: '#f5f5f5' } } : {}}
+            />
+            <FormTextField
+              label="Make"
+              name="make"
+              value={formData.make}
+              onChange={handleInputChange}
+              placeholder="Honda, Maruti..."
+              required
+            />
+            <FormTextField
+              label="Model"
+              name="model"
+              value={formData.model}
+              onChange={handleInputChange}
+              placeholder="City, Swift..."
+            />
+            <FormTextField
+              label="Color"
+              name="color"
+              value={formData.color}
+              onChange={handleInputChange}
+              placeholder="White, Black..."
+            />
+            <FormSelect
+              options={FUEL_TYPE_OPTIONS}
+              value={formData.fuelType}
+              onChange={(event, newValue) => {
+                setFormData(prev => ({ ...prev, fuelType: newValue || 'Petrol' }))
+              }}
+              label="Fuel Type"
+            />
+            <FormTextField
+              label="Kilometers"
+              name="kilometers"
+              value={formData.kilometers}
+              onChange={handleInputChange}
+              placeholder="50000"
+            />
+          </FormGrid>
+        </FormSection>
 
-        <div className="form-section">
-          <h3><i className="fas fa-rupee-sign"></i> Financial Details</h3>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Purchase Price (₹)</label>
-              <input
-                type="number"
-                name="purchasePrice"
-                value={formData.purchasePrice}
-                onChange={handleInputChange}
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div className="form-group">
-              <label>Asking Price (₹)</label>
-              <input
-                type="number"
+        {/* Purchase Details */}
+        <FormSection>
+          <FormSectionHeader icon={MoneyIcon} title="Purchase Details" />
+          <FormGrid>
+            <FormTextField
+              label="Purchase Price (₹)"
+              name="purchasePrice"
+              type="number"
+              value={formData.purchasePrice}
+              onChange={handleInputChange}
+              placeholder="850000"
+            />
+            {isAdmin && (
+              <FormTextField
+                label="Asking Price (₹)"
                 name="askingPrice"
+                type="number"
                 value={formData.askingPrice}
                 onChange={handleInputChange}
-                min="0"
-                step="1000"
+                placeholder="1000000"
               />
-            </div>
-            <div className="form-group">
-              <label>Last Price (₹)</label>
-              <input
-                type="number"
-                name="lastPrice"
-                value={formData.lastPrice}
-                onChange={handleInputChange}
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div className="form-group">
-              <label>Purchase Date</label>
-              <input
-                type="date"
-                name="purchaseDate"
-                value={formData.purchaseDate}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Payment Method</label>
-              <select
-                name="paymentMethod"
-                value={formData.paymentMethod}
-                onChange={handleInputChange}
-              >
-                <option value="">Select payment method</option>
-                {paymentMethodOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Agent Commission (₹)</label>
-              <input
-                type="number"
-                name="agentCommission"
-                value={formData.agentCommission}
-                onChange={handleInputChange}
-                min="0"
-                step="100"
-              />
-            </div>
-            <div className="form-group">
-              <label>Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                {statusOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h3><i className="fas fa-user-tie"></i> Seller / Dealer Information</h3>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Seller Name</label>
-              <input
-                type="text"
-                name="sellerName"
-                value={formData.sellerName}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Seller Contact</label>
-              <input
-                type="text"
-                name="sellerContact"
-                value={formData.sellerContact}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Dealer Name</label>
-              <input
-                type="text"
-                name="dealerName"
-                value={formData.dealerName}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="form-group">
-              <label>Dealer Phone</label>
-              <input
-                type="text"
-                name="dealerPhone"
-                value={formData.dealerPhone}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h3><i className="fas fa-camera"></i> Additional Images (After Modification)</h3>
-          <p style={{ color: '#6c757d', marginBottom: '20px', fontSize: '14px' }}>
-            Upload additional images to show after modification. Existing images will be preserved.
-          </p>
-          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            {imageCategories.map(category => (
-              <div key={category.key} className="form-group">
-                <label>{category.label}</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handleImageChange(e, category.key)}
-                  style={{ padding: '8px' }}
-                />
-                {images[category.key]?.length > 0 && (
-                  <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                    {images[category.key].map((img, idx) => (
-                      <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
-                        <img
-                          src={img.preview}
-                          alt={`${category.label} ${idx + 1}`}
-                          style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(category.key, idx)}
-                          style={{
-                            position: 'absolute',
-                            top: '-5px',
-                            right: '-5px',
-                            background: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '20px',
-                            height: '20px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h3>
-            <i className="fas fa-folder-open"></i> Documents
-            {vehicle.missingDocuments?.length > 0 && (
-              <span style={{ marginLeft: '10px', fontSize: '14px', color: '#ff9800', fontWeight: 'normal' }}>
-                ({vehicle.missingDocuments.length} missing: {vehicle.missingDocuments.join(', ')})
-              </span>
             )}
-          </h3>
-          <p style={{ color: '#6c757d', marginBottom: '20px', fontSize: '14px' }}>
-            Upload missing documents. Existing documents will be preserved.
-          </p>
-          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-            {documentTypes.map(docType => {
-              const allDocs = documents[docType.key] || []
-              const serverDocs = allDocs.filter(doc => doc && typeof doc === 'object' && doc.documentUrl)
-              const newFiles = allDocs.filter(doc => doc instanceof File)
-              
-              return (
-                <div key={docType.key} className="form-group">
-                  <label>
-                    {docType.label}
-                    {vehicle.missingDocuments?.includes(docType.key) && (
-                      <span style={{ color: '#ff9800', marginLeft: '5px' }}>⚠ Missing</span>
-                    )}
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf,image/*"
-                    multiple={docType.multiple}
-                    onChange={(e) => handleFileChange(e, docType.key)}
-                    style={{ padding: '8px' }}
-                  />
-                  {serverDocs.length > 0 && (
-                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#28a745' }}>
-                      <i className="fas fa-check-circle"></i> {serverDocs.length} existing file(s) on server
-                    </div>
-                  )}
-                  {newFiles.length > 0 && (
-                    <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                      {newFiles.map((file, idx) => (
-                        <span
-                          key={idx}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            background: '#e3f2fd',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px'
-                          }}
-                        >
-                          {file.name.length > 20 ? `${file.name.substring(0, 20)}...` : file.name}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentDocs = documents[docType.key] || []
-                              const updatedDocs = currentDocs.filter((_, index) => index !== serverDocs.length + idx)
-                              setDocuments(prev => ({ ...prev, [docType.key]: updatedDocs }))
-                            }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#dc3545',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              padding: '0',
-                              marginLeft: '5px'
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
+            <FormTextField
+              label="Last Price (₹)"
+              name="lastPrice"
+              type="number"
+              value={formData.lastPrice}
+              onChange={handleInputChange}
+              placeholder="950000"
+            />
+            <Box sx={{ width: '100%' }}>
+              <DatePicker
+                label="Purchase Month & Year"
+                value={formData.purchaseMonth && formData.purchaseYear 
+                  ? new Date(formData.purchaseYear, formData.purchaseMonth - 1, 1)
+                  : null}
+                onChange={handlePurchaseDateChange}
+                views={['month', 'year']}
+                openTo="month"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    size: 'medium',
+                    placeholder: 'Select Month & Year'
+                  }
+                }}
+              />
+            </Box>
+            <FormSelect
+              options={OWNER_TYPE_OPTIONS}
+              value={formData.ownerType}
+              onChange={(event, newValue) => {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  ownerType: newValue || '',
+                  ownerTypeCustom: newValue !== 'Custom' ? '' : prev.ownerTypeCustom
+                }))
+              }}
+              label="Owner Type"
+            />
+            {formData.ownerType === 'Custom' && (
+              <FormTextField
+                label="Custom Owner Description"
+                name="ownerTypeCustom"
+                value={formData.ownerTypeCustom}
+                onChange={handleInputChange}
+                placeholder="e.g., 4th Owner, Company Owned..."
+                required={formData.ownerType === 'Custom'}
+              />
+            )}
+            {isAdmin && (
+              <>
+                <FormTextField
+                  label="Agent Commission (₹)"
+                  name="agentCommission"
+                  type="number"
+                  value={formData.agentCommission}
+                  onChange={handleInputChange}
+                  inputProps={{ min: 0, step: 100 }}
+                />
+                <FormTextField
+                  label="Agent Phone"
+                  name="agentPhone"
+                  value={formData.agentPhone}
+                  onChange={handleInputChange}
+                  placeholder="+91 98765 43210"
+                />
+              </>
+            )}
+            <FormSelect
+              options={STATUS_OPTIONS}
+              value={formData.status}
+              onChange={(event, newValue) => {
+                setFormData(prev => ({ ...prev, status: newValue || 'On Modification' }))
+              }}
+              label="Status"
+            />
+          </FormGrid>
+        </FormSection>
 
-        <div className="form-section">
-          <h3><i className="fas fa-sticky-note"></i> Notes</h3>
-          <div className="form-group">
-            <textarea
+        {/* Purchase Payment Methods */}
+        <FormSection>
+          <FormSectionHeader 
+            icon={MoneyIcon} 
+            title="Payment Mode (To Seller)"
+            subtitle="Enter payment amounts. Remaining amount will be calculated automatically: Purchase Price - (Cash + Bank Transfer + Deductions)"
+          />
+          <FormGrid>
+            {PURCHASE_PAYMENT_MODE_OPTIONS.map((mode) => (
+              <FormTextField
+                key={mode.key}
+                label={`${mode.label} (₹)`}
+                type="text"
+                value={purchasePaymentModes[mode.key] || ''}
+                onChange={(e) => handlePaymentModeAmountChange(mode.key, e.target.value)}
+                placeholder="Enter amount"
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9.]*' }}
+              />
+            ))}
+          </FormGrid>
+          {purchasePaymentModes.deductions && purchasePaymentModes.deductions.toString().trim() !== '' && (
+            <FormGrid className="add-vehicle-form-grid-full" sx={{ mt: 2 }}>
+              <FormTextField
+                label="Deductions Notes"
+                value={deductionsNotes}
+                onChange={(e) => setDeductionsNotes(e.target.value)}
+                placeholder="Enter reason for deductions (e.g., Repair costs, Pending documentation, etc.)"
+                multiline
+                rows={3}
+                helperText="This note will be visible to admin and included in purchase notes"
+              />
+            </FormGrid>
+          )}
+          <FormGrid sx={{ mt: 2 }}>
+            <FormTextField
+              label="Remaining Amount"
+              name="remainingAmountToSeller"
+              type="number"
+              value={formData.remainingAmountToSeller}
+              disabled
+              helperText="Auto-calculated: Purchase Price - (Cash + Bank Transfer + Deductions)"
+              sx={{
+                '& .MuiInputBase-input': {
+                  backgroundColor: '#f5f5f5',
+                  fontWeight: 600,
+                  color: '#1976d2'
+                }
+              }}
+            />
+          </FormGrid>
+        </FormSection>
+
+        {/* Seller/Agent Details */}
+        <FormSection>
+          <FormSectionHeader icon={PersonIcon} title="Seller Details" />
+          <FormGrid>
+            <FormTextField
+              label="Seller Name"
+              name="sellerName"
+              value={formData.sellerName}
+              onChange={handleInputChange}
+              placeholder="Enter seller name"
+            />
+            <FormTextField
+              label="Seller Contact"
+              name="sellerContact"
+              value={formData.sellerContact}
+              onChange={handleInputChange}
+              placeholder="+91 98765 43210"
+            />
+            <FormTextField
+              label="Agent Name"
+              name="agentName"
+              value={formData.agentName}
+              onChange={handleInputChange}
+              placeholder="Enter agent name"
+            />
+            <FormTextField
+              className="add-vehicle-form-grid-full"
+              label="Notes"
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
-              rows="4"
               placeholder="Additional notes about the vehicle..."
+              multiline
+              rows={3}
+              sx={{ gridColumn: '1 / -1' }}
             />
-          </div>
-        </div>
+          </FormGrid>
+        </FormSection>
 
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? (
-              <>
-                <i className="fas fa-spinner fa-spin"></i> Updating...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save"></i> Update Vehicle
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={onClose}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-        </div>
+        {/* Address Details */}
+        <FormSection>
+          <FormSectionHeader icon={PersonIcon} title="Address Details" />
+          <FormGrid>
+            <FormTextField
+              className="add-vehicle-form-grid-full"
+              label="Address Line 1"
+              name="addressLine1"
+              value={formData.addressLine1}
+              onChange={handleInputChange}
+              placeholder="House/Flat No., Building Name, Street..."
+              sx={{ gridColumn: '1 / -1' }}
+            />
+            <FormSelect
+              options={getDistricts()}
+              value={formData.district}
+              onChange={handleDistrictChange}
+              label="District"
+              placeholder="Select District"
+            />
+            <FormSelect
+              options={availableTalukas}
+              value={formData.taluka}
+              onChange={(event, newValue) => {
+                setFormData(prev => ({ ...prev, taluka: newValue || '' }))
+              }}
+              disabled={!formData.district}
+              label="Taluka"
+              placeholder={formData.district ? "Select Taluka" : "Select District first"}
+              helperText={!formData.district ? "Please select a district first" : ""}
+            />
+            <FormTextField
+              label="Pincode"
+              name="pincode"
+              value={formData.pincode}
+              onChange={handlePincodeChange}
+              placeholder="400001"
+              inputProps={{ maxLength: 6 }}
+              error={formData.pincode.length > 0 && formData.pincode.length !== 6}
+              helperText={
+                formData.pincode.length > 0 && formData.pincode.length !== 6
+                  ? "Pincode must be exactly 6 digits"
+                  : ""
+              }
+            />
+          </FormGrid>
+        </FormSection>
+
+        {/* Vehicle Images */}
+        <FormSection>
+          <FormSectionHeader 
+            icon={CameraIcon} 
+            title="Vehicle Images"
+            subtitle="Upload additional images. Existing images will be preserved."
+          />
+          <Grid container spacing={2}>
+            {IMAGE_CATEGORIES.map(category => (
+              <Grid item xs={6} sm={4} md={2} key={category.key}>
+                <VehicleImageDropzone
+                  category={category.key}
+                  label={category.label}
+                  images={images[category.key] || []}
+                  onDrop={onImageDrop}
+                  onRemove={removeImage}
+                  onCameraCapture={handleCameraCapture}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </FormSection>
+
+        {/* Documents */}
+        <FormSection showDivider={false}>
+          <FormSectionHeader 
+            icon={FolderIcon} 
+            title="Documents"
+            subtitle="Upload vehicle documents. Supported formats: PDF, JPG, PNG"
+          />
+          <Grid container spacing={2}>
+            {DOCUMENT_TYPES.map((doc) => (
+              <Grid item xs={6} sm={4} md={3} key={doc.key}>
+                <VehicleDocumentDropzone
+                  docType={doc.key}
+                  label={doc.label}
+                  icon={doc.icon}
+                  multiple={doc.multiple}
+                  documents={documents[doc.key] || []}
+                  onDrop={onDocumentDrop}
+                  onRemove={removeDocument}
+                  isMissing={vehicle?.missingDocuments?.includes(doc.key)}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </FormSection>
+
+        {/* Form Actions */}
+        <FormActions
+          onCancel={onClose}
+          onSubmit={handleSubmit}
+          submitLabel="Update Vehicle"
+          loading={loading}
+        />
       </form>
-    </div>
+    </FormContainer>
   )
 }
 

@@ -51,6 +51,109 @@
     font-size: 14px;
 }
 
+/* Quick Login Section */
+.quick-login-section {
+    margin-top: 25px;
+    margin-bottom: 20px;
+}
+
+.quick-login-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 15px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quick-login-divider::before,
+.quick-login-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.quick-login-divider span {
+    padding: 0 15px;
+}
+
+.quick-login-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.btn-quick-login {
+    padding: 12px 8px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: #f8f9fa;
+    color: #495057;
+}
+
+.btn-quick-login i {
+    font-size: 20px;
+}
+
+.btn-quick-login span {
+    font-size: 11px;
+}
+
+.btn-quick-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-quick-login:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-quick-admin {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fff 0%, #ffe6e6 100%);
+    color: #dc3545;
+}
+
+.btn-quick-admin:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.btn-quick-purchase {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #fff 0%, #e6f7ed 100%);
+    color: #28a745;
+}
+
+.btn-quick-purchase:hover:not(:disabled) {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    color: white;
+}
+
+.btn-quick-sales {
+    border-color: #007bff;
+    background: linear-gradient(135deg, #fff 0%, #e6f2ff 100%);
+    color: #007bff;
+}
+
+.btn-quick-sales:hover:not(:disabled) {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
 .login-footer {
     margin-top: 20px;
     text-align: center;

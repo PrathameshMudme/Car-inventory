@@ -52,6 +52,8 @@ frontend/.env
 frontend/.env.local
 frontend/.env.*.local
 frontend/dist/
+# Allow .env.example (template file)
+!frontend/.env.example
 
 # Database
 *.sqlite

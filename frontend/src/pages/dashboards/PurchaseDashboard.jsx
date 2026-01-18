@@ -1,7 +1,6 @@
 import React from 'react'
 import { useApp } from '../../context/AppContext'
 import Sidebar from '../../components/Sidebar'
-import Topbar from '../../components/Topbar'
 import PurchaseOverview from '../../components/sections/PurchaseOverview'
 import AddVehicle from '../../components/sections/AddVehicle'
 import PurchaseInventory from '../../components/sections/PurchaseInventory'
@@ -49,7 +48,6 @@ const PurchaseDashboard = () => {
         onSectionChange={setActiveSection}
       />
       <div className="main-content">
-        <Topbar title={sectionTitles[activeSection] || 'Dashboard'} />
         <div className="content-section active">{renderSection()}</div>
       </div>
     </div>

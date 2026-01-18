@@ -14,7 +14,6 @@ import Login from './pages/Login'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
 import PurchaseDashboard from './pages/dashboards/PurchaseDashboard'
 import SalesDashboard from './pages/dashboards/SalesDashboard'
-import DeliveryDashboard from './pages/dashboards/DeliveryDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 
@@ -56,14 +55,6 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <SalesDashboard />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/delivery/*"
-                      element={
-                        <ProtectedRoute>
-                          <DeliveryDashboard />
                         </ProtectedRoute>
                       }
                     />

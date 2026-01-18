@@ -19,8 +19,7 @@ const Sidebar = ({ menuItems, activeSection, onSectionChange }) => {
     const roleNames = {
       admin: 'Administrator',
       purchase: 'Purchase Manager',
-      sales: 'Sales Manager',
-      delivery: 'Delivery Manager'
+      sales: 'Sales Manager'
     }
     return roleNames[role] || role
   }
