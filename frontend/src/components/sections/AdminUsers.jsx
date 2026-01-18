@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { Box } from '@mui/material'
 import { 
-  SectionHeader, 
-  SearchBar, 
-  FilterSelect, 
   DataTable, 
   LoadingState,
-  StatusBadge
+  StatusBadge,
+  EmptyState
 } from '../common'
 import { ActionButton } from '../forms'
 import { Edit as EditIcon, Delete as DeleteIcon, Lock as LockIcon } from '@mui/icons-material'
 import '../../styles/Sections.css'
+import '../../styles/main.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -318,49 +316,51 @@ const AdminUsers = () => {
 
   return (
     <div>
-      <SectionHeader
-        title="User Management"
-        description={
-          !loading ? (
-            <>
-              Manage user access and permissions | Total: <strong>{users.length}</strong> | Showing: <strong>{filteredUsers.length}</strong>
-            </>
-          ) : (
-            'Manage user access and permissions'
-          )
-        }
-        actionLabel="Add User"
-        actionIcon={<i className="fas fa-user-plus" />}
-        onAction={handleAddUser}
-      >
-        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-          <SearchBar
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Search users..."
-            fullWidth={false}
-            sx={{ minWidth: 250 }}
-          />
-          <FilterSelect
-            label="Status"
+      <div className="section-header">
+        <div>
+          <h2> User Management</h2>
+          <p>
+            {!loading ? (
+              <>
+                Manage user access and permissions | Total: <strong>{users.length}</strong> | Showing: <strong>{filteredUsers.length}</strong>
+              </>
+            ) : (
+              'Manage user access and permissions'
+            )}
+          </p>
+        </div>
+        <div className="header-actions">
+          <div className="search-box">
+            <i className="fas fa-search"></i>
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="filter-select"
             value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'All', label: 'All' },
-              { value: 'Active', label: 'Active' },
-              { value: 'Disabled', label: 'Disabled' }
-            ]}
-          />
-          <ActionButton
-            icon={<i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} />}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All</option>
+            <option value="Active">Active</option>
+            <option value="Disabled">Disabled</option>
+          </select>
+          <button className="btn btn-primary" onClick={handleAddUser}>
+            <i className="fas fa-user-plus"></i> Add User
+          </button>
+          <button 
+            className="btn btn-secondary" 
             onClick={loadUsers}
-            title="Refresh Users"
             disabled={loading}
-            variant="outlined"
-            color="primary"
-          />
-        </Box>
-      </SectionHeader>
+            title="Refresh Users"
+          >
+            <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
+          </button>
+        </div>
+      </div>
 
       {!token ? (
         <EmptyState
@@ -377,14 +377,14 @@ const AdminUsers = () => {
               key: 'name',
               label: 'Name',
               render: (user) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <img 
                     src={user.avatar} 
                     alt={user.name}
                     style={{ width: 32, height: 32, borderRadius: '50%' }}
                   />
                   <strong>{user.name}</strong>
-                </Box>
+                </div>
               )
             },
             { key: 'email', label: 'Email' },
@@ -408,7 +408,7 @@ const AdminUsers = () => {
               label: 'Actions',
               align: 'center',
               render: (user) => (
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                   <ActionButton
                     icon={<EditIcon />}
                     onClick={(e) => {
@@ -441,7 +441,7 @@ const AdminUsers = () => {
                     title={user.status === 'Active' ? 'Disable User' : 'Enable User'}
                     color={user.status === 'Active' ? 'danger' : 'success'}
                   />
-                </Box>
+                </div>
               )
             }
           ]}

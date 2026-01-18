@@ -161,7 +161,7 @@ const SalesOverview = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2><i className="fas fa-chart-line"></i> Sales Overview</h2>
+          <h2>Sales Overview</h2>
           <p>Track your sales performance and inventory at a glance</p>
         </div>
         <button className="btn btn-secondary" onClick={loadVehicles} title="Refresh">

@@ -26,7 +26,6 @@ import {
   Description as DescriptionIcon
 } from '@mui/icons-material'
 import {
-  SectionHeader,
   LoadingState,
   EmptyState,
   DataTable,
@@ -38,7 +37,8 @@ import {
   FormActions,
   SectionCard,
   VehicleImageDropzone,
-  VehicleDocumentDropzone
+  VehicleDocumentDropzone,
+  ActionButton
 } from '../forms'
 import {
   IMAGE_CATEGORIES,
@@ -473,18 +473,17 @@ const AdminActionRequired = () => {
 
   return (
     <div>
-      <SectionHeader
-        title="Action Required"
-        description={`Vehicles pending modification completion (${vehicles.length} vehicles)`}
-      >
-        <ActionButton
-          icon={<i className="fas fa-sync-alt" />}
-          onClick={loadVehicles}
-          title="Refresh"
-          variant="outlined"
-          color="primary"
-        />
-      </SectionHeader>
+      <div className="section-header">
+        <div>
+          <h2> Action Required</h2>
+          <p>Vehicles pending modification completion ({vehicles.length} vehicles)</p>
+        </div>
+        <div className="header-actions">
+          <button className="btn btn-secondary" onClick={loadVehicles} title="Refresh">
+            <i className="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
 
       {vehicles.length === 0 ? (
         <EmptyState

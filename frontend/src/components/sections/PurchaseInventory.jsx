@@ -102,7 +102,7 @@ const PurchaseInventory = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2><i className="fas fa-warehouse"></i> Vehicle Inventory</h2>
+          <h2> Vehicle Inventory</h2>
           <p>View and manage all purchased vehicles</p>
         </div>
         <div className="header-actions">

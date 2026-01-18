@@ -1,12 +1,10 @@
-import { DirectionsCar as CarIcon } from '@mui/icons-material'
-
 export const IMAGE_CATEGORIES = [
-  { key: 'front', label: 'Front View', icon: <CarIcon /> },
-  { key: 'back', label: 'Back View', icon: <CarIcon /> },
-  { key: 'right_side', label: 'Right Side', icon: <CarIcon /> },
-  { key: 'left_side', label: 'Left Side', icon: <CarIcon /> },
-  { key: 'interior', label: 'Interior', icon: <CarIcon /> },
-  { key: 'engine', label: 'Engine', icon: <CarIcon /> }
+  { key: 'front', label: 'Front View' },
+  { key: 'back', label: 'Back View' },
+  { key: 'right_side', label: 'Right Side' },
+  { key: 'left_side', label: 'Left Side' },
+  { key: 'interior', label: 'Interior' },
+  { key: 'engine', label: 'Engine' }
 ]
 
 export const DOCUMENT_TYPES = [

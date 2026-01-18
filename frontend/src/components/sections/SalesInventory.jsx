@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { Box, Button } from '@mui/material'
 import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
 import {
-  SectionHeader,
-  SearchBar,
-  FilterSelect,
   LoadingState,
   EmptyState,
   DataTable,
-  StatusBadge,
-  ViewToggle
+  StatusBadge
 } from '../common'
 import { ActionButton } from '../forms'
-import { CompareArrows as CompareIcon, Refresh as RefreshIcon } from '@mui/icons-material'
 import '../../styles/Sections.css'
+import '../../styles/main.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
@@ -370,50 +365,38 @@ const SalesInventory = () => {
 
   return (
     <div>
-      <SectionHeader
-        title="Available Inventory"
-        description={`View vehicles available for sale (${vehicles.length} vehicles)`}
-      >
-        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-          <SearchBar
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Search vehicles..."
-            fullWidth={false}
-            sx={{ minWidth: 250 }}
-          />
-          <FilterSelect
-            label="Status"
+      <div className="section-header">
+        <div>
+          <h2> Available Inventory</h2>
+          <p>View vehicles available for sale ({vehicles.length} vehicles)</p>
+        </div>
+        <div className="header-actions">
+          <div className="search-box">
+            <i className="fas fa-search"></i>
+            <input
+              type="text"
+              placeholder="Search vehicles..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="filter-select"
             value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'All', label: 'All Status' },
-              { value: 'In Stock', label: 'In Stock' },
-              { value: 'Reserved', label: 'Reserved' }
-            ]}
-          />
-          <Button
-            variant="contained"
-            startIcon={<CompareIcon />}
-            onClick={() => setShowCompareModal(true)}
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
-              }
-            }}
+            onChange={(e) => setStatusFilter(e.target.value)}
           >
-            Compare
-          </Button>
-          <ActionButton
-            icon={<RefreshIcon />}
-            onClick={() => loadVehicles(true)}
-            title="Refresh"
-            variant="outlined"
-            color="primary"
-          />
-        </Box>
-      </SectionHeader>
+            <option value="All">All Status</option>
+            <option value="In Stock">In Stock</option>
+            <option value="Reserved">Reserved</option>
+          </select>
+          <button className="btn btn-primary" onClick={() => setShowCompareModal(true)}>
+            <i className="fas fa-images"></i> Compare
+          </button>
+          <button className="btn btn-secondary" onClick={() => loadVehicles(true)} title="Refresh">
+            <i className="fas fa-sync-alt"></i>
+          </button>
+        </div>
+      </div>
 
       {loading ? (
         <LoadingState message="Loading vehicles..." />
@@ -450,7 +433,7 @@ const SalesInventory = () => {
               key: 'lastPrice',
               label: 'Last Price',
               render: (v) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ opacity: visibleLastPrices[v._id] ? 1 : 0.3 }}>
                     {visibleLastPrices[v._id] 
                       ? formatPrice(v.lastPrice || v.askingPrice) 
@@ -465,7 +448,7 @@ const SalesInventory = () => {
                       toggleLastPriceVisibility(v._id)
                     }}
                   />
-                </Box>
+                </div>
               )
             },
             {
@@ -478,7 +461,7 @@ const SalesInventory = () => {
               label: 'Actions',
               align: 'center',
               render: (v) => (
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
                   <ActionButton
                     icon={<i className="fas fa-eye" />}
                     onClick={(e) => {
@@ -498,7 +481,7 @@ const SalesInventory = () => {
                     title="Mark Sold"
                     color="success"
                   />
-                </Box>
+                </div>
               )
             }
           ]}

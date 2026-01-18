@@ -78,7 +78,7 @@ const AdminAgents = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2><i className="fas fa-handshake"></i> Agents</h2>
+          <h2> Agents</h2>
           <p>View agents and their vehicle purchase history ({agents.length} agents)</p>
         </div>
         <div className="header-actions">

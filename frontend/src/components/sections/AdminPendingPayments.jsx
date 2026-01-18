@@ -262,7 +262,7 @@ const AdminPendingPayments = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2><i className="fas fa-money-bill-wave"></i> Pending Payments</h2>
+          <h2> Pending Payments</h2>
           <p>Vehicles with outstanding payments ({vehicles.length} vehicles)</p>
         </div>
         <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
