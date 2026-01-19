@@ -10,20 +10,24 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/scripts/seedUsers.js",
-    "seed:dummy": "node src/scripts/seedDummyData.js",
-    "seed:test": "node src/scripts/seedTestData.js",
-    "cleanup:vehicles": "node src/scripts/cleanupVehicleData.js"
+    "seed": "node src/scripts/seedComprehensiveData.js",
+    "verify:db": "node src/scripts/verifyDatabase.js",
+    "cleanup:vehicles": "node src/scripts/cleanupVehicleData.js",
+    "reset:db": "node src/scripts/resetDatabase.js",
+    "reset:and:seed": "npm run reset:db && npm run seed",
+    "update:manufacturing-dates": "node src/scripts/updateVehicleManufacturingDates.js",
+    "verify:expenses": "node src/scripts/verifyExpensesData.js"
   },
   "dependencies": {
-    "express": "^4.21.2",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "mongoose": "^8.8.4",
-    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.4",
     "multer": "^1.4.5-lts.1",
-    "pdfkit": "^0.15.0"
+    "pdfkit": "^0.15.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

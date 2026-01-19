@@ -25,6 +25,7 @@ app.use('/api/auth', require('./routes/auth'))
 app.use('/api/users', require('./routes/users'))
 app.use('/api/vehicles', require('./routes/vehicles'))
 app.use('/api/agents', require('./routes/agents'))
+app.use('/api/reports', require('./routes/reports'))
 // Keep /api/dealers route for backward compatibility only (delegates to agents route - use /api/agents instead)
 app.use('/api/dealers', require('./routes/agents'))
 

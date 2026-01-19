@@ -167,14 +167,8 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       })
     }
 
-    // Validate purchase month/year or purchaseDate
-    if (!req.body.purchaseMonth || !req.body.purchaseYear) {
-      if (!req.body.purchaseDate) {
-        return res.status(400).json({ 
-          message: 'Purchase Month & Year or Purchase Date is required' 
-        })
-      }
-    }
+    // purchaseMonth and purchaseYear are now auto-set from createdAt
+    // No validation needed - they will be set automatically when vehicle is saved
 
     // Validate pincode format
     if (req.body.pincode && !/^\d{6}$/.test(req.body.pincode)) {
@@ -228,31 +222,35 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
     }
 
     // Handle purchase month and year
-    let purchaseMonth = null
-    let purchaseYear = null
-    if (req.body.purchaseMonth && req.body.purchaseYear) {
-      purchaseMonth = parseInt(req.body.purchaseMonth)
-      purchaseYear = parseInt(req.body.purchaseYear)
-      // Create purchaseDate as first day of the month for backward compatibility
-      if (!purchaseDate) {
-        purchaseDate = new Date(purchaseYear, purchaseMonth - 1, 1)
-      }
-    }
-
     // Get agentName from req.body (prefer agentName over legacy dealerName field)
     const finalAgentName = req.body.agentName || req.body.dealerName || agentName || ''
     const finalAgentPhone = req.body.agentPhone || req.body.dealerPhone || agentPhone || ''
     
-    // Calculate year from purchaseYear if year is not provided
+    // Get vehicle manufacturing month and year (from vehicleMonth/vehicleYear or year field)
+    let vehicleMonth = undefined
     let vehicleYear = undefined
-    if (req.body.year) {
+    
+    if (req.body.vehicleMonth) {
+      const parsedMonth = parseInt(req.body.vehicleMonth)
+      if (!isNaN(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12) {
+        vehicleMonth = parsedMonth
+      }
+    }
+    
+    if (req.body.vehicleYear) {
+      const parsedYear = parseInt(req.body.vehicleYear)
+      if (!isNaN(parsedYear) && parsedYear >= 1900) {
+        vehicleYear = parsedYear
+      }
+    } else if (req.body.year) {
       const parsedYear = parseInt(req.body.year)
       if (!isNaN(parsedYear) && parsedYear >= 1900) {
         vehicleYear = parsedYear
       }
-    } else if (purchaseYear) {
-      vehicleYear = purchaseYear // Use purchase year as vehicle year if not specified
     }
+    
+    // Purchase month and year will be auto-set from createdAt after vehicle creation
+    // No longer accepting purchaseMonth/purchaseYear as input
 
     // Create vehicle with all required fields
     const vehicleData = {
@@ -278,10 +276,19 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       createdBy: req.user._id
     }
     
-    // Only add year if it's valid (Mongoose validation requires it to be >= 1900)
+    // Add manufacturing month and year if valid
+    if (vehicleMonth && !isNaN(vehicleMonth) && vehicleMonth >= 1 && vehicleMonth <= 12) {
+      vehicleData.vehicleMonth = vehicleMonth
+    }
+    
     if (vehicleYear && !isNaN(vehicleYear) && vehicleYear >= 1900) {
+      vehicleData.vehicleYear = vehicleYear
+      // Also set year field for backward compatibility
       vehicleData.year = vehicleYear
     }
+
+    // purchaseMonth and purchaseYear will be auto-set from createdAt in pre-save hook
+    // No need to set them manually here
 
     // Process purchase payment methods - convert "NIL" to 0 for calculations
     const processedPaymentMethods = {}
@@ -311,13 +318,8 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
     })
     vehicleData.paymentMethod = paymentMethodParts.join(', ') || 'No payment method specified'
 
-    // Add purchase month and year if provided
-    if (purchaseMonth) {
-      vehicleData.purchaseMonth = purchaseMonth
-    }
-    if (purchaseYear) {
-      vehicleData.purchaseYear = purchaseYear
-    }
+    // purchaseMonth and purchaseYear are auto-set from createdAt in pre-save hook
+    // No need to set them manually here
 
     // Add owner type fields
     if (req.body.ownerType) {
@@ -512,7 +514,9 @@ router.get('/', authenticate, async (req, res) => {
     const vehicles = await Vehicle.find(query)
       .populate('createdBy', 'name email')
       .populate('modifiedBy', 'name email')
+      .populate('paymentSettlementHistory.settledBy', 'name email')
       .populate('purchaseNoteHistory.generatedBy', 'name email')
+      .populate('deliveryNoteHistory.generatedBy', 'name email')
       .sort({ createdAt: -1 })
 
     // Get images and documents for each vehicle
@@ -558,6 +562,9 @@ router.get('/:id', authenticate, async (req, res) => {
     const vehicle = await Vehicle.findById(req.params.id)
       .populate('createdBy', 'name email')
       .populate('modifiedBy', 'name email')
+      .populate('paymentSettlementHistory.settledBy', 'name email')
+      .populate('purchaseNoteHistory.generatedBy', 'name email')
+      .populate('deliveryNoteHistory.generatedBy', 'name email')
 
     if (!vehicle) {
       return res.status(404).json({ message: 'Vehicle not found' })
@@ -640,7 +647,7 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
     if (isAdmin) {
       // Admin can update all fields
       updateFields = [
-        'make', 'model', 'year', 'color', 'fuelType', 'kilometers',
+        'make', 'model', 'year', 'vehicleMonth', 'vehicleYear', 'color', 'fuelType', 'kilometers',
         'purchasePrice', 'askingPrice', 'lastPrice', 'purchaseDate', 'paymentMethod',
         'agentCommission', 'sellerName', 'sellerContact', 'agentName',
         'agentPhone', 'dealerName', 'dealerPhone', 'notes', 'status',
@@ -654,7 +661,8 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
         'chassisNo', 'engineNo',
         // Customer information
         'customerName', 'customerContact', 'customerAlternateContact', 'customerEmail',
-        'customerAddress', 'customerAadhaar', 'customerPAN', 'customerSource', 'saleDate',
+        'customerAddress', 'customerAddressLine1', 'customerDistrict', 'customerTaluka', 'customerPincode',
+        'customerAadhaar', 'customerPAN', 'customerSource', 'saleDate',
         // Payment details
         'paymentType', 'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan',
         'remainingAmount', 'saleNotes'
@@ -665,7 +673,8 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
         'lastPrice', 'status',
         // Customer information
         'customerName', 'customerContact', 'customerAlternateContact', 'customerEmail',
-        'customerAddress', 'customerAadhaar', 'customerPAN', 'customerSource', 'saleDate',
+        'customerAddress', 'customerAddressLine1', 'customerDistrict', 'customerTaluka', 'customerPincode',
+        'customerAadhaar', 'customerPAN', 'customerSource', 'saleDate',
         // Payment details
         'paymentType', 'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan',
         'remainingAmount', 'saleNotes'
@@ -718,11 +727,20 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
       vehicle.dealerPhone = vehicle.agentPhone // Keep legacy field in sync for backward compatibility
     }
 
+    // Store old values for settlement tracking (before updates)
+    const oldRemainingFromCustomer = parseFloat(vehicle.remainingAmount) || 0
+    const oldRemainingToSeller = parseFloat(vehicle.remainingAmountToSeller) || 0
+    const oldCash = parseFloat(vehicle.paymentCash) || 0
+    const oldBank = parseFloat(vehicle.paymentBankTransfer) || 0
+    const oldOnline = parseFloat(vehicle.paymentOnline) || 0
+    const oldLoan = parseFloat(vehicle.paymentLoan) || 0
+
     updateFields.forEach(field => {
       if (req.body[field] !== undefined) {
         // Additional restrictions for sales role
         if (isSales) {
           // Sales cannot modify purchase-related fields
+          // Note: purchaseMonth/purchaseYear are auto-set from createdAt, so they're not editable anyway
           if (['purchasePrice', 'askingPrice', 'purchaseDate', 'purchaseMonth', 'purchaseYear',
                'paymentMethod', 'purchasePaymentMethods', 'agentCommission', 'agentPhone',
                'sellerName', 'sellerContact', 'dealerName', 'dealerPhone', 'ownerType', 
@@ -747,8 +765,27 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
           return // Skip agent commission and phone update for non-admin
         }
 
-        if (field === 'year' || field === 'purchaseMonth' || field === 'purchaseYear') {
-          vehicle[field] = parseInt(req.body[field])
+        // purchaseMonth and purchaseYear are auto-set from createdAt, don't allow manual editing
+        if (field === 'purchaseMonth' || field === 'purchaseYear') {
+          return // Skip - these are auto-set from createdAt
+        }
+        
+        if (field === 'year' || field === 'vehicleYear') {
+          const parsedValue = parseInt(req.body[field])
+          if (!isNaN(parsedValue) && parsedValue >= 1900) {
+            vehicle[field] = parsedValue
+            // Keep year and vehicleYear in sync
+            if (field === 'vehicleYear') {
+              vehicle.year = parsedValue
+            } else if (field === 'year') {
+              vehicle.vehicleYear = parsedValue
+            }
+          }
+        } else if (field === 'vehicleMonth') {
+          const parsedValue = parseInt(req.body[field])
+          if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 12) {
+            vehicle[field] = parsedValue
+          }
         } else if (['purchasePrice', 'askingPrice', 'lastPrice', 'agentCommission', 
                      'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan', 
                      'remainingAmount', 'remainingAmountToSeller', 'modificationCost'].includes(field)) {
@@ -781,6 +818,15 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
           vehicle[field] = req.body[field]?.trim() || ''
           // Keep legacy dealerPhone field in sync with agentPhone (use agentPhone instead)
           vehicle.dealerPhone = vehicle.agentPhone
+        } else if (field === 'customerPincode') {
+          // Validate pincode format (6 digits)
+          const pincode = req.body[field]?.trim() || ''
+          if (pincode && !/^\d{6}$/.test(pincode)) {
+            return res.status(400).json({ 
+              message: 'Customer pincode must be exactly 6 digits' 
+            })
+          }
+          vehicle[field] = pincode
         } else if (field === 'chassisNo') {
           // Admin-only field with audit logging
           const oldValue = vehicle.chassisNo || ''
@@ -826,6 +872,68 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
     // For sales role, also update modifiedBy
     if (isSales) {
       vehicle.modifiedBy = req.user._id
+    }
+
+    // Track payment settlements for audit (after all fields are updated)
+    const newRemainingFromCustomer = parseFloat(vehicle.remainingAmount) || 0
+    const newRemainingToSeller = parseFloat(vehicle.remainingAmountToSeller) || 0
+    const newCash = parseFloat(vehicle.paymentCash) || 0
+    const newBank = parseFloat(vehicle.paymentBankTransfer) || 0
+    const newOnline = parseFloat(vehicle.paymentOnline) || 0
+    const newLoan = parseFloat(vehicle.paymentLoan) || 0
+
+    // Track settlement when remaining amount from customer decreases
+    if (oldRemainingFromCustomer > newRemainingFromCustomer && oldRemainingFromCustomer > 0) {
+      const settlementAmount = oldRemainingFromCustomer - newRemainingFromCustomer
+      
+      // Determine payment mode by checking which payment method increased
+      let paymentMode = 'cash' // default
+      if (newCash > oldCash) paymentMode = 'cash'
+      else if (newBank > oldBank) paymentMode = 'bankTransfer'
+      else if (newOnline > oldOnline) paymentMode = 'online'
+      else if (newLoan > oldLoan) paymentMode = 'loan'
+      
+      // Initialize settlement history if it doesn't exist
+      if (!vehicle.paymentSettlementHistory) {
+        vehicle.paymentSettlementHistory = []
+      }
+      
+      // Add settlement record
+      vehicle.paymentSettlementHistory.push({
+        settlementType: 'FROM_CUSTOMER',
+        amount: settlementAmount,
+        paymentMode,
+        settledBy: req.user._id,
+        settledAt: new Date(),
+        notes: req.body.settlementNotes || ''
+      })
+    }
+
+    // Track settlement when remaining amount to seller decreases
+    if (oldRemainingToSeller > newRemainingToSeller && oldRemainingToSeller > 0) {
+      const settlementAmount = oldRemainingToSeller - newRemainingToSeller
+      
+      // Determine payment mode by checking which payment method increased
+      let paymentMode = 'cash' // default
+      if (newCash > oldCash) paymentMode = 'cash'
+      else if (newBank > oldBank) paymentMode = 'bankTransfer'
+      else if (newOnline > oldOnline) paymentMode = 'online'
+      else if (newLoan > oldLoan) paymentMode = 'loan'
+      
+      // Initialize settlement history if it doesn't exist
+      if (!vehicle.paymentSettlementHistory) {
+        vehicle.paymentSettlementHistory = []
+      }
+      
+      // Add settlement record
+      vehicle.paymentSettlementHistory.push({
+        settlementType: 'TO_SELLER',
+        amount: settlementAmount,
+        paymentMode,
+        settledBy: req.user._id,
+        settledAt: new Date(),
+        notes: req.body.settlementNotes || ''
+      })
     }
 
     // Handle security cheque payment
@@ -973,6 +1081,7 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
     const updatedVehicle = await Vehicle.findById(vehicle._id)
       .populate('createdBy', 'name email')
       .populate('modifiedBy', 'name email')
+      .populate('paymentSettlementHistory.settledBy', 'name email')
       .lean()
 
     // Get images sorted by order (for after-modification) or by creation date (for before-modification)
@@ -1011,6 +1120,7 @@ router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), a
     const vehicle = await Vehicle.findById(req.params.id)
       .populate('createdBy', 'name email')
       .populate('modifiedBy', 'name email')
+      .populate('paymentSettlementHistory.settledBy', 'name email')
 
     if (!vehicle) {
       return res.status(404).json({ message: 'Vehicle not found' })
@@ -1043,6 +1153,66 @@ router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), a
     doc.end()
   } catch (error) {
     console.error('Generate purchase note error:', error)
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+})
+
+// @route   GET /api/vehicles/:id/delivery-note
+// @desc    Generate and download delivery note PDF
+// @access  Private (Sales Manager for own vehicles, Admin for all)
+// @query   downloadOnly - If true, only downloads without creating new history entry
+router.get('/:id/delivery-note', authenticate, authorize('sales', 'admin'), async (req, res) => {
+  try {
+    const { downloadOnly } = req.query
+    const isDownloadOnly = downloadOnly === 'true'
+    
+    // Fetch vehicle with populated fields
+    const vehicle = await Vehicle.findById(req.params.id)
+      .populate('createdBy', 'name email')
+      .populate('modifiedBy', 'name email')
+      .populate('paymentSettlementHistory.settledBy', 'name email')
+      .populate('deliveryNoteHistory.generatedBy', 'name email')
+
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' })
+    }
+
+    // Check if vehicle is sold (delivery notes can only be generated for sold vehicles)
+    if (vehicle.status !== 'Sold') {
+      return res.status(400).json({ message: 'Delivery notes can only be generated for sold vehicles' })
+    }
+
+    // Check if sales manager can access this vehicle (only their own vehicles)
+    if (req.user.role === 'sales') {
+      const createdById = vehicle.createdBy?._id?.toString() || vehicle.createdBy?.toString()
+      if (createdById !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'You can only generate delivery notes for vehicles you added' })
+      }
+    }
+
+    // Import delivery note history service
+    const { saveHistoryIfNeeded } = require('../services/deliveryNoteHistoryService')
+    
+    // Save history if needed (handles role-based logic internally)
+    await saveHistoryIfNeeded(vehicle, req.user, isDownloadOnly)
+
+    // Generate PDF filename
+    const filename = `Delivery_Note_${vehicle.vehicleNo}_${Date.now()}.pdf`
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+
+    // Generate PDF using service
+    const DeliveryNotePDFService = require('../services/deliveryNotePDFService')
+    const pdfService = new DeliveryNotePDFService()
+    const doc = pdfService.generatePDF(vehicle)
+    
+    // Pipe PDF to response
+    doc.pipe(res)
+    doc.end()
+  } catch (error) {
+    console.error('Generate delivery note error:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })

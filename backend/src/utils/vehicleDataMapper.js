@@ -23,9 +23,11 @@ const mapVehicleToPurchaseNoteData = (vehicle) => {
   // Generate note number
   const noteNo = `PN-${vehicle.vehicleNo.replace(/-/g, '')}-${Date.now().toString().slice(-6)}`
   
-  // Date information
-  const purchaseDate = formatDate(vehicle.purchaseDate)
-  const purchaseDateTime = formatDateTime(vehicle.purchaseDate || new Date())
+  // Date information - use createdAt (when vehicle was added to system) for purchase note
+  // This ensures the date/time reflects when the vehicle was actually purchased/added
+  const purchaseNoteDate = vehicle.createdAt || vehicle.purchaseDate || new Date()
+  const purchaseDate = formatDate(purchaseNoteDate)
+  const purchaseDateTime = formatDateTime(purchaseNoteDate)
   
   // Vehicle information
   const vehicleModel = `${vehicle.make} ${vehicle.model || ''}`.trim()

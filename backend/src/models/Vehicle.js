@@ -35,6 +35,16 @@ const vehicleSchema = new mongoose.Schema({
     min: [1900, 'Year must be after 1900'],
     max: [new Date().getFullYear() + 1, 'Year cannot be in the future']
   },
+  vehicleMonth: {
+    type: Number,
+    min: [1, 'Month must be between 1 and 12'],
+    max: [12, 'Month must be between 1 and 12']
+  },
+  vehicleYear: {
+    type: Number,
+    min: [1900, 'Year must be after 1900'],
+    max: [new Date().getFullYear() + 1, 'Year cannot be in the future']
+  },
   color: {
     type: String,
     trim: true
@@ -236,6 +246,23 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  customerAddressLine1: {
+    type: String,
+    trim: true
+  },
+  customerDistrict: {
+    type: String,
+    trim: true
+  },
+  customerTaluka: {
+    type: String,
+    trim: true
+  },
+  customerPincode: {
+    type: String,
+    trim: true,
+    match: [/^\d{6}$/, 'Pincode must be exactly 6 digits']
+  },
   customerAadhaar: {
     type: String,
     trim: true
@@ -352,6 +379,37 @@ const vehicleSchema = new mongoose.Schema({
     }],
     default: undefined // Don't create empty array by default
   },
+  // Delivery note generation history
+  // Tracks when delivery notes were generated for this vehicle (sales managers only)
+  deliveryNoteHistory: {
+    type: [{
+      generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      generatedAt: { type: Date, default: Date.now },
+      filename: { type: String, trim: true }
+    }],
+    default: undefined // Don't create empty array by default
+  },
+  // Payment settlement history
+  // Tracks when pending payments were settled and how they were paid
+  paymentSettlementHistory: {
+    type: [{
+      settlementType: { 
+        type: String, 
+        enum: ['FROM_CUSTOMER', 'TO_SELLER'], 
+        required: true 
+      }, // FROM_CUSTOMER: Customer paid remaining amount, TO_SELLER: Company paid seller
+      amount: { type: Number, required: true, min: [0, 'Settlement amount cannot be negative'] },
+      paymentMode: { 
+        type: String, 
+        enum: ['cash', 'bankTransfer', 'online', 'loan'], 
+        required: true 
+      },
+      settledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      settledAt: { type: Date, default: Date.now },
+      notes: { type: String, trim: true } // Optional notes about the settlement
+    }],
+    default: undefined // Don't create empty array by default
+  },
   // Soft deletion audit
   deletedAt: {
     type: Date
@@ -362,6 +420,26 @@ const vehicleSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically
+})
+
+// Pre-save hook to auto-set purchaseMonth and purchaseYear from createdAt if not already set
+vehicleSchema.pre('save', function(next) {
+  // Auto-set purchaseMonth and purchaseYear from createdAt (when vehicle was added to system)
+  // This happens automatically for all new vehicles
+  // For existing vehicles, only update if not already set (allows manual override if needed)
+  if (!this.purchaseMonth || !this.purchaseYear) {
+    // Priority: purchaseDate > createdAt > current date
+    const dateToUse = this.purchaseDate || this.createdAt || new Date()
+    const date = new Date(dateToUse)
+    this.purchaseMonth = date.getMonth() + 1
+    this.purchaseYear = date.getFullYear()
+    
+    // Also set purchaseDate if not already set (for consistency)
+    if (!this.purchaseDate) {
+      this.purchaseDate = new Date(dateToUse)
+    }
+  }
+  next()
 })
 
 // Index for faster queries
