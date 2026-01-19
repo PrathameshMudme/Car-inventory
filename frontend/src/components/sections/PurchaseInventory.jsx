@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import VehicleDetails from '../VehicleDetails'
-import Modal from '../Modal'
+import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -14,7 +14,7 @@ const PurchaseInventory = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('All')
   const [selectedVehicle, setSelectedVehicle] = useState(null)
-  const [showVehicleModal, setShowVehicleModal] = useState(false)
+  const [showVehicleFullPage, setShowVehicleFullPage] = useState(false)
   const { showToast } = useToast()
   const { token, user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -53,7 +53,7 @@ const PurchaseInventory = () => {
 
   const handleViewDetails = (vehicle) => {
     setSelectedVehicle(vehicle)
-    setShowVehicleModal(true)
+    setShowVehicleFullPage(true)
   }
 
   const getStatusBadgeClass = (status) => {
@@ -154,13 +154,13 @@ const PurchaseInventory = () => {
               <TableCell>Purchase Date</TableCell>
               <TableCell>Documents</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell align="center">Actions</TableCell>
+              {isAdmin && <TableCell align="center">Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredVehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 8 : 7} sx={{ textAlign: 'center', padding: '40px' }}>
+                <TableCell colSpan={isAdmin ? 8 : 6} sx={{ textAlign: 'center', padding: '40px' }}>
                   <i className="fas fa-search" style={{ fontSize: '32px', color: '#ccc', marginBottom: '10px', display: 'block' }}></i>
                   No vehicles match your search criteria
                 </TableCell>
@@ -169,8 +169,14 @@ const PurchaseInventory = () => {
               filteredVehicles.map((vehicle) => {
                 const docStatus = getDocumentStatus(vehicle)
                 return (
-                  <TableRow key={vehicle._id}>
-                    <TableCell><strong>{vehicle.vehicleNo}</strong></TableCell>
+                  <TableRow 
+                    key={vehicle._id}
+                    onClick={() => handleViewDetails(vehicle)}
+                    style={{ cursor: 'pointer' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <TableCell><strong>{formatVehicleNumber(vehicle.vehicleNo)}</strong></TableCell>
                     <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
                     <TableCell>{vehicle.year || 'N/A'}</TableCell>
                     {isAdmin && (
@@ -187,15 +193,11 @@ const PurchaseInventory = () => {
                         {vehicle.status}
                       </span>
                     </TableCell>
-                    <TableCell align="center">
-                      <button
-                        className="btn-icon-small"
-                        onClick={() => handleViewDetails(vehicle)}
-                        title="View Details"
-                      >
-                        <i className="fas fa-eye"></i>
-                      </button>
-                    </TableCell>
+                    {isAdmin && (
+                      <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                        <i className="fas fa-chevron-right" style={{ color: '#999' }}></i>
+                      </TableCell>
+                    )}
                   </TableRow>
                 )
               })
@@ -204,14 +206,16 @@ const PurchaseInventory = () => {
         </Table>
       )}
 
-      <Modal
-        isOpen={showVehicleModal}
-        onClose={() => setShowVehicleModal(false)}
-        title="Vehicle Details"
-        size="large"
-      >
-        {selectedVehicle && <VehicleDetails vehicle={selectedVehicle} />}
-      </Modal>
+      {/* Vehicle Details Full Page */}
+      {showVehicleFullPage && selectedVehicle && (
+        <VehicleDetailsFullPage
+          vehicle={selectedVehicle}
+          onClose={() => {
+            setShowVehicleFullPage(false)
+            setSelectedVehicle(null)
+          }}
+        />
+      )}
     </div>
   )
 }

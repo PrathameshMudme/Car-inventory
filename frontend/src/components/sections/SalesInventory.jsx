@@ -3,6 +3,7 @@ import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import {
   LoadingState,
   EmptyState,
@@ -230,10 +231,15 @@ const SalesInventory = () => {
       
       // Payment information
       formData.append('paymentType', 'custom')
-      formData.append('paymentCash', parseFloat(saleFormData.paymentCash) || 0)
-      formData.append('paymentBankTransfer', parseFloat(saleFormData.paymentBankTransfer) || 0)
-      formData.append('paymentOnline', parseFloat(saleFormData.paymentOnline) || 0)
-      formData.append('paymentLoan', parseFloat(saleFormData.paymentLoan) || 0)
+      // For sale payments, 0 is valid (means no payment in that mode), so send 0 instead of "NIL"
+      const cash = saleFormData.paymentCash && saleFormData.paymentCash.trim() !== '' ? parseFloat(saleFormData.paymentCash) : 0
+      const bankTransfer = saleFormData.paymentBankTransfer && saleFormData.paymentBankTransfer.trim() !== '' ? parseFloat(saleFormData.paymentBankTransfer) : 0
+      const online = saleFormData.paymentOnline && saleFormData.paymentOnline.trim() !== '' ? parseFloat(saleFormData.paymentOnline) : 0
+      const loan = saleFormData.paymentLoan && saleFormData.paymentLoan.trim() !== '' ? parseFloat(saleFormData.paymentLoan) : 0
+      formData.append('paymentCash', isNaN(cash) ? 0 : cash)
+      formData.append('paymentBankTransfer', isNaN(bankTransfer) ? 0 : bankTransfer)
+      formData.append('paymentOnline', isNaN(online) ? 0 : online)
+      formData.append('paymentLoan', isNaN(loan) ? 0 : loan)
       
       // Security cheque
       if (saleFormData.securityCheque.enabled) {
@@ -412,7 +418,7 @@ const SalesInventory = () => {
             { 
               key: 'vehicleNo', 
               label: 'Vehicle No.', 
-              render: (v) => <strong>{v.vehicleNo}</strong> 
+              render: (v) => <strong>{formatVehicleNumber(v.vehicleNo)}</strong> 
             },
             { 
               key: 'makeModel', 
@@ -461,16 +467,7 @@ const SalesInventory = () => {
               label: 'Actions',
               align: 'center',
               render: (v) => (
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                  <ActionButton
-                    icon={<i className="fas fa-eye" />}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleViewDetails(v)
-                    }}
-                    title="View"
-                    color="view"
-                  />
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                   <ActionButton
                     icon={<i className="fas fa-check-circle" />}
                     onClick={(e) => {
@@ -515,7 +512,7 @@ const SalesInventory = () => {
         <form onSubmit={handleMarkAsSold}>
           {selectedVehicle && (
             <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px', marginBottom: '20px' }}>
-              <strong>{selectedVehicle.vehicleNo}</strong> - {selectedVehicle.make} {selectedVehicle.model || ''}
+              <strong>{formatVehicleNumber(selectedVehicle.vehicleNo)}</strong> - {selectedVehicle.make} {selectedVehicle.model || ''}
               {selectedVehicle.askingPrice && (
                 <div style={{ marginTop: '8px', color: '#6c757d', fontSize: '14px' }}>
                   Asking Price: ₹{selectedVehicle.askingPrice.toLocaleString('en-IN')}
@@ -654,7 +651,7 @@ const SalesInventory = () => {
               <label>Cash</label>
               <input 
                 type="number" 
-                placeholder="0" 
+                placeholder="NIL" 
                 min="0"
                 value={saleFormData.paymentCash}
                 onChange={(e) => handleSaleFormChange('paymentCash', e.target.value)}
@@ -664,7 +661,7 @@ const SalesInventory = () => {
               <label>Bank Transfer (RTGS/NEFT)</label>
               <input 
                 type="number" 
-                placeholder="0" 
+                placeholder="NIL" 
                 min="0"
                 value={saleFormData.paymentBankTransfer}
                 onChange={(e) => handleSaleFormChange('paymentBankTransfer', e.target.value)}
@@ -674,7 +671,7 @@ const SalesInventory = () => {
               <label>Online (UPI)</label>
               <input 
                 type="number" 
-                placeholder="0" 
+                placeholder="NIL" 
                 min="0"
                 value={saleFormData.paymentOnline}
                 onChange={(e) => handleSaleFormChange('paymentOnline', e.target.value)}
@@ -684,7 +681,7 @@ const SalesInventory = () => {
               <label>By Loan</label>
               <input 
                 type="number" 
-                placeholder="0" 
+                placeholder="NIL" 
                 min="0"
                 value={saleFormData.paymentLoan}
                 onChange={(e) => handleSaleFormChange('paymentLoan', e.target.value)}
@@ -758,7 +755,7 @@ const SalesInventory = () => {
                   <label>Cheque Amount <span className="required">*</span></label>
                   <input 
                     type="number" 
-                    placeholder="0" 
+                    placeholder="NIL" 
                     min="0"
                     value={saleFormData.securityCheque.amount}
                     onChange={(e) => handleSaleFormChange('securityCheque.amount', e.target.value)}
@@ -884,7 +881,7 @@ const SalesInventory = () => {
               <option value="">Choose a vehicle...</option>
               {vehicles.map(v => (
                 <option key={v._id} value={v._id}>
-                  {v.vehicleNo} - {v.make} {v.model || ''} {v.year || ''}
+                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {v.year || ''}
                 </option>
               ))}
             </select>
@@ -897,7 +894,7 @@ const SalesInventory = () => {
         {selectedVehicle && compareVehicle && (
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {selectedVehicle.vehicleNo}</h3>
+              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
               <StatusBadge status={selectedVehicle.status} />
             </div>
 

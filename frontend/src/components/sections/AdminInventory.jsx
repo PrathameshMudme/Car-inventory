@@ -13,6 +13,7 @@ import {
 } from '../common'
 import { ActionButton } from '../forms'
 import { Edit as EditIcon, Delete as DeleteIcon, CompareArrows as CompareIcon, Refresh as RefreshIcon } from '@mui/icons-material'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import '../../styles/Sections.css'
 import '../../styles/main.css'
 
@@ -83,7 +84,7 @@ const AdminInventory = () => {
   const handleDeleteVehicle = async (vehicle, e) => {
     e.stopPropagation() // Prevent row click from triggering
     
-    if (!window.confirm(`Are you sure you want to delete vehicle ${vehicle.vehicleNo}? This action cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete vehicle ${formatVehicleNumber(vehicle.vehicleNo)}? This action cannot be undone.`)) {
       return
     }
 
@@ -139,7 +140,7 @@ const AdminInventory = () => {
 
 
   const formatPrice = (price) => {
-    if (!price) return 'N/A'
+    if (!price || price === 0) return 'NIL'
     if (price >= 100000) {
       return `₹${(price / 100000).toFixed(1)}L`
     }
@@ -164,8 +165,10 @@ const AdminInventory = () => {
     if (frontImage) return `${API_URL.replace('/api', '')}${frontImage.imageUrl}`
     if (firstImage) return `${API_URL.replace('/api', '')}${firstImage.imageUrl}`
     
-    // Default placeholder
-    return `https://via.placeholder.com/400x250?text=${vehicle.make}+${vehicle.model || ''}`
+    // Default placeholder - use data URI instead of external service
+    const placeholderText = `${vehicle.make} ${vehicle.model || ''}`.trim() || 'Vehicle'
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250"><rect width="400" height="250" fill="#e2e8f0"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#64748b" text-anchor="middle" dominant-baseline="middle">${placeholderText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text></svg>`
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
   }
 
   const filteredVehicles = vehicles.filter(vehicle => {
@@ -212,7 +215,7 @@ const AdminInventory = () => {
   }
 
   const tableColumns = [
-    { key: 'vehicleNo', label: 'Vehicle No.', render: (v) => <strong>{v.vehicleNo}</strong> },
+    { key: 'vehicleNo', label: 'Vehicle No.', render: (v) => <strong>{formatVehicleNumber(v.vehicleNo)}</strong> },
     { key: 'makeModel', label: 'Make/Model', render: (v) => `${v.make} ${v.model || ''}`.trim() },
     { key: 'year', label: 'Year', render: (v) => v.year || 'N/A' },
     { key: 'purchasePrice', label: 'Purchase Price', render: (v) => formatPrice(v.purchasePrice) },
@@ -253,14 +256,17 @@ const AdminInventory = () => {
     ...(vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) ? [{
       key: 'remainingAmount',
       label: 'Remaining Amount',
-      render: (v) => v.status === 'Sold' && v.remainingAmount > 0 ? formatPrice(v.remainingAmount) : 'N/A'
+      render: (v) => v.status === 'Sold' && v.remainingAmount > 0 ? formatPrice(v.remainingAmount) : 'NIL'
     }] : []),
     {
       key: 'actions',
       label: 'Actions',
       align: 'center',
       render: (v) => (
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+        <div 
+          style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <ActionButton
             icon={<EditIcon />}
             onClick={(e) => {
@@ -336,25 +342,32 @@ const AdminInventory = () => {
           {viewType === 'grid' && (
             <div className="vehicle-grid active">
               {filteredVehicles.map((vehicle) => (
-                <div key={vehicle._id} className="vehicle-card">
+                <div 
+                  key={vehicle._id} 
+                  className="vehicle-card"
+                  onClick={() => handleViewDetails(vehicle)}
+                  style={{ cursor: 'pointer' }}
+                >
                     <div className="vehicle-card-image">
                     <img src={getVehicleImage(vehicle)} alt={`${vehicle.make} ${vehicle.model || ''}`} />
                     <div style={{ position: 'absolute', top: 10, right: 10 }}>
                       <StatusBadge status={vehicle.status} />
                     </div>
                     <div className="vehicle-card-overlay">
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={() => handleViewDetails(vehicle)}
-                      >
-                        <i className="fas fa-eye"></i> View Details
-                      </button>
+                      <div style={{ 
+                        color: 'white', 
+                        textAlign: 'center',
+                        padding: '20px'
+                      }}>
+                        <i className="fas fa-eye" style={{ fontSize: '32px', marginBottom: '10px', display: 'block' }}></i>
+                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Click to View Details</p>
+                      </div>
                     </div>
                   </div>
                   <div className="vehicle-card-content">
                     <div className="vehicle-card-header">
                       <h3>{vehicle.make} {vehicle.model || ''} {vehicle.year || ''}</h3>
-                      <span className="vehicle-number">{vehicle.vehicleNo}</span>
+                      <span className="vehicle-number">{formatVehicleNumber(vehicle.vehicleNo)}</span>
                     </div>
                     <div className="vehicle-card-specs">
                       <span><i className="fas fa-tachometer-alt"></i> {vehicle.kilometers || 'N/A'} km</span>
@@ -377,7 +390,7 @@ const AdminInventory = () => {
                         </strong>
                       </div>
                     </div>
-                    <div className="vehicle-card-actions">
+                    <div className="vehicle-card-actions" onClick={(e) => e.stopPropagation()}>
                       <ActionButton
                         icon={<EditIcon />}
                         onClick={(e) => {
@@ -472,7 +485,7 @@ const AdminInventory = () => {
               <option value="">Choose a vehicle...</option>
               {vehicles.map(v => (
                 <option key={v._id} value={v._id}>
-                  {v.vehicleNo} - {v.make} {v.model || ''} {v.year || ''}
+                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {v.year || ''}
                 </option>
               ))}
             </select>
@@ -485,7 +498,7 @@ const AdminInventory = () => {
         {selectedVehicle && compareVehicle && (
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {selectedVehicle.vehicleNo}</h3>
+              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
               <span className={`badge ${getStatusBadgeClass(selectedVehicle.status)}`}>
                 {selectedVehicle.status}
               </span>

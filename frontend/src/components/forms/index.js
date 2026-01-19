@@ -10,3 +10,12 @@ export { default as ActionButton } from './ActionButton'
 export { default as SectionCard } from './SectionCard'
 export { default as VehicleImageDropzone } from './VehicleImageDropzone'
 export { default as VehicleDocumentDropzone } from './VehicleDocumentDropzone'
+
+// Shared form sections
+export { default as VehicleInformationSection } from './VehicleInformationSection'
+export { default as PurchaseDetailsSection } from './PurchaseDetailsSection'
+export { default as PurchasePaymentSection } from './PurchasePaymentSection'
+export { default as SellerDetailsSection } from './SellerDetailsSection'
+export { default as AddressDetailsSection } from './AddressDetailsSection'
+export { default as VehicleImagesSection } from './VehicleImagesSection'
+export { default as VehicleDocumentsSection } from './VehicleDocumentsSection'

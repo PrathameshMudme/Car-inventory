@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
+import { formatVehicleNumber } from '../utils/formatUtils'
 import '../styles/VehicleDetails.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -26,16 +27,17 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
   })
   const allImages = sortedImages.map(img => `${API_URL.replace('/api', '')}${img.imageUrl}`)
   
-  // Fallback placeholder if no images
-  const displayImages = allImages.length > 0 ? allImages : [
-    `https://via.placeholder.com/600x400?text=${encodeURIComponent(vehicle.make + ' ' + (vehicle.model || ''))}`
-  ]
+  // Fallback placeholder if no images - use data URI instead of external service
+  const placeholderText = `${vehicle.make} ${vehicle.model || ''}`.trim() || 'Vehicle'
+  const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="#e2e8f0"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="24" fill="#64748b" text-anchor="middle" dominant-baseline="middle">${placeholderText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text></svg>`
+  const placeholderDataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(placeholderSvg)}`
+  const displayImages = allImages.length > 0 ? allImages : [placeholderDataUri]
 
   // Get documents from vehicle data
   const vehicleDocuments = vehicle.documents || []
 
-  const formatPrice = (price) => {
-    if (!price) return 'N/A'
+  const formatPrice = (price, isPayment = false) => {
+    if (!price || price === 0) return isPayment ? 'NIL' : 'N/A'
     return `₹${price.toLocaleString('en-IN')}`
   }
 
@@ -140,7 +142,7 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
         <div className="info-grid">
           <div className="info-item">
             <label>Vehicle Number</label>
-            <strong>{vehicle.vehicleNo}</strong>
+            <strong>{formatVehicleNumber(vehicle.vehicleNo)}</strong>
           </div>
           <div className="info-item">
             <label>Chassis Number</label>
@@ -170,45 +172,60 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
             <label>Kilometers</label>
             <strong>{vehicle.kilometers ? `${vehicle.kilometers} km` : 'N/A'}</strong>
           </div>
+          {/* Purchase Date - Show in Basic Information for Purchase Managers, otherwise in Financial Details */}
+          {isPurchaseManager && (
+            <div className="info-item">
+              <label>Purchase Date</label>
+              <strong>{formatDate(vehicle.purchaseDate)}</strong>
+            </div>
+          )}
         </div>
 
-        <h3><i className="fas fa-rupee-sign"></i> Financial Details</h3>
-        <div className="info-grid">
-          {isAdmin && vehicle.purchasePrice !== undefined && (
-            <div className="info-item">
-              <label>Purchase Price</label>
-              <strong>{formatPrice(vehicle.purchasePrice)}</strong>
-            </div>
-          )}
-          {!isPurchaseManager && (
-            <div className="info-item">
-              <label>Asking Price</label>
-              <strong>{formatPrice(vehicle.askingPrice)}</strong>
-            </div>
-          )}
-          <div className="info-item">
-            <label>Purchase Date</label>
-            <strong>{formatDate(vehicle.purchaseDate)}</strong>
-          </div>
-          {!isSalesManager && !isPurchaseManager && (
-            <>
-              <div className="info-item">
-                <label>Payment Method</label>
-                <strong>{vehicle.paymentMethod || 'N/A'}</strong>
-              </div>
-              <div className="info-item">
-                <label>Agent Commission</label>
-                <strong>{formatPrice(vehicle.agentCommission)}</strong>
-              </div>
-              {vehicle.agentPhone && (
+        {/* Financial Details - Hidden for Purchase Managers */}
+        {!isPurchaseManager && (
+          <>
+            <h3><i className="fas fa-rupee-sign"></i> Financial Details</h3>
+            <div className="info-grid">
+              {isAdmin && vehicle.purchasePrice !== undefined && (
                 <div className="info-item">
-                  <label>Agent Phone</label>
-                  <strong>{vehicle.agentPhone}</strong>
+                  <label>Purchase Price</label>
+                  <strong>{formatPrice(vehicle.purchasePrice)}</strong>
                 </div>
               )}
-            </>
-          )}
-        </div>
+              {!isPurchaseManager && vehicle.askingPrice && (
+                <div className="info-item">
+                  <label>Asking Price</label>
+                  <strong>{formatPrice(vehicle.askingPrice)}</strong>
+                </div>
+              )}
+              {/* Purchase Date - Admin and Sales only (Purchase Managers see it in Basic Information) */}
+              {!isPurchaseManager && (
+                <div className="info-item">
+                  <label>Purchase Date</label>
+                  <strong>{formatDate(vehicle.purchaseDate)}</strong>
+                </div>
+              )}
+              {!isSalesManager && !isPurchaseManager && (
+                <>
+                  <div className="info-item">
+                    <label>Payment Method</label>
+                    <strong>{vehicle.paymentMethod || 'N/A'}</strong>
+                  </div>
+                  <div className="info-item">
+                    <label>Agent Commission</label>
+                    <strong>{formatPrice(vehicle.agentCommission, true)}</strong>
+                  </div>
+                  {vehicle.agentPhone && (
+                    <div className="info-item">
+                      <label>Agent Phone</label>
+                      <strong>{vehicle.agentPhone}</strong>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {!isSalesManager && !isPurchaseManager && (vehicle.sellerName || vehicle.agentName || vehicle.dealerName) && (
           <>

@@ -19,7 +19,7 @@ const capitalizeName = (name) => {
 // @access  Private (Admin)
 router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
-    // Get all vehicles with agent info (prefer agentName, fallback to dealerName for backward compat)
+    // Get all vehicles with agent info (prefer agentName, fallback to legacy dealerName field for backward compat)
     const vehicles = await Vehicle.find({
       $or: [
         { agentName: { $exists: true, $ne: null, $ne: '' } },
@@ -31,7 +31,7 @@ router.get('/', authenticate, authorize('admin'), async (req, res) => {
     const agentMap = new Map()
 
     vehicles.forEach(vehicle => {
-      // Prefer agentName, fallback to dealerName for backward compatibility
+      // Prefer agentName, fallback to legacy dealerName field for backward compatibility
       const agentName = vehicle.agentName || vehicle.dealerName || ''
       const agentPhone = vehicle.agentPhone || vehicle.dealerPhone || 'N/A'
       
@@ -81,7 +81,7 @@ router.get('/:name/vehicles', authenticate, authorize('admin'), async (req, res)
   try {
     const agentName = decodeURIComponent(req.params.name)
     
-    // Search by both agentName and dealerName for backward compatibility
+    // Search by both agentName and legacy dealerName field for backward compatibility
     const vehicles = await Vehicle.find({
       $or: [
         { agentName: agentName },

@@ -11,7 +11,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/scripts/seedUsers.js",
-    "seed:dummy": "node src/scripts/seedDummyData.js"
+    "seed:dummy": "node src/scripts/seedDummyData.js",
+    "seed:test": "node src/scripts/seedTestData.js",
+    "cleanup:vehicles": "node src/scripts/cleanupVehicleData.js"
   },
   "dependencies": {
     "express": "^4.21.2",

@@ -15,7 +15,7 @@ export const ToastProvider = ({ children }) => {
   const showToast = (message, type = 'info', options = {}) => {
     const defaultOptions = {
       position: 'top-right',
-      autoClose: 5000,
+      autoClose: 2000,
       hideProgressBar: false,
       closeOnClick: true,
       pauseOnHover: true,

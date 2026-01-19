@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -312,7 +313,7 @@ const AdminPendingPayments = () => {
             {vehicles.map((vehicle) => (
               <TableRow key={vehicle._id}>
                 <TableCell>
-                  <strong>{vehicle.vehicleNo || 'N/A'}</strong>
+                  <strong>{formatVehicleNumber(vehicle.vehicleNo) || 'N/A'}</strong>
                 </TableCell>
                 <TableCell>{vehicle.make || 'N/A'}</TableCell>
                 <TableCell>{vehicle.model || 'N/A'}</TableCell>
@@ -406,7 +407,7 @@ const AdminPendingPayments = () => {
               <label>Vehicle</label>
               <input 
                 type="text" 
-                value={`${selectedVehicle.vehicleNo} - ${selectedVehicle.make} ${selectedVehicle.model}`}
+                value={`${formatVehicleNumber(selectedVehicle.vehicleNo)} - ${selectedVehicle.make} ${selectedVehicle.model}`}
                 disabled
                 style={{ background: '#f5f5f5' }}
               />

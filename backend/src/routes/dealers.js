@@ -17,10 +17,10 @@ const capitalizeName = (name) => {
 // @route   GET /api/dealers
 // @desc    Get all agents with vehicle counts and commission (LEGACY ROUTE - use /api/agents instead)
 // @access  Private (Admin)
-// @note    This route is kept for backward compatibility. New code should use /api/agents
+// @note    This route is kept for backward compatibility only. All new code should use /api/agents
 router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
-    // Get all vehicles with agent info (prefer agentName, fallback to dealerName for backward compat)
+    // Get all vehicles with agent info (prefer agentName, fallback to legacy dealerName field for backward compat)
     const vehicles = await Vehicle.find({
       $or: [
         { agentName: { $exists: true, $ne: null, $ne: '' } },
@@ -32,7 +32,7 @@ router.get('/', authenticate, authorize('admin'), async (req, res) => {
     const agentMap = new Map()
 
     vehicles.forEach(vehicle => {
-      // Prefer agentName, fallback to dealerName for backward compatibility
+      // Prefer agentName, fallback to legacy dealerName field for backward compatibility
       const agentName = vehicle.agentName || vehicle.dealerName || ''
       const agentPhone = vehicle.agentPhone || vehicle.dealerPhone || 'N/A'
       
@@ -78,12 +78,12 @@ router.get('/', authenticate, authorize('admin'), async (req, res) => {
 // @route   GET /api/dealers/:name/vehicles
 // @desc    Get all vehicles for a specific agent (LEGACY ROUTE - use /api/agents/:name/vehicles instead)
 // @access  Private (Admin)
-// @note    This route is kept for backward compatibility. New code should use /api/agents/:name/vehicles
+// @note    This route is kept for backward compatibility only. All new code should use /api/agents/:name/vehicles
 router.get('/:name/vehicles', authenticate, authorize('admin'), async (req, res) => {
   try {
     const agentName = decodeURIComponent(req.params.name)
     
-    // Search by both agentName and dealerName for backward compatibility
+    // Search by both agentName and legacy dealerName field for backward compatibility
     const vehicles = await Vehicle.find({
       $or: [
         { agentName: agentName },

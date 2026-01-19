@@ -19,7 +19,8 @@ const ActionButton = ({
     view: '#3498db',
     warning: '#f39c12',
     danger: '#e74c3c',
-    success: '#27ae60'
+    success: '#27ae60',
+    info: '#667eea' // Alias for primary/purple
   }
 
   const buttonColor = colorMap[color] || colorMap.primary

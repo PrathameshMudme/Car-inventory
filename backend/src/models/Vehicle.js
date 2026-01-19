@@ -1,6 +1,9 @@
 const mongoose = require('mongoose')
 
 const vehicleSchema = new mongoose.Schema({
+  // ============================================
+  // VEHICLE IDENTIFICATION
+  // ============================================
   vehicleNo: {
     type: String,
     required: [true, 'Vehicle number is required'],
@@ -45,17 +48,13 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+
+  // ============================================
+  // PURCHASE INFORMATION
+  // ============================================
   purchasePrice: {
     type: Number,
     min: [0, 'Purchase price cannot be negative']
-  },
-  askingPrice: {
-    type: Number,
-    min: [0, 'Asking price cannot be negative']
-  },
-  lastPrice: {
-    type: Number,
-    min: [0, 'Last price cannot be negative']
   },
   purchaseDate: {
     type: Date
@@ -80,31 +79,11 @@ const vehicleSchema = new mongoose.Schema({
     trim: true
     // Only used when ownerType is 'Custom'
   },
-  // Structured address fields (Maharashtra only)
-  addressLine1: {
-    type: String,
-    trim: true
-  },
-  district: {
-    type: String,
-    trim: true
-  },
-  taluka: {
-    type: String,
-    trim: true
-  },
-  pincode: {
-    type: String,
-    trim: true,
-    match: [/^\d{6}$/, 'Pincode must be exactly 6 digits']
-  },
-  paymentMethod: {
-    type: String,
-    trim: true
-    // Stores payment method summary string (e.g., "Cash: ₹50,000, Bank Transfer: ₹30,000")
-    // DEPRECATED: Use purchasePaymentMethods instead for structured data
-  },
-  // Structured purchase payment methods (to seller) - key-value pairs
+
+  // ============================================
+  // PURCHASE PAYMENT (To Seller)
+  // ============================================
+  // Structured purchase payment methods - key-value pairs
   // Example: { "cash": 200000, "bank_transfer": 300000, "deductions": 10000 }
   purchasePaymentMethods: {
     type: Map,
@@ -130,17 +109,18 @@ const vehicleSchema = new mongoose.Schema({
     // PENDING_FROM_CUSTOMER: Customer owes money (security cheque, etc.)
     // PENDING_TO_SELLER: Company owes money to seller
   },
-  agentCommission: {
-    type: Number,
-    default: 0,
-    min: [0, 'Commission cannot be negative']
-    // Admin-only field - cannot be set by purchase manager
-  },
-  agentPhone: {
+  // DEPRECATED: Legacy payment method summary string
+  // Kept for backward compatibility, but use purchasePaymentMethods instead
+  // This is auto-generated from purchasePaymentMethods in routes
+  paymentMethod: {
     type: String,
-    trim: true
-    // Admin-only field - cannot be set by purchase manager
+    trim: true,
+    default: null
   },
+
+  // ============================================
+  // SELLER & AGENT INFORMATION
+  // ============================================
   sellerName: {
     type: String,
     trim: true
@@ -149,30 +129,73 @@ const vehicleSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  // LEGACY FIELDS: Use agentName and agentPhone instead
-  // Keeping dealerName/dealerPhone for backward compatibility during migration
-  dealerName: {
-    type: String,
-    trim: true
-  },
-  dealerPhone: {
-    type: String,
-    trim: true
-  },
-  // Agent fields (primary fields, replaces legacy dealerName/dealerPhone)
+  // Agent fields (primary fields)
   agentName: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
   agentPhone: {
     type: String,
-    trim: true
-    // Note: This field also exists above as admin-only, but this one is set during vehicle creation
+    trim: true,
+    default: null
+    // Admin-only field for editing, but can be set during vehicle creation
   },
-  // Modification workflow fields
+  agentCommission: {
+    type: Number,
+    default: 0, // Default to 0 for calculations (display shows "NIL" when 0)
+    min: [0, 'Commission cannot be negative']
+    // Admin-only field - cannot be set by purchase manager
+  },
+  // LEGACY FIELDS: Kept for backward compatibility only
+  // DO NOT USE - Use agentName and agentPhone instead
+  // These fields are automatically synced with agentName/agentPhone in routes
+  dealerName: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  dealerPhone: {
+    type: String,
+    trim: true,
+    default: null
+  },
+
+  // ============================================
+  // ADDRESS INFORMATION (Maharashtra)
+  // ============================================
+  addressLine1: {
+    type: String,
+    trim: true
+  },
+  district: {
+    type: String,
+    trim: true
+  },
+  taluka: {
+    type: String,
+    trim: true
+  },
+  pincode: {
+    type: String,
+    trim: true,
+    match: [/^\d{6}$/, 'Pincode must be exactly 6 digits']
+  },
+
+  // ============================================
+  // PRICING & MODIFICATION WORKFLOW
+  // ============================================
+  askingPrice: {
+    type: Number,
+    min: [0, 'Asking price cannot be negative']
+  },
+  lastPrice: {
+    type: Number,
+    min: [0, 'Last price cannot be negative']
+  },
   modificationCost: {
     type: Number,
-    default: 0,
+    default: 0, // Default to 0 for calculations (display shows "NIL" when 0)
     min: [0, 'Modification cost cannot be negative']
   },
   modificationNotes: {
@@ -181,28 +204,18 @@ const vehicleSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['On Modification', 'In Stock', 'Reserved', 'Sold', 'Processing'],
+    enum: ['On Modification', 'In Stock', 'Reserved', 'Sold', 'Processing', 'DELETED'],
     default: 'On Modification'
   },
-  // Track if vehicle is ready for stock (all modification fields filled)
   modificationComplete: {
     type: Boolean,
     default: false
+    // Track if vehicle is ready for stock (all modification fields filled)
   },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  modifiedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  notes: {
-    type: String,
-    trim: true
-  },
-  // Customer information (when vehicle is sold)
+
+  // ============================================
+  // SALE INFORMATION (Customer Details)
+  // ============================================
   customerName: {
     type: String,
     trim: true
@@ -240,7 +253,10 @@ const vehicleSchema = new mongoose.Schema({
   saleDate: {
     type: Date
   },
-  // Payment details
+
+  // ============================================
+  // SALE PAYMENT (From Customer)
+  // ============================================
   paymentType: {
     type: String,
     enum: ['full', 'custom', ''],
@@ -278,28 +294,65 @@ const vehicleSchema = new mongoose.Schema({
   },
   remainingAmount: {
     type: Number,
-    default: 0,
+    default: 0, // Default to 0 for calculations (display shows "NIL" when 0 or not sold)
     min: [0, 'Remaining amount cannot be negative']
+    // Remaining amount from customer (only used when vehicle is sold)
   },
   saleNotes: {
     type: String,
     trim: true
   },
-  // Audit trail for chassis number changes
-  chassisNoHistory: [{
-    oldValue: { type: String },
-    newValue: { type: String },
-    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    changedAt: { type: Date, default: Date.now }
-  }],
-  // Audit trail for engine number changes
-  engineNoHistory: [{
-    oldValue: { type: String },
-    newValue: { type: String },
-    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    changedAt: { type: Date, default: Date.now }
-  }],
-  // Deletion audit
+
+  // ============================================
+  // AUDIT & METADATA
+  // ============================================
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  modifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  notes: {
+    type: String,
+    trim: true
+    // General notes about the vehicle
+  },
+  // Audit trail for chassis number changes (admin-only edits)
+  // Only created when chassis number is actually changed
+  chassisNoHistory: {
+    type: [{
+      oldValue: { type: String },
+      newValue: { type: String },
+      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      changedAt: { type: Date, default: Date.now }
+    }],
+    default: undefined // Don't create empty array by default
+  },
+  // Audit trail for engine number changes (admin-only edits)
+  // Only created when engine number is actually changed
+  engineNoHistory: {
+    type: [{
+      oldValue: { type: String },
+      newValue: { type: String },
+      changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      changedAt: { type: Date, default: Date.now }
+    }],
+    default: undefined // Don't create empty array by default
+  },
+  // Purchase note generation history
+  // Tracks when purchase notes were generated for this vehicle
+  purchaseNoteHistory: {
+    type: [{
+      generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      generatedAt: { type: Date, default: Date.now },
+      filename: { type: String, trim: true }
+    }],
+    default: undefined // Don't create empty array by default
+  },
+  // Soft deletion audit
   deletedAt: {
     type: Date
   },
@@ -308,7 +361,7 @@ const vehicleSchema = new mongoose.Schema({
     ref: 'User'
   }
 }, {
-  timestamps: true
+  timestamps: true // Adds createdAt and updatedAt automatically
 })
 
 // Index for faster queries
@@ -316,6 +369,6 @@ const vehicleSchema = new mongoose.Schema({
 vehicleSchema.index({ status: 1 })
 vehicleSchema.index({ createdBy: 1 })
 vehicleSchema.index({ agentName: 1 })
-vehicleSchema.index({ dealerName: 1 }) // Legacy index, kept for backward compatibility
+vehicleSchema.index({ dealerName: 1 }) // Legacy index - use agentName instead
 
 module.exports = mongoose.model('Vehicle', vehicleSchema)

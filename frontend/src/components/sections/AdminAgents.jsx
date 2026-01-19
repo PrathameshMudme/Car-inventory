@@ -24,7 +24,7 @@ const AdminAgents = () => {
     }
 
     try {
-      // Try new /api/agents route first, fallback to /api/dealers for backward compatibility
+      // Try new /api/agents route first, fallback to legacy /api/dealers route for backward compatibility
       let response = await fetch(`${API_URL}/agents`, {
         headers: {
           'Authorization': `Bearer ${token}`

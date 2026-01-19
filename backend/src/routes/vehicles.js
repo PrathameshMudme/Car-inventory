@@ -2,13 +2,27 @@ const express = require('express')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
-const PDFDocument = require('pdfkit')
 const Vehicle = require('../models/Vehicle')
 const VehicleImage = require('../models/VehicleImage')
 const VehicleDocument = require('../models/VehicleDocument')
 const { authenticate, authorize } = require('../middleware/auth')
+const PurchaseNotePDFService = require('../services/purchaseNotePDFService')
+const { saveHistoryIfNeeded } = require('../services/purchaseNoteHistoryService')
 
 const router = express.Router()
+
+// Image slots configuration - fixed order for all image uploads
+// Order: 0=Front, 1=Back, 2=Right, 3=Left, 4=Interior 1, 5=Interior 2, 6=Engine, 7+=Other
+const IMAGE_SLOTS = [
+  { category: 'front', fieldName: 'front_images', order: 0 },
+  { category: 'back', fieldName: 'back_images', order: 1 },
+  { category: 'right_side', fieldName: 'right_side_images', order: 2 },
+  { category: 'left_side', fieldName: 'left_side_images', order: 3 },
+  { category: 'interior', fieldName: 'interior_images', order: 4 },
+  { category: 'interior_2', fieldName: 'interior_2_images', order: 5 },
+  { category: 'engine', fieldName: 'engine_images', order: 6 },
+  { category: 'other', fieldName: 'other_images', order: 7 }
+]
 
 // Helper function to check if vehicle modification is complete
 const checkModificationComplete = async (vehicle) => {
@@ -19,10 +33,10 @@ const checkModificationComplete = async (vehicle) => {
   
   const hasAskingPrice = vehicle.askingPrice && parseFloat(vehicle.askingPrice) > 0
   const hasLastPrice = vehicle.lastPrice && parseFloat(vehicle.lastPrice) > 0
-  const hasModificationCost = vehicle.modificationCost !== undefined && vehicle.modificationCost !== null
+  const hasModificationCost = vehicle.modificationCost && vehicle.modificationCost > 0
   const hasModificationNotes = vehicle.modificationNotes && vehicle.modificationNotes.trim()
   const hasAgentPhone = vehicle.agentPhone && vehicle.agentPhone.trim()
-  const hasAgentCommission = vehicle.agentCommission !== undefined && vehicle.agentCommission !== null
+  const hasAgentCommission = vehicle.agentCommission && vehicle.agentCommission > 0
   
   return hasAskingPrice && hasLastPrice && 
          hasModificationCost !== null && hasModificationNotes && 
@@ -51,14 +65,21 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf/
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
-    const mimetype = allowedTypes.test(file.mimetype)
+    // Allowed file extensions
+    const allowedExtensions = /\.(jpeg|jpg|png|gif|pdf|webp)$/i
+    // Allowed MIME types (more comprehensive)
+    const allowedMimeTypes = /^(image\/(jpeg|jpg|png|gif|webp)|application\/pdf)$/i
     
-    if (mimetype && extname) {
+    const ext = path.extname(file.originalname).toLowerCase()
+    const hasValidExtension = allowedExtensions.test(ext)
+    const hasValidMimeType = allowedMimeTypes.test(file.mimetype)
+    
+    // Accept if either extension OR mimetype is valid (more lenient)
+    // This handles cases where browsers send different mimetypes
+    if (hasValidExtension || hasValidMimeType) {
       return cb(null, true)
     } else {
-      cb(new Error('Invalid file type. Only images and PDFs are allowed.'))
+      cb(new Error(`Invalid file type: ${file.originalname} (${file.mimetype}). Only images (JPEG, JPG, PNG, GIF, WEBP) and PDFs are allowed.`))
     }
   }
 })
@@ -67,13 +88,13 @@ const upload = multer({
 // @desc    Create new vehicle
 // @access  Private (Purchase Manager, Admin)
 router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
-  { name: 'front_images', maxCount: 5 },
-  { name: 'back_images', maxCount: 5 },
-  { name: 'right_side_images', maxCount: 5 },
-  { name: 'left_side_images', maxCount: 5 },
-  { name: 'interior_images', maxCount: 5 },
-  { name: 'interior_2_images', maxCount: 5 },
-  { name: 'engine_images', maxCount: 5 },
+  { name: 'front_images', maxCount: 1 },
+  { name: 'back_images', maxCount: 1 },
+  { name: 'right_side_images', maxCount: 1 },
+  { name: 'left_side_images', maxCount: 1 },
+  { name: 'interior_images', maxCount: 1 },
+  { name: 'interior_2_images', maxCount: 1 },
+  { name: 'engine_images', maxCount: 1 },
   { name: 'other_images', maxCount: 10 },
   { name: 'insurance', maxCount: 1 },
   { name: 'rc', maxCount: 1 },
@@ -113,14 +134,12 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       engineNo: 'Engine Number',
       make: 'Make',
       model: 'Model',
-      year: 'Year',
       color: 'Color',
       kilometers: 'Kilometers',
       purchasePrice: 'Purchase Price',
       sellerName: 'Seller Name',
       sellerContact: 'Seller Contact',
-      dealerName: 'Agent Name', // Legacy field name, kept for backward compatibility
-      dealerPhone: 'Agent Phone', // Legacy field name, kept for backward compatibility
+      agentName: 'Agent Name', // Legacy dealerName field is kept for backward compatibility only
       addressLine1: 'Address Line 1',
       district: 'District',
       taluka: 'Taluka',
@@ -173,6 +192,14 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
 
     const missingFields = []
     for (const [field, label] of Object.entries(requiredFields)) {
+      // Special handling for agentName - also check legacy dealerName field for backward compatibility
+      if (field === 'agentName') {
+        if (!req.body.agentName && !req.body.dealerName) {
+          missingFields.push(label)
+        }
+        continue
+      }
+      
       if (!req.body[field] || (typeof req.body[field] === 'string' && !req.body[field].trim())) {
         missingFields.push(label)
       }
@@ -212,6 +239,21 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       }
     }
 
+    // Get agentName from req.body (prefer agentName over legacy dealerName field)
+    const finalAgentName = req.body.agentName || req.body.dealerName || agentName || ''
+    const finalAgentPhone = req.body.agentPhone || req.body.dealerPhone || agentPhone || ''
+    
+    // Calculate year from purchaseYear if year is not provided
+    let vehicleYear = undefined
+    if (req.body.year) {
+      const parsedYear = parseInt(req.body.year)
+      if (!isNaN(parsedYear) && parsedYear >= 1900) {
+        vehicleYear = parsedYear
+      }
+    } else if (purchaseYear) {
+      vehicleYear = purchaseYear // Use purchase year as vehicle year if not specified
+    }
+
     // Create vehicle with all required fields
     const vehicleData = {
       vehicleNo: vehicleNo.toUpperCase(),
@@ -219,7 +261,6 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       engineNo: engineNo ? engineNo.toUpperCase() : '',
       make,
       model,
-      year: parseInt(year),
       color,
       fuelType: fuelType || 'Petrol',
       kilometers,
@@ -228,17 +269,31 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       sellerName: capitalizeName(sellerName),
       sellerContact,
       // Use agentName/agentPhone (also set dealerName/dealerPhone for backward compatibility)
-      agentName: capitalizeName(agentName || req.body.agentName || ''),
-      agentPhone: agentPhone || req.body.agentPhone || '',
-      dealerName: capitalizeName(agentName || req.body.agentName || ''), // Legacy field, kept for backward compatibility
-      dealerPhone: agentPhone || req.body.agentPhone || '', // Legacy field, kept for backward compatibility
+      agentName: finalAgentName ? capitalizeName(finalAgentName) : null,
+      agentPhone: finalAgentPhone || null,
+      dealerName: finalAgentName ? capitalizeName(finalAgentName) : null, // Legacy field, kept for backward compatibility
+      dealerPhone: finalAgentPhone || null, // Legacy field, kept for backward compatibility
       status: 'On Modification',
       modificationComplete: false,
       createdBy: req.user._id
     }
+    
+    // Only add year if it's valid (Mongoose validation requires it to be >= 1900)
+    if (vehicleYear && !isNaN(vehicleYear) && vehicleYear >= 1900) {
+      vehicleData.year = vehicleYear
+    }
 
-    // Store structured purchase payment methods
-    vehicleData.purchasePaymentMethods = purchasePaymentMethods
+    // Process purchase payment methods - convert "NIL" to 0 for calculations
+    const processedPaymentMethods = {}
+    Object.entries(purchasePaymentMethods).forEach(([mode, amount]) => {
+      if (amount === 'NIL' || amount === 'nil' || (typeof amount === 'string' && amount.trim().toUpperCase() === 'NIL')) {
+        processedPaymentMethods[mode] = 0 // Use 0 for calculations
+      } else {
+        const numAmount = typeof amount === 'number' ? amount : parseFloat(amount)
+        processedPaymentMethods[mode] = isNaN(numAmount) ? 0 : numAmount
+      }
+    })
+    vehicleData.purchasePaymentMethods = processedPaymentMethods
     
     // Store deductions notes if provided
     if (req.body.deductionsNotes) {
@@ -247,15 +302,12 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
     
     // Generate payment method summary string for backward compatibility
     const paymentMethodParts = []
-    Object.entries(purchasePaymentMethods).forEach(([mode, amount]) => {
-      if (amount === 'NIL' || amount === 'nil') {
-        paymentMethodParts.push(`${mode.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: NIL`)
-      } else {
-        const amountNum = typeof amount === 'number' ? amount : parseFloat(amount)
-        if (!isNaN(amountNum) && amountNum > 0) {
-          paymentMethodParts.push(`${mode.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ₹${amountNum.toLocaleString('en-IN')}`)
-        }
+    Object.entries(processedPaymentMethods).forEach(([mode, amount]) => {
+      const amountNum = typeof amount === 'number' ? amount : parseFloat(amount)
+      if (!isNaN(amountNum) && amountNum > 0) {
+        paymentMethodParts.push(`${mode.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ₹${amountNum.toLocaleString('en-IN')}`)
       }
+      // Don't include 0 amounts in the summary (they show as "NIL" in UI)
     })
     vehicleData.paymentMethod = paymentMethodParts.join(', ') || 'No payment method specified'
 
@@ -309,8 +361,15 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
           vehicleData.askingPrice = parseFloat(askingPrice)
         }
         // Agent commission and phone are admin-only - purchase manager cannot set them
-        if (req.body.agentCommission && !isNaN(parseFloat(req.body.agentCommission))) {
-          vehicleData.agentCommission = parseFloat(req.body.agentCommission)
+        if (req.body.agentCommission !== undefined && req.body.agentCommission !== null) {
+          const commissionValue = req.body.agentCommission
+          if (commissionValue === '' || commissionValue === 'NIL' || commissionValue === 'nil' || 
+              (typeof commissionValue === 'string' && commissionValue.trim().toUpperCase() === 'NIL')) {
+            vehicleData.agentCommission = 0 // Default to 0 for calculations
+          } else {
+            const parsedCommission = parseFloat(commissionValue)
+            vehicleData.agentCommission = isNaN(parsedCommission) ? 0 : parsedCommission
+          }
         }
         if (req.body.agentPhone) {
           vehicleData.agentPhone = req.body.agentPhone.trim()
@@ -321,26 +380,29 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
 
     await vehicle.save()
 
-    // Handle image uploads (before modification)
-    const imageCategories = ['front', 'back', 'right_side', 'left_side', 'interior', 'engine']
+    // Handle image uploads (before modification) - using shared IMAGE_SLOTS configuration
     const imagePromises = []
+    let otherImageIndex = 0
 
-    imageCategories.forEach(category => {
-      const fieldName = category === 'right_side' ? 'right_side_images' : 
-                       category === 'left_side' ? 'left_side_images' :
-                       `${category}_images`
-      const files = req.files[fieldName] || []
+    IMAGE_SLOTS.forEach(slot => {
+      const files = req.files[slot.fieldName] || []
       
       files.forEach((file, index) => {
         const imageUrl = `/uploads/vehicles/${file.filename}`
+        // Calculate order: for 'other' category, increment from 7
+        const imageOrder = slot.category === 'other' ? slot.order + otherImageIndex : slot.order
+        if (slot.category === 'other') {
+          otherImageIndex++
+        }
+        
         const imagePromise = VehicleImage.create({
           vehicleId: vehicle._id,
           imageUrl,
-          category,
+          category: slot.category,
           stage: 'before',
-          order: 0, // Before modification images don't need specific ordering
+          order: imageOrder, // Maintain explicit order
           uploadedBy: req.user._id,
-          isPrimary: category === 'front' && index === 0 // First front image is primary
+          isPrimary: slot.category === 'front' && index === 0 // First front image is primary
         })
         imagePromises.push(imagePromise)
       })
@@ -398,9 +460,20 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
     })
   } catch (error) {
     console.error('Create vehicle error:', error)
+    
+    // Handle multer file filter errors
+    if (error.message && error.message.includes('Invalid file type')) {
+      return res.status(400).json({ 
+        message: error.message,
+        error: 'File validation failed'
+      })
+    }
+    
+    // Handle duplicate vehicle number
     if (error.code === 11000) {
       return res.status(400).json({ message: 'Vehicle number already exists' })
     }
+    
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })
@@ -439,6 +512,7 @@ router.get('/', authenticate, async (req, res) => {
     const vehicles = await Vehicle.find(query)
       .populate('createdBy', 'name email')
       .populate('modifiedBy', 'name email')
+      .populate('purchaseNoteHistory.generatedBy', 'name email')
       .sort({ createdAt: -1 })
 
     // Get images and documents for each vehicle
@@ -522,13 +596,13 @@ router.get('/:id', authenticate, async (req, res) => {
 // @desc    Update vehicle (Admin can edit all fields, Sales can mark as sold and update payment)
 // @access  Private (Admin, Sales)
 router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
-  { name: 'front_images', maxCount: 5 },
-  { name: 'back_images', maxCount: 5 },
-  { name: 'right_side_images', maxCount: 5 },
-  { name: 'left_side_images', maxCount: 5 },
-  { name: 'interior_images', maxCount: 5 },
-  { name: 'interior_2_images', maxCount: 5 },
-  { name: 'engine_images', maxCount: 5 },
+  { name: 'front_images', maxCount: 1 },
+  { name: 'back_images', maxCount: 1 },
+  { name: 'right_side_images', maxCount: 1 },
+  { name: 'left_side_images', maxCount: 1 },
+  { name: 'interior_images', maxCount: 1 },
+  { name: 'interior_2_images', maxCount: 1 },
+  { name: 'engine_images', maxCount: 1 },
   { name: 'other_images', maxCount: 10 },
   { name: 'insurance', maxCount: 1 },
   { name: 'rc', maxCount: 1 },
@@ -602,19 +676,26 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
     if (req.body.purchasePaymentMethods) {
       try {
         const purchasePaymentMethods = JSON.parse(req.body.purchasePaymentMethods)
-        vehicle.purchasePaymentMethods = purchasePaymentMethods
+        // Convert "NIL" strings to null for storage
+        const processedPaymentMethods = {}
+        Object.entries(purchasePaymentMethods).forEach(([mode, amount]) => {
+          if (amount === 'NIL' || amount === 'nil' || (typeof amount === 'string' && amount.trim().toUpperCase() === 'NIL')) {
+            processedPaymentMethods[mode] = 0 // Use 0 for calculations
+          } else {
+            const numAmount = typeof amount === 'number' ? amount : parseFloat(amount)
+            processedPaymentMethods[mode] = isNaN(numAmount) ? 0 : numAmount
+          }
+        })
+        vehicle.purchasePaymentMethods = processedPaymentMethods
         
         // Update payment method summary string for backward compatibility
         const paymentMethodParts = []
-        Object.entries(purchasePaymentMethods).forEach(([mode, amount]) => {
-          if (amount === 'NIL' || amount === 'nil') {
-            paymentMethodParts.push(`${mode.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: NIL`)
-          } else {
-            const amountNum = typeof amount === 'number' ? amount : parseFloat(amount)
-            if (!isNaN(amountNum) && amountNum > 0) {
-              paymentMethodParts.push(`${mode.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ₹${amountNum.toLocaleString('en-IN')}`)
-            }
+        Object.entries(processedPaymentMethods).forEach(([mode, amount]) => {
+          const amountNum = typeof amount === 'number' ? amount : parseFloat(amount)
+          if (!isNaN(amountNum) && amountNum > 0) {
+            paymentMethodParts.push(`${mode.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ₹${amountNum.toLocaleString('en-IN')}`)
           }
+          // Don't include 0 amounts in the summary (they show as "NIL" in UI)
         })
         vehicle.paymentMethod = paymentMethodParts.join(', ') || 'No payment method specified'
       } catch (error) {
@@ -627,13 +708,13 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
       vehicle.deductionsNotes = req.body.deductionsNotes.trim() || ''
     }
 
-    // Handle agentName/agentPhone updates (also update dealerName/dealerPhone for backward compatibility)
+    // Handle agentName/agentPhone updates (also update legacy dealerName/dealerPhone fields for backward compatibility)
     if (req.body.agentName !== undefined) {
-      vehicle.agentName = capitalizeName(req.body.agentName)
+      vehicle.agentName = req.body.agentName ? capitalizeName(req.body.agentName) : null
       vehicle.dealerName = vehicle.agentName // Keep legacy field in sync for backward compatibility
     }
     if (req.body.agentPhone !== undefined) {
-      vehicle.agentPhone = req.body.agentPhone.trim()
+      vehicle.agentPhone = req.body.agentPhone && req.body.agentPhone.trim() ? req.body.agentPhone.trim() : null
       vehicle.dealerPhone = vehicle.agentPhone // Keep legacy field in sync for backward compatibility
     }
 
@@ -671,18 +752,34 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
         } else if (['purchasePrice', 'askingPrice', 'lastPrice', 'agentCommission', 
                      'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan', 
                      'remainingAmount', 'remainingAmountToSeller', 'modificationCost'].includes(field)) {
-          const numValue = parseFloat(req.body[field])
-          vehicle[field] = isNaN(numValue) ? (field === 'modificationCost' ? null : 0) : numValue
+          // Handle "NIL" string values and empty strings - convert to 0 for calculation fields
+          const value = req.body[field]
+          
+          // All payment fields default to 0 for calculations (UI shows "NIL" for display)
+          // Fields used in calculations: modificationCost, agentCommission, paymentCash, etc.
+          if (value === 'NIL' || value === 'nil' || value === '' || 
+              (typeof value === 'string' && value.trim().toUpperCase() === 'NIL') ||
+              value === null || value === undefined) {
+            // Convert empty/NIL to 0 (for calculations)
+            vehicle[field] = 0
+          } else {
+            const numValue = parseFloat(value)
+            if (isNaN(numValue)) {
+              vehicle[field] = 0 // Default to 0 for invalid values
+            } else {
+              vehicle[field] = numValue
+            }
+          }
         } else if (field === 'dealerName' || field === 'sellerName' || field === 'customerName' || field === 'agentName') {
           // Normalize agent, seller, customer names
           vehicle[field] = capitalizeName(req.body[field])
-          // Keep legacy dealerName field in sync with agentName for backward compatibility
+          // Keep legacy dealerName field in sync with agentName (use agentName instead)
           if (field === 'agentName') {
             vehicle.dealerName = vehicle.agentName
           }
         } else if (field === 'agentPhone') {
           vehicle[field] = req.body[field]?.trim() || ''
-          // Keep legacy dealerPhone field in sync with agentPhone for backward compatibility
+          // Keep legacy dealerPhone field in sync with agentPhone (use agentPhone instead)
           vehicle.dealerPhone = vehicle.agentPhone
         } else if (field === 'chassisNo') {
           // Admin-only field with audit logging
@@ -764,24 +861,12 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
     vehicle.modifiedBy = req.user._id
     await vehicle.save()
 
-    // Handle after-modification image uploads with fixed order
-    // Order: 1=Front, 2=Back, 3=Right, 4=Left, 5=Interior 1, 6=Interior 2, 7=Engine, 8+=Other
-    const imageSlots = [
-      { category: 'front', fieldName: 'front_images', order: 1 },
-      { category: 'back', fieldName: 'back_images', order: 2 },
-      { category: 'right_side', fieldName: 'right_side_images', order: 3 },
-      { category: 'left_side', fieldName: 'left_side_images', order: 4 },
-      { category: 'interior', fieldName: 'interior_images', order: 5 },
-      { category: 'interior_2', fieldName: 'interior_2_images', order: 6 },
-      { category: 'engine', fieldName: 'engine_images', order: 7 },
-      { category: 'other', fieldName: 'other_images', order: 8 }
-    ]
-    
+    // Handle after-modification image uploads - using shared IMAGE_SLOTS configuration
     const imagePromises = []
     let hasAfterImages = false
     let otherImageIndex = 0
 
-    imageSlots.forEach(slot => {
+    IMAGE_SLOTS.forEach(slot => {
       const files = req.files[slot.fieldName] || []
       
       if (files.length > 0) {
@@ -790,7 +875,7 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
       
       files.forEach((file, index) => {
         const imageUrl = `/uploads/vehicles/${file.filename}`
-        // Calculate order: for 'other' category, increment from 8
+        // Calculate order: for 'other' category, increment from 7
         const imageOrder = slot.category === 'other' ? slot.order + otherImageIndex : slot.order
         if (slot.category === 'other') {
           otherImageIndex++
@@ -808,6 +893,40 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
         imagePromises.push(imagePromise)
       })
     })
+
+    // Handle document deletions (if provided)
+    if (req.body.deletedDocumentIds) {
+      try {
+        const deletedIds = JSON.parse(req.body.deletedDocumentIds)
+        if (Array.isArray(deletedIds) && deletedIds.length > 0) {
+          // Find documents to delete and remove their files
+          const documentsToDelete = await VehicleDocument.find({
+            _id: { $in: deletedIds },
+            vehicleId: vehicle._id
+          })
+          
+          // Delete physical files
+          documentsToDelete.forEach(doc => {
+            const filePath = path.join(__dirname, '..', '..', 'public', doc.documentUrl)
+            if (fs.existsSync(filePath)) {
+              try {
+                fs.unlinkSync(filePath)
+              } catch (err) {
+                console.error(`Error deleting file ${filePath}:`, err)
+              }
+            }
+          })
+          
+          // Delete document records from database
+          await VehicleDocument.deleteMany({
+            _id: { $in: deletedIds },
+            vehicleId: vehicle._id
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing deletedDocumentIds:', error)
+      }
+    }
 
     // Handle additional document uploads
     const documentTypes = {
@@ -882,8 +1001,13 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
 // @route   GET /api/vehicles/:id/purchase-note
 // @desc    Generate and download purchase note PDF
 // @access  Private (Purchase Manager for own vehicles, Admin for all)
+// @query   downloadOnly - If true, only downloads without creating new history entry
 router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), async (req, res) => {
   try {
+    const { downloadOnly } = req.query
+    const isDownloadOnly = downloadOnly === 'true'
+    
+    // Fetch vehicle with populated fields
     const vehicle = await Vehicle.findById(req.params.id)
       .populate('createdBy', 'name email')
       .populate('modifiedBy', 'name email')
@@ -900,123 +1024,22 @@ router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), a
       }
     }
 
-    // Create PDF
-    const doc = new PDFDocument({ margin: 50 })
+    // Save history if needed (handles role-based logic internally)
+    await saveHistoryIfNeeded(vehicle, req.user, isDownloadOnly)
+
+    // Generate PDF filename
     const filename = `Purchase_Note_${vehicle.vehicleNo}_${Date.now()}.pdf`
-    
+
+    // Set response headers
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+
+    // Generate PDF using service
+    const pdfService = new PurchaseNotePDFService()
+    const doc = pdfService.generatePDF(vehicle)
     
+    // Pipe PDF to response
     doc.pipe(res)
-
-    // Header
-    doc.fontSize(20).font('Helvetica-Bold')
-      .text('PURCHASE NOTE', { align: 'center' })
-    doc.moveDown(0.5)
-    
-    doc.fontSize(12).font('Helvetica')
-      .text(`Date: ${new Date(vehicle.purchaseDate).toLocaleDateString('en-IN')}`, { align: 'right' })
-    doc.moveDown(1)
-
-    // Vehicle Details Section
-    doc.fontSize(16).font('Helvetica-Bold')
-      .text('VEHICLE DETAILS', { underline: true })
-    doc.moveDown(0.5)
-    
-    doc.fontSize(11).font('Helvetica')
-    const vehicleDetails = [
-      ['Vehicle Number:', vehicle.vehicleNo],
-      ['Chassis Number:', vehicle.chassisNo || 'N/A'],
-      ['Make:', vehicle.make],
-      ['Model:', vehicle.model || 'N/A'],
-      ['Year:', vehicle.year || 'N/A'],
-      ['Color:', vehicle.color || 'N/A'],
-      ['Fuel Type:', vehicle.fuelType || 'N/A'],
-      ['Kilometers:', vehicle.kilometers || 'N/A']
-    ]
-
-    let startY = doc.y
-    vehicleDetails.forEach(([label, value], index) => {
-      doc.font('Helvetica-Bold').text(label, 50, startY + (index * 20), { width: 200 })
-      doc.font('Helvetica').text(value || 'N/A', 250, startY + (index * 20), { width: 300 })
-    })
-    
-    doc.y = startY + (vehicleDetails.length * 20) + 10
-    doc.moveDown(1)
-
-    // Purchase Details Section
-    doc.fontSize(16).font('Helvetica-Bold')
-      .text('PURCHASE DETAILS', { underline: true })
-    doc.moveDown(0.5)
-    
-    doc.fontSize(11).font('Helvetica')
-    const purchaseDetails = [
-      ['Purchase Price:', `₹${vehicle.purchasePrice?.toLocaleString('en-IN') || '0'}`],
-      ['Asking Price:', vehicle.askingPrice ? `₹${vehicle.askingPrice.toLocaleString('en-IN')}` : 'N/A'],
-      ['Payment Method:', vehicle.paymentMethod || 'N/A'],
-      ['Agent Commission:', vehicle.agentCommission ? `₹${vehicle.agentCommission.toLocaleString('en-IN')}` : 'N/A']
-    ]
-
-    startY = doc.y
-    purchaseDetails.forEach(([label, value], index) => {
-      doc.font('Helvetica-Bold').text(label, 50, startY + (index * 20), { width: 200 })
-      doc.font('Helvetica').text(value || 'N/A', 250, startY + (index * 20), { width: 300 })
-    })
-    
-    // Add Deductions Notes if deductions exist and notes are provided
-    if (vehicle.purchasePaymentMethods?.get('deductions') && 
-        parseFloat(vehicle.purchasePaymentMethods.get('deductions')) > 0 && 
-        vehicle.deductionsNotes) {
-      doc.y = startY + (purchaseDetails.length * 20) + 10
-      doc.moveDown(0.5)
-      doc.font('Helvetica-Bold').text('Deductions Notes:', 50, doc.y, { width: 200 })
-      doc.font('Helvetica').text(vehicle.deductionsNotes, 250, doc.y, { width: 300, align: 'left' })
-      doc.moveDown(1)
-    } else {
-      doc.y = startY + (purchaseDetails.length * 20) + 10
-      doc.moveDown(1)
-    }
-
-    // Seller/Agent Details Section
-    if (vehicle.sellerName || vehicle.agentName || vehicle.dealerName) {
-      doc.fontSize(16).font('Helvetica-Bold')
-        .text('SELLER/AGENT DETAILS', { underline: true })
-      doc.moveDown(0.5)
-      
-      doc.fontSize(11).font('Helvetica')
-      const sellerAgentDetails = [
-        ['Seller Name:', vehicle.sellerName || 'N/A'],
-        ['Seller Contact:', vehicle.sellerContact || 'N/A'],
-        ['Agent Name:', vehicle.agentName || vehicle.dealerName || 'N/A'],
-        ['Agent Phone:', vehicle.agentPhone || vehicle.dealerPhone || 'N/A']
-      ]
-
-      startY = doc.y
-      sellerAgentDetails.forEach(([label, value], index) => {
-        doc.font('Helvetica-Bold').text(label, 50, startY + (index * 20), { width: 200 })
-        doc.font('Helvetica').text(value || 'N/A', 250, startY + (index * 20), { width: 300 })
-      })
-      
-      doc.y = startY + (sellerAgentDetails.length * 20) + 10
-      doc.moveDown(1)
-    }
-
-    // Notes Section
-    if (vehicle.notes) {
-      doc.fontSize(16).font('Helvetica-Bold')
-        .text('NOTES', { underline: true })
-      doc.moveDown(0.5)
-      
-      doc.fontSize(11).font('Helvetica')
-        .text(vehicle.notes, { width: 500 })
-      doc.moveDown(1)
-    }
-
-    // Footer
-    doc.fontSize(10).font('Helvetica')
-      .text(`Generated by: ${vehicle.createdBy?.name || 'System'}`, 50, doc.page.height - 100)
-      .text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 50, doc.page.height - 85)
-
     doc.end()
   } catch (error) {
     console.error('Generate purchase note error:', error)
@@ -1053,6 +1076,108 @@ router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
     })
   } catch (error) {
     console.error('Delete vehicle error:', error)
+    res.status(500).json({ message: 'Server error', error: error.message })
+  }
+})
+
+// @route   PUT /api/vehicles/:id/documents
+// @desc    Upload documents only (Purchase Manager can only upload documents for vehicles they added)
+// @access  Private (Purchase Manager only)
+router.put('/:id/documents', authenticate, authorize('purchase'), upload.fields([
+  { name: 'insurance', maxCount: 1 },
+  { name: 'rc', maxCount: 1 },
+  { name: 'bank_noc', maxCount: 1 },
+  { name: 'kyc', maxCount: 5 },
+  { name: 'tt_form', maxCount: 1 },
+  { name: 'papers_on_hold', maxCount: 5 },
+  { name: 'puc', maxCount: 1 },
+  { name: 'service_record', maxCount: 5 },
+  { name: 'other', maxCount: 5 }
+]), async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findById(req.params.id)
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' })
+    }
+
+    // Check if the vehicle was created by the current Purchase Manager
+    const createdById = vehicle.createdBy?._id?.toString() || vehicle.createdBy?.toString()
+    if (createdById !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        message: 'You can only upload documents for vehicles you added' 
+      })
+    }
+
+    // Reject any attempts to modify other fields
+    const allowedFields = ['insurance', 'rc', 'bank_noc', 'kyc', 'tt_form', 'papers_on_hold', 'puc', 'service_record', 'other']
+    const bodyFields = Object.keys(req.body).filter(key => !key.startsWith('payment') && !key.includes('['))
+    
+    // Check if any non-document fields are being sent
+    const hasNonDocumentFields = bodyFields.some(field => !allowedFields.includes(field))
+    if (hasNonDocumentFields) {
+      return res.status(400).json({ 
+        message: 'This endpoint only accepts document uploads. Other fields cannot be modified.' 
+      })
+    }
+
+    // Handle document uploads only
+    const documentTypes = {
+      'insurance': 'insurance',
+      'rc': 'rc',
+      'bank_noc': 'bank_noc',
+      'kyc': 'kyc',
+      'tt_form': 'tt_form',
+      'papers_on_hold': 'papers_on_hold',
+      'puc': 'puc',
+      'service_record': 'service_record',
+      'other': 'other'
+    }
+
+    const documentPromises = []
+    let documentsUploaded = 0
+
+    Object.entries(documentTypes).forEach(([fieldName, docType]) => {
+      const files = req.files[fieldName] || []
+      files.forEach(file => {
+        const docUrl = `/uploads/vehicles/${file.filename}`
+        const docPromise = VehicleDocument.create({
+          vehicleId: vehicle._id,
+          documentUrl: docUrl,
+          documentType: docType,
+          documentName: file.originalname,
+          uploadedBy: req.user._id
+        })
+        documentPromises.push(docPromise)
+        documentsUploaded++
+      })
+    })
+
+    // Wait for all documents to be saved
+    if (documentPromises.length > 0) {
+      await Promise.all(documentPromises)
+    }
+
+    // Fetch updated vehicle with documents
+    const updatedVehicle = await Vehicle.findById(vehicle._id)
+      .populate('createdBy', 'name email')
+      .lean()
+
+    // Get all documents for the vehicle
+    const documents = await VehicleDocument.find({ vehicleId: vehicle._id })
+      .populate('uploadedBy', 'name email')
+      .sort({ createdAt: -1 })
+
+    res.json({
+      message: documentsUploaded > 0 
+        ? `${documentsUploaded} document(s) uploaded successfully` 
+        : 'No documents were uploaded',
+      vehicle: {
+        ...updatedVehicle,
+        documents
+      }
+    })
+  } catch (error) {
+    console.error('Upload documents error:', error)
     res.status(500).json({ message: 'Server error', error: error.message })
   }
 })

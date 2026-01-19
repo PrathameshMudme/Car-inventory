@@ -18,8 +18,30 @@ const VehicleDocumentDropzone = ({
     multiple
   })
 
-  const hasFile = multiple ? documents?.length > 0 : documents
-  const fileCount = multiple ? documents?.length || 0 : (documents ? 1 : 0)
+  // Properly check if documents exist
+  // For multiple: documents is an array, check if it has items
+  // For single: documents is a single value (File object or document object), check if it's truthy
+  // Properly check if documents exist
+  // For multiple: documents is always an array, check if it has items
+  // For single: documents is a single value (File object, document object, or null), check if it's truthy
+  let hasFile = false
+  let fileCount = 0
+  
+  if (multiple) {
+    // Multiple documents: always an array
+    hasFile = Array.isArray(documents) && documents.length > 0
+    fileCount = Array.isArray(documents) ? documents.length : 0
+  } else {
+    // Single document: can be File object, document object, null, undefined, or empty array
+    // Check if it's a valid document (not null, undefined, false, empty string, or empty array)
+    if (Array.isArray(documents)) {
+      hasFile = documents.length > 0
+      fileCount = documents.length > 0 ? 1 : 0
+    } else {
+      hasFile = documents !== null && documents !== undefined && documents !== false && documents !== ''
+      fileCount = hasFile ? 1 : 0
+    }
+  }
 
   return (
     <Paper

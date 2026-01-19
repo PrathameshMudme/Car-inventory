@@ -9,12 +9,20 @@ const VehicleImageDropzone = ({
   images = [], 
   onDrop, 
   onRemove, 
-  onCameraCapture 
+  onCameraCapture,
+  maxCount = 1 // Default to 1 image, can be overridden for 'other' category
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (acceptedFiles) => onDrop(category, acceptedFiles),
+    onDrop: (acceptedFiles) => {
+      // Limit accepted files based on maxCount
+      const remainingSlots = maxCount - images.length
+      if (remainingSlots > 0) {
+        const filesToAdd = acceptedFiles.slice(0, remainingSlots)
+        onDrop(category, filesToAdd)
+      }
+    },
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.gif'] },
-    multiple: true
+    multiple: maxCount > 1 // Allow multiple only if maxCount > 1
   })
 
   const hasImages = images?.length > 0

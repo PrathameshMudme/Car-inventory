@@ -1,10 +1,15 @@
+// Image categories in fixed order
+// First 7 slots accept only one image each
+// Last slot (other) allows multiple images
 export const IMAGE_CATEGORIES = [
-  { key: 'front', label: 'Front View' },
-  { key: 'back', label: 'Back View' },
-  { key: 'right_side', label: 'Right Side' },
-  { key: 'left_side', label: 'Left Side' },
-  { key: 'interior', label: 'Interior' },
-  { key: 'engine', label: 'Engine' }
+  { key: 'front', label: 'Front', order: 0, maxCount: 1 },
+  { key: 'back', label: 'Back', order: 1, maxCount: 1 },
+  { key: 'right_side', label: 'Right', order: 2, maxCount: 1 },
+  { key: 'left_side', label: 'Left', order: 3, maxCount: 1 },
+  { key: 'interior', label: 'Interior 1', order: 4, maxCount: 1 },
+  { key: 'interior_2', label: 'Interior 2', order: 5, maxCount: 1 },
+  { key: 'engine', label: 'Engine', order: 6, maxCount: 1 },
+  { key: 'other', label: 'Other Images', order: 7, maxCount: 10 } // Multiple images allowed
 ]
 
 export const DOCUMENT_TYPES = [

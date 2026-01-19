@@ -3,6 +3,7 @@ import StatCard from '../StatCard'
 import ChartCard from '../ChartCard'
 import { useAuth } from '../../context/AuthContext'
 import { useApp } from '../../context/AppContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -23,11 +24,16 @@ const AdminOverview = () => {
     lowStock: 0
   })
   const [topAgents, setTopAgents] = useState([])
+  const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [])
+    if (token) {
+      fetchDashboardData()
+    } else {
+      setLoading(false)
+    }
+  }, [token])
 
   const fetchDashboardData = async () => {
     try {
@@ -40,32 +46,52 @@ const AdminOverview = () => {
         })
       ])
 
-      const vehicles = await vehiclesRes.json()
+      const vehiclesData = await vehiclesRes.json()
       const agents = await agentsRes.json()
 
+      setVehicles(vehiclesData)
+
       // Calculate stats
-      const inStock = vehicles.filter(v => v.status === 'In Stock').length
-      const sold = vehicles.filter(v => v.status === 'Sold').length
-      const onModification = vehicles.filter(v => v.status === 'On Modification').length
+      const inStock = vehiclesData.filter(v => v.status === 'In Stock').length
+      const sold = vehiclesData.filter(v => v.status === 'Sold').length
+      const onModification = vehiclesData.filter(v => v.status === 'On Modification').length
+      const reserved = vehiclesData.filter(v => v.status === 'Reserved').length
       
       // Calculate financial stats
-      const totalRevenue = vehicles
+      const totalRevenue = vehiclesData
         .filter(v => v.status === 'Sold' && v.salePrice)
         .reduce((sum, v) => sum + (v.salePrice || 0), 0)
       
-      const totalCost = vehicles
+      const totalCost = vehiclesData
         .filter(v => v.status === 'Sold')
         .reduce((sum, v) => sum + (v.purchasePrice || 0) + (v.modificationCost || 0), 0)
       
       const netProfit = totalRevenue - totalCost
 
+      // Calculate this month revenue and profit
+      const now = new Date()
+      const currentMonth = now.getMonth()
+      const currentYear = now.getFullYear()
+      
+      const thisMonthSold = vehiclesData.filter(v => {
+        if (v.status !== 'Sold' || !v.updatedAt) return false
+        const soldDate = new Date(v.updatedAt)
+        return soldDate.getMonth() === currentMonth && soldDate.getFullYear() === currentYear
+      })
+      
+      const thisMonthRevenue = thisMonthSold.reduce((sum, v) => sum + (v.salePrice || 0), 0)
+      const thisMonthCost = thisMonthSold.reduce((sum, v) => sum + (v.purchasePrice || 0) + (v.modificationCost || 0), 0)
+      const thisMonthNetProfit = thisMonthRevenue - thisMonthCost
+
       setStats({
-        totalVehicles: vehicles.length,
+        totalVehicles: vehiclesData.length,
         inStock,
         sold,
         onModification,
         totalRevenue,
         netProfit,
+        thisMonthRevenue,
+        thisMonthNetProfit,
         pendingModifications: onModification,
         lowStock: inStock < 10 ? inStock : 0
       })
@@ -103,25 +129,117 @@ const AdminOverview = () => {
     { icon: 'fas fa-chart-bar', label: 'Reports', color: '#e67e22', action: () => setActiveSection('reports') }
   ]
 
-  const salesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{
-      label: 'Sales',
-      data: [12, 19, 15, 25, 22, 28],
-      borderColor: '#667eea',
-      backgroundColor: 'rgba(102, 126, 234, 0.1)',
-      tension: 0.4,
-      fill: true
-    }]
+  // Calculate monthly sales data for last 6 months
+  const getMonthlySalesData = () => {
+    const months = []
+    const salesCounts = []
+    const now = new Date()
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthName = date.toLocaleDateString('en-IN', { month: 'short' })
+      months.push(monthName)
+      
+      const monthSales = vehicles.filter(v => {
+        if (v.status !== 'Sold' || !v.updatedAt) return false
+        const soldDate = new Date(v.updatedAt)
+        return soldDate.getMonth() === date.getMonth() && 
+               soldDate.getFullYear() === date.getFullYear()
+      }).length
+      
+      salesCounts.push(monthSales)
+    }
+    
+    return {
+      labels: months,
+      datasets: [{
+        label: 'Sales',
+        data: salesCounts,
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        tension: 0.4,
+        fill: true
+      }]
+    }
   }
+
+  const salesData = getMonthlySalesData()
 
   const statusData = {
     labels: ['In Stock', 'Sold', 'On Modification', 'Reserved'],
     datasets: [{
-      data: [stats.inStock, stats.sold, stats.onModification, 0],
+      data: [
+        stats.inStock, 
+        stats.sold, 
+        stats.onModification, 
+        vehicles.filter(v => v.status === 'Reserved').length
+      ],
       backgroundColor: ['#27ae60', '#3498db', '#f39c12', '#9b59b6']
     }]
   }
+
+  // Get recent activity from vehicles
+  const getRecentActivity = () => {
+    const activities = []
+    const now = new Date()
+    
+    // Get recently sold vehicles
+    const recentSold = vehicles
+      .filter(v => v.status === 'Sold' && v.updatedAt)
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      .slice(0, 3)
+      .map(v => ({
+        type: 'sold',
+        message: `Vehicle ${formatVehicleNumber(v.vehicleNo)} sold`,
+        time: v.updatedAt,
+        color: '#27ae60'
+      }))
+    
+    // Get recently added vehicles
+    const recentAdded = vehicles
+      .filter(v => v.createdAt)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 2)
+      .map(v => ({
+        type: 'added',
+        message: `New vehicle ${formatVehicleNumber(v.vehicleNo)} added`,
+        time: v.createdAt,
+        color: '#3498db'
+      }))
+    
+    // Get recently modified vehicles (status changed to In Stock)
+    const recentModified = vehicles
+      .filter(v => v.status === 'In Stock' && v.updatedAt && v.modificationComplete)
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      .slice(0, 2)
+      .map(v => ({
+        type: 'modified',
+        message: `Modification complete for ${formatVehicleNumber(v.vehicleNo)}`,
+        time: v.updatedAt,
+        color: '#9b59b6'
+      }))
+    
+    // Combine and sort by time
+    const allActivities = [...recentSold, ...recentAdded, ...recentModified]
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 5)
+    
+    return allActivities.map(activity => {
+      const timeDiff = now - new Date(activity.time)
+      const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60))
+      const daysAgo = Math.floor(hoursAgo / 24)
+      
+      let timeText = ''
+      if (hoursAgo < 1) timeText = 'Just now'
+      else if (hoursAgo < 24) timeText = `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`
+      else if (daysAgo < 7) timeText = `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`
+      else timeText = new Date(activity.time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
+      
+      return { ...activity, timeText }
+    })
+  }
+
+  const recentActivity = getRecentActivity()
 
   return (
     <div className="admin-overview-container">
@@ -440,39 +558,25 @@ const AdminOverview = () => {
               Recent Activity
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{
-                padding: '12px',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                borderLeft: '3px solid #3498db'
-              }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50', marginBottom: '4px' }}>
-                  New Vehicle Added
-                </div>
-                <div style={{ fontSize: '12px', color: '#6c757d' }}>2 hours ago</div>
-              </div>
-              <div style={{
-                padding: '12px',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                borderLeft: '3px solid #27ae60'
-              }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50', marginBottom: '4px' }}>
-                  Vehicle Sold
-                </div>
-                <div style={{ fontSize: '12px', color: '#6c757d' }}>5 hours ago</div>
-              </div>
-              <div style={{
-                padding: '12px',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                borderLeft: '3px solid #9b59b6'
-              }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50', marginBottom: '4px' }}>
-                  Modification Complete
-                </div>
-                <div style={{ fontSize: '12px', color: '#6c757d' }}>1 day ago</div>
-              </div>
+              {loading ? (
+                <p style={{ fontSize: '13px', color: '#6c757d', textAlign: 'center' }}>Loading...</p>
+              ) : recentActivity.length > 0 ? (
+                recentActivity.map((activity, idx) => (
+                  <div key={idx} style={{
+                    padding: '12px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    borderLeft: `3px solid ${activity.color}`
+                  }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50', marginBottom: '4px' }}>
+                      {activity.message}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6c757d' }}>{activity.timeText}</div>
+                  </div>
+                ))
+              ) : (
+                <p style={{ fontSize: '13px', color: '#6c757d', textAlign: 'center' }}>No recent activity</p>
+              )}
             </div>
           </div>
         </div>

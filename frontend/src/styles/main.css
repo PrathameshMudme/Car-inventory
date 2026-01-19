@@ -1708,32 +1708,36 @@ body {
 
 .vehicle-card {
     background: white;
-    border-radius: 15px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    position: relative;
 }
 
 .vehicle-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    border-color: var(--primary-color);
 }
 
 .vehicle-card-image {
     position: relative;
-    height: 220px;
+    height: 240px;
     overflow: hidden;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .vehicle-card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform 0.4s ease;
 }
 
 .vehicle-card:hover .vehicle-card-image img {
-    transform: scale(1.1);
+    transform: scale(1.08);
 }
 
 .vehicle-card-badge {
@@ -1766,12 +1770,13 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px);
 }
 
 .vehicle-card:hover .vehicle-card-overlay {
@@ -1780,19 +1785,28 @@ body {
 
 .vehicle-card-content {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .vehicle-card-header {
     display: flex;
     justify-content: space-between;
     align-items: start;
-    margin-bottom: 15px;
+    margin-bottom: 0;
 }
 
 .vehicle-card-header h3 {
     font-size: 18px;
     color: var(--dark-color);
     margin-bottom: 5px;
+    font-weight: 700;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .vehicle-number {
@@ -1828,10 +1842,11 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     padding: 15px;
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 10px;
+    border: 1px solid #dee2e6;
 }
 
 .price-item {
@@ -1857,15 +1872,25 @@ body {
 .vehicle-card-actions {
     display: flex;
     gap: 8px;
-    justify-content: space-between;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid #e9ecef;
 }
 
 .vehicle-card-actions .btn-icon-small {
-    flex: 1;
-    padding: 10px;
+    padding: 10px 14px;
     display: flex;
     justify-content: center;
+    align-items: center;
     border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.vehicle-card-actions .btn-icon-small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 /* Comparison Table */
@@ -2477,8 +2502,8 @@ body.dark-mode .data-table tbody tr:hover {
         grid-template-columns: 1fr;
     }
 }
-/* Dealer Details Modal Styles */
-.dealer-info-header {
+/* Agent Details Modal Styles */
+.agent-info-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -2488,13 +2513,13 @@ body.dark-mode .data-table tbody tr:hover {
     margin-bottom: 20px;
 }
 
-.dealer-info-header h3 {
+.agent-info-header h3 {
     margin: 0 0 10px 0;
     color: var(--text-primary);
     font-size: 1.5rem;
 }
 
-.dealer-info-header p {
+.agent-info-header p {
     margin: 5px 0;
     color: var(--text-secondary);
     display: flex;
@@ -2502,7 +2527,7 @@ body.dark-mode .data-table tbody tr:hover {
     gap: 8px;
 }
 
-.dealer-info-header i {
+.agent-info-header i {
     color: var(--primary-color);
     width: 16px;
 }

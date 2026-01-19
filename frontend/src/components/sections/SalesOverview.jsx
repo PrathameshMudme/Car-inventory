@@ -3,6 +3,7 @@ import StatCard from '../StatCard'
 import ChartCard from '../ChartCard'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -257,7 +258,7 @@ const SalesOverview = () => {
             <TableBody>
               {stats.recentSales.map((sale, index) => (
                 <TableRow key={index}>
-                  <TableCell><strong>{sale.vehicleNo}</strong></TableCell>
+                  <TableCell><strong>{formatVehicleNumber(sale.vehicleNo)}</strong></TableCell>
                   <TableCell>{`${sale.make} ${sale.model || ''}`.trim()}</TableCell>
                   <TableCell>
                     {sale.updatedAt 

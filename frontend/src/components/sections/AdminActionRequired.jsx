@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import {
   Box,
   Grid,
@@ -10,6 +11,7 @@ import {
   Typography,
   Button,
   IconButton,
+  Paper,
 } from '@mui/material'
 import {
   Delete as DeleteIcon,
@@ -50,15 +52,16 @@ import '../../styles/Sections.css'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 // Image slots for after-modification images
+// Order: 0=Front, 1=Back, 2=Right, 3=Left, 4=Interior 1, 5=Interior 2, 6=Engine, 7+=Other
 const IMAGE_SLOTS = [
-  { key: 'front', fieldName: 'front_images', order: 1, maxCount: 1 },
-  { key: 'back', fieldName: 'back_images', order: 2, maxCount: 1 },
-  { key: 'right_side', fieldName: 'right_side_images', order: 3, maxCount: 1 },
-  { key: 'left_side', fieldName: 'left_side_images', order: 4, maxCount: 1 },
-  { key: 'interior', fieldName: 'interior_images', order: 5, maxCount: 1 },
-  { key: 'interior_2', fieldName: 'interior_2_images', order: 6, maxCount: 1 },
-  { key: 'engine', fieldName: 'engine_images', order: 7, maxCount: 1 },
-  { key: 'other', fieldName: 'other_images', order: 8, maxCount: 10 }
+  { key: 'front', fieldName: 'front_images', order: 0, maxCount: 1 },
+  { key: 'back', fieldName: 'back_images', order: 1, maxCount: 1 },
+  { key: 'right_side', fieldName: 'right_side_images', order: 2, maxCount: 1 },
+  { key: 'left_side', fieldName: 'left_side_images', order: 3, maxCount: 1 },
+  { key: 'interior', fieldName: 'interior_images', order: 4, maxCount: 1 },
+  { key: 'interior_2', fieldName: 'interior_2_images', order: 5, maxCount: 1 },
+  { key: 'engine', fieldName: 'engine_images', order: 6, maxCount: 1 },
+  { key: 'other', fieldName: 'other_images', order: 7, maxCount: 10 }
 ]
 
 // Reusable File Preview Component (keeping for now as it's specific to this component)
@@ -183,10 +186,10 @@ const AdminActionRequired = () => {
     setFormData({
       askingPrice: vehicle.askingPrice || '',
       lastPrice: vehicle.lastPrice || '',
-      modificationCost: vehicle.modificationCost || '',
+      modificationCost: vehicle.modificationCost !== null && vehicle.modificationCost !== undefined ? vehicle.modificationCost.toString() : '',
       modificationNotes: vehicle.modificationNotes || '',
       agentPhone: vehicle.agentPhone || '',
-      agentCommission: vehicle.agentCommission || ''
+      agentCommission: vehicle.agentCommission !== null && vehicle.agentCommission !== undefined ? vehicle.agentCommission.toString() : ''
     })
     setPostModificationImages({
       front: [], back: [], right_side: [], left_side: [],
@@ -405,18 +408,26 @@ const AdminActionRequired = () => {
       
       // Add form fields
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== '' && value !== null && value !== undefined) {
+        // Handle payment fields (modificationCost, agentCommission) - send 0 for empty values (for calculations)
+        if (key === 'modificationCost' || key === 'agentCommission') {
+          if (value === '' || value === null || value === undefined || value === 'NIL') {
+            formDataToSend.append(key, '0') // Send 0 for calculations
+          } else {
+            const numValue = parseFloat(value)
+            formDataToSend.append(key, isNaN(numValue) ? '0' : numValue.toString())
+          }
+        } else if (value !== '' && value !== null && value !== undefined) {
           formDataToSend.append(key, value)
         }
       })
       
       // Add post-modification images
+      // Note: Order is calculated on backend from IMAGE_SLOTS array, no need to send it
       IMAGE_SLOTS.forEach(slot => {
         const images = postModificationImages[slot.key] || []
         const imagesToUpload = slot.maxCount === 1 ? images.slice(0, 1) : images
-        imagesToUpload.forEach((file, index) => {
+        imagesToUpload.forEach((file) => {
           formDataToSend.append(slot.fieldName, file)
-          formDataToSend.append(`${slot.fieldName}_order`, slot.order + (slot.maxCount > 1 ? index : 0))
         })
       })
 
@@ -451,7 +462,7 @@ const AdminActionRequired = () => {
   }
 
   const formatPrice = (price) => {
-    if (!price || price === 0) return '₹0'
+    if (!price || price === 0) return 'NIL'
     if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)}Cr`
     if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`
     return `₹${price.toLocaleString('en-IN')}`
@@ -497,7 +508,7 @@ const AdminActionRequired = () => {
             { 
               key: 'vehicleNo', 
               label: 'Vehicle No.', 
-              render: (v) => <strong>{v.vehicleNo || 'N/A'}</strong> 
+              render: (v) => <strong>{formatVehicleNumber(v.vehicleNo) || 'N/A'}</strong> 
             },
             { 
               key: 'makeModel', 
@@ -516,10 +527,10 @@ const AdminActionRequired = () => {
                 const missingFields = []
                 if (!v.askingPrice || parseFloat(v.askingPrice) <= 0) missingFields.push('Asking Price')
                 if (!v.lastPrice || parseFloat(v.lastPrice) <= 0) missingFields.push('Last Price')
-                if (v.modificationCost === undefined || v.modificationCost === null) missingFields.push('Modification Cost')
+                if (!v.modificationCost || v.modificationCost === 0) missingFields.push('Modification Cost')
                 if (!v.modificationNotes || !v.modificationNotes.trim()) missingFields.push('Modification Notes')
                 if (!v.agentPhone || !v.agentPhone.trim()) missingFields.push('Agent Phone')
-                if (v.agentCommission === undefined || v.agentCommission === null) missingFields.push('Agent Commission')
+                if (!v.agentCommission || v.agentCommission === 0) missingFields.push('Agent Commission')
                 return (
                   <span style={{ color: missingFields.length > 0 ? '#dc3545' : '#28a745' }}>
                     {missingFields.length > 0 ? missingFields.join(', ') : 'All fields complete'}
@@ -588,7 +599,7 @@ const AdminActionRequired = () => {
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="h5" sx={{ color: '#2c3e50', fontWeight: 700, fontSize: '22px', mb: 0.5 }}>
-                    {selectedVehicle.vehicleNo || 'N/A'}
+                    {formatVehicleNumber(selectedVehicle.vehicleNo) || 'N/A'}
                   </Typography>
                   <Typography variant="body1" sx={{ color: '#64748b', fontSize: '15px' }}>
                     {selectedVehicle.make || 'N/A'} {selectedVehicle.model || ''} • Purchase: {formatPrice(selectedVehicle.purchasePrice)}
@@ -638,7 +649,7 @@ const AdminActionRequired = () => {
                     type="number"
                     value={formData.modificationCost}
                     onChange={handleInputChange}
-                    placeholder="Enter modification cost"
+                    placeholder="NIL"
                     required
                     inputProps={{ min: 0 }}
                   />
@@ -650,7 +661,7 @@ const AdminActionRequired = () => {
                     type="number"
                     value={formData.agentCommission}
                     onChange={handleInputChange}
-                    placeholder="Enter agent commission"
+                    placeholder="NIL"
                     required
                     inputProps={{ min: 0 }}
                   />

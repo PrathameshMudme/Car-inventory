@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -182,7 +183,7 @@ const AdminHistory = () => {
 
   const purchaseColumns = [
     { label: 'Date', key: 'date' },
-    { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{item.vehicleNo}</strong> },
+    { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{formatVehicleNumber(item.vehicleNo)}</strong> },
     { label: 'Make/Model', key: 'makeModel', render: (item) => `${item.make} ${item.model || ''}`.trim() },
     { label: 'Purchase Price', key: 'purchasePrice', render: (item) => formatPrice(item.purchasePrice) },
     { label: 'Added By', key: 'user' }
@@ -190,7 +191,7 @@ const AdminHistory = () => {
 
   const soldColumns = [
     { label: 'Date', key: 'date' },
-    { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{item.vehicleNo}</strong> },
+    { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{formatVehicleNumber(item.vehicleNo)}</strong> },
     { label: 'Make/Model', key: 'makeModel', render: (item) => `${item.make} ${item.model || ''}`.trim() },
     { label: 'Purchase Price', key: 'purchasePrice', render: (item) => formatPrice(item.purchasePrice) },
     { label: 'Sale Price', key: 'lastPrice', render: (item) => formatPrice(item.lastPrice) },
@@ -199,7 +200,7 @@ const AdminHistory = () => {
 
   const modificationColumns = [
     { label: 'Date', key: 'date' },
-    { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{item.vehicleNo}</strong> },
+    { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{formatVehicleNumber(item.vehicleNo)}</strong> },
     { label: 'Make/Model', key: 'makeModel', render: (item) => `${item.make} ${item.model || ''}`.trim() },
     { label: 'Modified By', key: 'user' }
   ]

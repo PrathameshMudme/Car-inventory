@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -249,7 +250,7 @@ const AdminProfit = () => {
             {profitData.map((row, index) => (
               <TableRow key={index}>
                 <TableCell>
-                  <strong>{row.vehicleNo}</strong>
+                  <strong>{formatVehicleNumber(row.vehicleNo)}</strong>
                   {row.make || row.model ? (
                     <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '2px' }}>
                       {[row.make, row.model].filter(Boolean).join(' ')}

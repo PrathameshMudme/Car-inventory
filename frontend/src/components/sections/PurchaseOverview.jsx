@@ -3,6 +3,7 @@ import StatCard from '../StatCard'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useApp } from '../../context/AppContext'
+import { formatVehicleNumber } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import { Box, Paper, Typography, Chip, Button } from '@mui/material'
 import { Line, Doughnut } from 'react-chartjs-2'
@@ -63,6 +64,13 @@ const PurchaseOverview = () => {
       }
 
       const data = await response.json()
+      console.log('PurchaseOverview: Loaded vehicles from API', data.length)
+      console.log('PurchaseOverview: Sample vehicle', data[0] ? {
+        vehicleNo: data[0].vehicleNo,
+        createdBy: data[0].createdBy,
+        createdByType: typeof data[0].createdBy
+      } : 'No vehicles')
+      console.log('PurchaseOverview: Current user', { _id: user?._id, role: user?.role })
       setVehicles(data || [])
     } catch (error) {
       console.error('Error loading vehicles:', error)
@@ -72,22 +80,46 @@ const PurchaseOverview = () => {
     }
   }
 
-  // Get user's vehicles (filtered by createdBy for purchase managers)
+  // Get user's vehicles
+  // Note: Backend already filters by createdBy for purchase managers, so for purchase managers
+  // we can use vehicles directly. For admin, show all vehicles.
   const getUserVehicles = () => {
-    if (isAdmin) return vehicles
+    // Backend already filters by createdBy for purchase managers (see backend/src/routes/vehicles.js line 507-509)
+    // So for purchase managers, all returned vehicles are vehicles they added
+    // For admin, show all vehicles
+    if (isAdmin) {
+      return vehicles
+    }
     
-    if (!user?._id) return []
-    
-    return vehicles.filter(vehicle => {
-      const createdById = typeof vehicle.createdBy === 'object' 
-        ? (vehicle.createdBy._id || vehicle.createdBy.id || vehicle.createdBy)
-        : vehicle.createdBy
-      const userId = user._id || user.id
-      return createdById?.toString() === userId?.toString()
-    })
+    // For purchase managers: Backend already filtered, so trust the backend
+    // Return all vehicles since backend already filtered by createdBy
+    console.log('PurchaseOverview: getUserVehicles - returning', vehicles.length, 'vehicles for purchase manager')
+    return vehicles
   }
 
-  // Get monthly purchase data for last 6 months
+  // Helper function to get vehicle purchase date (for purchase notes - uses purchaseMonth/purchaseYear or purchaseDate)
+  const getVehiclePurchaseDate = (vehicle) => {
+    // First try purchaseDate
+    if (vehicle.purchaseDate) {
+      return new Date(vehicle.purchaseDate)
+    }
+    // Then try purchaseMonth and purchaseYear (used for generating purchase notes)
+    if (vehicle.purchaseMonth && vehicle.purchaseYear) {
+      return new Date(vehicle.purchaseYear, vehicle.purchaseMonth - 1, 1)
+    }
+    return null
+  }
+
+  // Helper function to get when vehicle was added by Purchase Manager (for insights)
+  const getVehicleAddedDate = (vehicle) => {
+    // Use createdAt - when the Purchase Manager added the vehicle to the system
+    if (vehicle.createdAt) {
+      return new Date(vehicle.createdAt)
+    }
+    return null
+  }
+
+  // Get monthly data for last 6 months (based on when vehicles were added by Purchase Manager)
   const getMonthlyData = () => {
     const userVehicles = getUserVehicles()
     const months = []
@@ -100,10 +132,10 @@ const PurchaseOverview = () => {
       months.push(monthName)
       
       const count = userVehicles.filter(vehicle => {
-        if (!vehicle.purchaseDate) return false
-        const purchaseDate = new Date(vehicle.purchaseDate)
-        return purchaseDate.getMonth() === date.getMonth() && 
-               purchaseDate.getFullYear() === date.getFullYear()
+        const addedDate = getVehicleAddedDate(vehicle)
+        if (!addedDate) return false
+        return addedDate.getMonth() === date.getMonth() && 
+               addedDate.getFullYear() === date.getFullYear()
       }).length
       
       data.push(count)
@@ -119,22 +151,22 @@ const PurchaseOverview = () => {
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
 
-    // This month purchases
+    // This month - vehicles added by Purchase Manager this month (based on createdAt)
     const thisMonthVehicles = userVehicles.filter(vehicle => {
-      if (!vehicle.purchaseDate) return false
-      const purchaseDate = new Date(vehicle.purchaseDate)
-      return purchaseDate.getMonth() === currentMonth && 
-             purchaseDate.getFullYear() === currentYear
+      const addedDate = getVehicleAddedDate(vehicle)
+      if (!addedDate) return false
+      return addedDate.getMonth() === currentMonth && 
+             addedDate.getFullYear() === currentYear
     })
 
-    // Last month for comparison
+    // Last month for comparison - vehicles added by Purchase Manager last month
     const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
     const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
     const lastMonthVehicles = userVehicles.filter(vehicle => {
-      if (!vehicle.purchaseDate) return false
-      const purchaseDate = new Date(vehicle.purchaseDate)
-      return purchaseDate.getMonth() === lastMonth && 
-             purchaseDate.getFullYear() === lastMonthYear
+      const addedDate = getVehicleAddedDate(vehicle)
+      if (!addedDate) return false
+      return addedDate.getMonth() === lastMonth && 
+             addedDate.getFullYear() === lastMonthYear
     })
 
     // Total purchases
@@ -198,25 +230,37 @@ const PurchaseOverview = () => {
       .slice(0, 5)
   }
 
-  // Get recent purchases
+  // Get recent purchases (vehicles added by Purchase Manager, sorted by when they were added)
   const getRecentPurchases = () => {
     const userVehicles = getUserVehicles()
     
     return userVehicles
-      .filter(vehicle => vehicle.purchaseDate)
+      .filter(vehicle => getVehicleAddedDate(vehicle) !== null)
       .sort((a, b) => {
-        const dateA = new Date(a.purchaseDate)
-        const dateB = new Date(b.purchaseDate)
-        return dateB - dateA
+        const dateA = getVehicleAddedDate(a)
+        const dateB = getVehicleAddedDate(b)
+        if (!dateA || !dateB) return 0
+        return dateB - dateA // Most recently added first
       })
       .slice(0, 5)
       .map(vehicle => {
-        const purchaseDate = new Date(vehicle.purchaseDate)
-        const formattedDate = purchaseDate.toLocaleDateString('en-IN', {
+        const addedDate = getVehicleAddedDate(vehicle)
+        if (!addedDate) return null
+        const formattedDate = addedDate.toLocaleDateString('en-IN', {
           day: 'numeric',
           month: 'short',
           year: 'numeric'
         })
+        
+        // For display, also show vehicle purchase date if available
+        const vehiclePurchaseDate = getVehiclePurchaseDate(vehicle)
+        const purchaseDateDisplay = vehiclePurchaseDate 
+          ? vehiclePurchaseDate.toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            })
+          : 'N/A'
 
         const amount = vehicle.purchasePrice !== undefined
           ? new Intl.NumberFormat('en-IN', {
@@ -239,15 +283,17 @@ const PurchaseOverview = () => {
 
         return {
           id: vehicle._id || vehicle.id,
-          vehicleNo: vehicle.vehicleNo || 'N/A',
+          vehicleNo: formatVehicleNumber(vehicle.vehicleNo || 'N/A'),
           makeModel: `${vehicle.make || ''} ${vehicle.model || ''}`.trim() || 'N/A',
-          purchaseDate: formattedDate,
+          purchaseDate: formattedDate, // Date when added by Purchase Manager
+          vehiclePurchaseDate: purchaseDateDisplay, // Vehicle's actual purchase date
           amount: amount,
           status: status,
           badgeClass: badgeClass,
           agentName: vehicle.agentName || vehicle.dealerName || 'N/A'
         }
       })
+      .filter(purchase => purchase !== null) // Remove null entries
   }
 
   const formatCurrency = (amount) => {
@@ -331,8 +377,27 @@ const PurchaseOverview = () => {
     )
   }
 
+  // Get user's vehicles for all insights (only vehicles added by this Purchase Manager)
+  const userVehicles = getUserVehicles()
+
   return (
     <div className="purchase-overview-container">
+      {/* Header with vehicle count info */}
+      {!isAdmin && (
+        <div style={{ 
+          marginBottom: '20px', 
+          padding: '12px 16px', 
+          background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+          borderRadius: '8px',
+          border: '1px solid rgba(102, 126, 234, 0.2)',
+          fontSize: '14px',
+          color: '#2c3e50'
+        }}>
+          <i className="fas fa-info-circle" style={{ marginRight: '8px', color: '#667eea' }}></i>
+          Showing insights for <strong>{userVehicles.length}</strong> vehicle{userVehicles.length !== 1 ? 's' : ''} you added
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div style={{ 
         display: 'grid', 
@@ -341,14 +406,14 @@ const PurchaseOverview = () => {
         marginBottom: '30px' 
       }}>
         <StatCard
-          icon="fas fa-shopping-cart"
+          icon="fas fa-car"
           iconClass="blue"
           title="Total Purchases"
           value={stats.totalPurchases.toString()}
           label="All time"
         />
         <StatCard
-          icon="fas fa-calendar-check"
+          icon="fas fa-calendar-plus"
           iconClass="purple"
           title="This Month"
           value={stats.purchasedThisMonth.toString()}
@@ -357,7 +422,7 @@ const PurchaseOverview = () => {
         {isAdmin && (
           <>
             <StatCard
-              icon="fas fa-rupee-sign"
+              icon="fas fa-wallet"
               iconClass="green"
               title="Total Investment"
               value={formatCurrency(stats.totalInvestment)}
@@ -365,7 +430,7 @@ const PurchaseOverview = () => {
             />
             {stats.avgPurchasePrice > 0 && (
               <StatCard
-                icon="fas fa-chart-line"
+                icon="fas fa-tag"
                 iconClass="orange"
                 title="Avg Purchase Price"
                 value={formatCurrency(stats.avgPurchasePrice)}
@@ -375,14 +440,14 @@ const PurchaseOverview = () => {
           </>
         )}
         <StatCard
-          icon="fas fa-file-alt"
+          icon="fas fa-file-circle-exclamation"
           iconClass="red"
           title="Pending Documents"
           value={stats.pendingDocs.toString()}
           label="Need attention"
         />
         <StatCard
-          icon="fas fa-box-open"
+          icon="fas fa-warehouse"
           iconClass="teal"
           title="In Stock"
           value={stats.statusCounts['In Stock'].toString()}
@@ -598,7 +663,7 @@ const PurchaseOverview = () => {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Vehicle</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Added Date</TableCell>
                   {isAdmin && <TableCell sx={{ fontWeight: 600 }}>Amount</TableCell>}
                   <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                 </TableRow>
@@ -614,6 +679,11 @@ const PurchaseOverview = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2">{purchase.purchaseDate}</Typography>
+                      {purchase.vehiclePurchaseDate !== 'N/A' && (
+                        <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>
+                          Purchase: {purchase.vehiclePurchaseDate}
+                        </Typography>
+                      )}
                     </TableCell>
                     {isAdmin && (
                       <TableCell>
