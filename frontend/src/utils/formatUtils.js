@@ -96,3 +96,30 @@ export const formatVehicleNumber = (vehicleNo) => {
   // If no pattern matches, return as-is (might already be formatted or invalid)
   return vehicleNo
 }
+
+/**
+ * Format vehicle manufacturing month and year for display
+ * @param {Object} vehicle - Vehicle object with vehicleMonth, vehicleYear, or year
+ * @returns {string} - Formatted string like "Jan 2024" or "2024" if only year available
+ */
+export const formatManufacturingDate = (vehicle) => {
+  if (!vehicle) return 'N/A'
+  
+  // Priority: vehicleMonth + vehicleYear > year
+  if (vehicle.vehicleMonth && vehicle.vehicleYear) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const month = parseInt(vehicle.vehicleMonth)
+    const year = parseInt(vehicle.vehicleYear)
+    
+    if (month >= 1 && month <= 12 && year) {
+      return `${monthNames[month - 1]} ${year}`
+    }
+  }
+  
+  // Fallback to year if available
+  if (vehicle.year) {
+    return vehicle.year.toString()
+  }
+  
+  return 'N/A'
+}

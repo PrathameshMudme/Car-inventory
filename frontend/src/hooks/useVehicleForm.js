@@ -21,6 +21,9 @@ export const useVehicleForm = (initialVehicle = null) => {
     engineNo: '',
     make: '',
     model: '',
+    year: '',
+    vehicleMonth: null,
+    vehicleYear: null,
     color: '',
     fuelType: 'Petrol',
     kilometers: '',
@@ -28,8 +31,6 @@ export const useVehicleForm = (initialVehicle = null) => {
     askingPrice: '',
     lastPrice: '',
     purchaseDate: null,
-    purchaseMonth: null,
-    purchaseYear: null,
     sellerName: '',
     sellerContact: '',
     agentName: '',
@@ -85,20 +86,25 @@ export const useVehicleForm = (initialVehicle = null) => {
   // Initialize form data from vehicle (for EditVehicle) or reset to empty (for AddVehicle)
   useEffect(() => {
     if (initialVehicle) {
-      // Handle purchase month and year
-      let purchaseDateValue = null
-      let purchaseMonth = null
-      let purchaseYear = null
+      // Handle vehicle manufacturing month and year (from year field)
+      // Note: For existing vehicles, we only have year, not month
+      // User can update month/year if needed in edit mode
+      let vehicleMonth = null
+      let vehicleYear = null
       
-      if (initialVehicle.purchaseMonth && initialVehicle.purchaseYear) {
-        purchaseMonth = initialVehicle.purchaseMonth
-        purchaseYear = initialVehicle.purchaseYear
-        purchaseDateValue = new Date(purchaseYear, purchaseMonth - 1, 1)
-      } else if (initialVehicle.purchaseDate) {
-        const date = new Date(initialVehicle.purchaseDate)
-        purchaseMonth = date.getMonth() + 1
-        purchaseYear = date.getFullYear()
-        purchaseDateValue = new Date(purchaseYear, purchaseMonth - 1, 1)
+      if (initialVehicle.year) {
+        vehicleYear = parseInt(initialVehicle.year)
+        // Month is not stored separately, so it will be null
+        // User can set it when editing if needed
+      }
+      
+      // Handle purchase date (for display only, purchaseMonth/purchaseYear will come from createdAt)
+      let purchaseDateValue = null
+      if (initialVehicle.purchaseDate) {
+        purchaseDateValue = new Date(initialVehicle.purchaseDate)
+      } else if (initialVehicle.createdAt) {
+        // Fallback to createdAt if purchaseDate doesn't exist
+        purchaseDateValue = new Date(initialVehicle.createdAt)
       }
       
       // Load purchase payment methods
@@ -124,6 +130,9 @@ export const useVehicleForm = (initialVehicle = null) => {
         engineNo: initialVehicle.engineNo || '',
         make: initialVehicle.make || '',
         model: initialVehicle.model || '',
+        year: initialVehicle.year || '',
+        vehicleMonth: vehicleMonth,
+        vehicleYear: vehicleYear,
         color: initialVehicle.color || '',
         fuelType: initialVehicle.fuelType || 'Petrol',
         kilometers: initialVehicle.kilometers || '',
@@ -131,8 +140,6 @@ export const useVehicleForm = (initialVehicle = null) => {
         askingPrice: initialVehicle.askingPrice || '',
         lastPrice: initialVehicle.lastPrice || '',
         purchaseDate: purchaseDateValue,
-        purchaseMonth: purchaseMonth,
-        purchaseYear: purchaseYear,
         ownerType: initialVehicle.ownerType || '',
         ownerTypeCustom: initialVehicle.ownerTypeCustom || '',
         addressLine1: initialVehicle.addressLine1 || '',
@@ -264,25 +271,31 @@ export const useVehicleForm = (initialVehicle = null) => {
     setFormData(prev => ({ ...prev, remainingAmountToSeller: remaining.toFixed(2) }))
   }, [purchasePaymentModes, formData.purchasePrice, calculateRemainingAmount])
 
-  // Handle purchase date change
-  const handlePurchaseDateChange = useCallback((newValue) => {
+  // Handle vehicle manufacturing month/year change (for year field)
+  const handleVehicleMonthYearChange = useCallback((newValue) => {
     if (newValue) {
       const month = newValue.getMonth() + 1
       const year = newValue.getFullYear()
       setFormData(prev => ({ 
         ...prev, 
-        purchaseMonth: month,
-        purchaseYear: year,
-        purchaseDate: new Date(year, month - 1, 1)
+        vehicleMonth: month,
+        vehicleYear: year,
+        year: year.toString()
       }))
     } else {
       setFormData(prev => ({ 
         ...prev, 
-        purchaseMonth: null,
-        purchaseYear: null,
-        purchaseDate: null
+        vehicleMonth: null,
+        vehicleYear: null,
+        year: ''
       }))
     }
+  }, [])
+  
+  // Handle purchase date change (kept for backward compatibility, but purchaseMonth/purchaseYear are now auto-set from createdAt)
+  const handlePurchaseDateChange = useCallback((newValue) => {
+    // This function is kept for compatibility but purchaseMonth/purchaseYear are now auto-set from createdAt
+    // No longer needed, but kept to avoid breaking existing code
   }, [])
 
   // Image handling
@@ -477,7 +490,7 @@ export const useVehicleForm = (initialVehicle = null) => {
     handleDistrictChange,
     handlePincodeChange,
     handlePaymentModeAmountChange,
-    handlePurchaseDateChange,
+    handlePurchaseDateChange: handleVehicleMonthYearChange,
     onImageDrop,
     removeImage,
     handleCameraCapture,

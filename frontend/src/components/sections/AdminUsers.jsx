@@ -431,7 +431,7 @@ const AdminUsers = () => {
                     icon={
                       <i 
                         className={`fas fa-${user.status === 'Active' ? 'ban' : 'check-circle'}`}
-                        style={{ fontSize: '14px' }}
+                        style={{ fontSize: '20px' }}
                       />
                     }
                     onClick={(e) => {

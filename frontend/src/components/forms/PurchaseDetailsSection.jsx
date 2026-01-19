@@ -13,8 +13,7 @@ const PurchaseDetailsSection = ({
   formData,
   isEdit = false,
   isAdmin = false,
-  handleInputChange,
-  handlePurchaseDateChange
+  handleInputChange
 }) => {
   return (
     <FormSection>
@@ -49,25 +48,6 @@ const PurchaseDetailsSection = ({
             placeholder="950000"
           />
         )}
-        <Box sx={{ width: '100%' }}>
-          <DatePicker
-            label="Purchase Month & Year"
-            value={formData.purchaseMonth && formData.purchaseYear 
-              ? new Date(formData.purchaseYear, formData.purchaseMonth - 1, 1)
-              : null}
-            onChange={handlePurchaseDateChange}
-            views={['month', 'year']}
-            openTo="month"
-            slotProps={{
-              textField: {
-                fullWidth: true,
-                required: !isEdit,
-                size: 'medium',
-                placeholder: 'Select Month & Year'
-              }
-            }}
-          />
-        </Box>
         <FormSelect
           options={OWNER_TYPE_OPTIONS}
           value={formData.ownerType}

@@ -133,7 +133,7 @@ const FilePreviewItem = ({ name, onView, onDelete, isNew = false }) => (
           p: 0.5
         }}
       >
-        <DeleteIcon sx={{ fontSize: 12 }} />
+        <DeleteIcon sx={{ fontSize: 20 }} />
       </Box>
     )}
   </Box>

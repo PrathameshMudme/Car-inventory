@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { formatVehicleNumber } from '../../utils/formatUtils'
+import { formatVehicleNumber, formatManufacturingDate } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -149,7 +149,7 @@ const PurchaseInventory = () => {
             <TableRow>
               <TableCell>Vehicle No.</TableCell>
               <TableCell>Make/Model</TableCell>
-              <TableCell>Year</TableCell>
+              <TableCell>Mfg. Date</TableCell>
               {isAdmin && <TableCell>Purchase Price</TableCell>}
               <TableCell>Purchase Date</TableCell>
               <TableCell>Documents</TableCell>
@@ -178,7 +178,7 @@ const PurchaseInventory = () => {
                   >
                     <TableCell><strong>{formatVehicleNumber(vehicle.vehicleNo)}</strong></TableCell>
                     <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
-                    <TableCell>{vehicle.year || 'N/A'}</TableCell>
+                    <TableCell>{formatManufacturingDate(vehicle)}</TableCell>
                     {isAdmin && (
                       <TableCell>{formatPrice(vehicle.purchasePrice)}</TableCell>
                     )}

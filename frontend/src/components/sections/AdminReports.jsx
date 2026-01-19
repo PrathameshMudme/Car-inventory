@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -6,24 +6,51 @@ import {
   Card,
   CardContent,
   Grid,
-  useTheme,
-  useMediaQuery,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress
 } from '@mui/material'
 import {
   BarChart as BarChartIcon,
   ShoppingCart as ShoppingCartIcon,
   AttachMoney as MoneyIcon,
   Warehouse as WarehouseIcon,
+  Download as DownloadIcon,
+  History as HistoryIcon
 } from '@mui/icons-material'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../context/AuthContext'
 import '../../styles/Sections.css'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 
 const AdminReports = () => {
   const { showToast } = useToast()
+  const { token } = useAuth()
+  const [selectedPeriod, setSelectedPeriod] = useState('6months')
+  const [selectedFormat, setSelectedFormat] = useState('pdf')
+  const [includeComparison, setIncludeComparison] = useState(true)
+  const [comparisonData, setComparisonData] = useState(null)
+  const [loadingComparison, setLoadingComparison] = useState(false)
+  const [generating, setGenerating] = useState({})
+  const [reportHistory, setReportHistory] = useState([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
 
   const reports = [
     {
       id: 1,
+      type: 'sales',
       name: 'Sales Report',
       description: 'Monthly sales performance and trends',
       icon: 'fas fa-chart-bar',
@@ -31,6 +58,7 @@ const AdminReports = () => {
     },
     {
       id: 2,
+      type: 'purchase',
       name: 'Purchase Report',
       description: 'Vehicle purchase history and costs',
       icon: 'fas fa-shopping-cart',
@@ -38,6 +66,7 @@ const AdminReports = () => {
     },
     {
       id: 3,
+      type: 'financial',
       name: 'Financial Report',
       description: 'Comprehensive financial statements',
       icon: 'fas fa-money-bill-wave',
@@ -45,6 +74,7 @@ const AdminReports = () => {
     },
     {
       id: 4,
+      type: 'inventory',
       name: 'Inventory Report',
       description: 'Current stock and valuation',
       icon: 'fas fa-warehouse',
@@ -52,11 +82,120 @@ const AdminReports = () => {
     }
   ]
 
-  const handleGenerate = (reportName) => {
+  useEffect(() => {
+    if (token && includeComparison) {
+      loadComparisonData()
+    }
+  }, [selectedPeriod, token, includeComparison])
+
+  const loadReportHistory = async () => {
+    if (!token) return
+    
+    setLoadingHistory(true)
+    try {
+      const response = await fetch(`${API_URL}/reports/audit/history?limit=20`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to load report history')
+      }
+
+      const data = await response.json()
+      setReportHistory(data)
+    } catch (error) {
+      console.error('Error loading report history:', error)
+      showToast('Failed to load report history', 'error')
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const loadComparisonData = async () => {
+    setLoadingComparison(true)
+    try {
+      const response = await fetch(`${API_URL}/reports/comparison/${selectedPeriod}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to load comparison data')
+      }
+
+      const data = await response.json()
+      setComparisonData(data)
+    } catch (error) {
+      console.error('Error loading comparison data:', error)
+      showToast('Failed to load comparison data', 'error')
+    } finally {
+      setLoadingComparison(false)
+    }
+  }
+
+  const handleGenerate = async (reportType, reportName) => {
+    if (!token) {
+      showToast('Please login to generate reports', 'error')
+      return
+    }
+
+    setGenerating(prev => ({ ...prev, [reportType]: true }))
     showToast(`Generating ${reportName}...`, 'info')
-    setTimeout(() => {
-      showToast(`${reportName} generated successfully!`, 'success')
-    }, 2000)
+
+    try {
+      const params = new URLSearchParams({
+        periodType: selectedPeriod,
+        format: selectedFormat,
+        includeComparison: includeComparison.toString()
+      })
+
+      const response = await fetch(`${API_URL}/reports/${reportType}?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to generate report')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      
+      const contentType = response.headers.get('content-type')
+      const extension = contentType === 'text/csv' ? 'csv' : 'pdf'
+      a.download = `${reportType}_report_${selectedPeriod}_${Date.now()}.${extension}`
+      
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      showToast(`${reportName} generated and downloaded successfully!`, 'success')
+      
+      // Reload history after generating
+      if (showHistory) {
+        loadReportHistory()
+      }
+    } catch (error) {
+      console.error('Error generating report:', error)
+      showToast(error.message || 'Failed to generate report', 'error')
+    } finally {
+      setGenerating(prev => ({ ...prev, [reportType]: false }))
+    }
+  }
+
+  const formatPrice = (price) => {
+    if (!price && price !== 0) return '₹0'
+    if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)}Cr`
+    if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`
+    return `₹${price.toLocaleString('en-IN')}`
   }
 
   return (
@@ -64,10 +203,128 @@ const AdminReports = () => {
       <div className="section-header">
         <div>
           <h2>Reports & Analytics</h2>
-          <p>Generate comprehensive business reports</p>
+          <p>Generate comprehensive business reports with comparison matrices</p>
         </div>
       </div>
 
+      {/* Report Options */}
+      <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <i className="fas fa-cog" style={{ color: '#667eea' }}></i>
+          Report Options
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <FormControl fullWidth>
+              <InputLabel>Period</InputLabel>
+              <Select
+                value={selectedPeriod}
+                label="Period"
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+              >
+                <MenuItem value="6months">Last 6 Months</MenuItem>
+                <MenuItem value="quarterly">Quarterly</MenuItem>
+                <MenuItem value="yearly">Yearly</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <FormControl fullWidth>
+              <InputLabel>Format</InputLabel>
+              <Select
+                value={selectedFormat}
+                label="Format"
+                onChange={(e) => setSelectedFormat(e.target.value)}
+              >
+                <MenuItem value="pdf">PDF</MenuItem>
+                <MenuItem value="csv">CSV</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <FormControl fullWidth>
+              <InputLabel>Include Comparison</InputLabel>
+              <Select
+                value={includeComparison.toString()}
+                label="Include Comparison"
+                onChange={(e) => setIncludeComparison(e.target.value === 'true')}
+              >
+                <MenuItem value="true">Yes</MenuItem>
+                <MenuItem value="false">No</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Comparison Matrix */}
+      {includeComparison && comparisonData && (
+        <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <i className="fas fa-chart-line" style={{ color: '#667eea' }}></i>
+            Comparison Matrix ({selectedPeriod === '6months' ? '6 Months' : selectedPeriod === 'quarterly' ? 'Quarterly' : 'Yearly'})
+          </Typography>
+          {loadingComparison ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Period</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Revenue</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Cost</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Profit</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Margin</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Sold</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Purchased</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {comparisonData.periods.map((period, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                        <Chip 
+                          label={period.period} 
+                          size="small" 
+                          color={idx === comparisonData.periods.length - 1 ? 'primary' : 'default'}
+                          sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
+                        />
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{formatPrice(period.metrics.totalRevenue)}</TableCell>
+                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{formatPrice(period.metrics.totalCost)}</TableCell>
+                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                        <span style={{ 
+                          color: period.metrics.netProfit >= 0 ? '#27ae60' : '#e74c3c',
+                          fontWeight: '600',
+                          fontSize: '15px'
+                        }}>
+                          {formatPrice(period.metrics.netProfit)}
+                        </span>
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                        <span style={{ 
+                          color: period.metrics.profitMargin >= 0 ? '#27ae60' : '#e74c3c',
+                          fontWeight: '600',
+                          fontSize: '15px'
+                        }}>
+                          {period.metrics.profitMargin.toFixed(1)}%
+                        </span>
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{period.metrics.vehiclesSold}</TableCell>
+                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{period.metrics.vehiclesPurchased}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      )}
+
+      {/* Report Cards */}
       <div className="reports-grid">
         {reports.map((report) => (
           <div key={report.id} className="report-card">
@@ -78,13 +335,129 @@ const AdminReports = () => {
             <p>{report.description}</p>
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => handleGenerate(report.name)}
+              onClick={() => handleGenerate(report.type, report.name)}
+              disabled={generating[report.type]}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                justifyContent: 'center',
+                minWidth: '120px'
+              }}
             >
-              Generate
+              {generating[report.type] ? (
+                <>
+                  <CircularProgress size={16} />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <DownloadIcon sx={{ fontSize: 16 }} />
+                  Generate {selectedFormat.toUpperCase()}
+                </>
+              )}
             </button>
           </div>
         ))}
       </div>
+
+      {/* Report History */}
+      <Paper elevation={2} sx={{ p: 3, mt: 3, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <HistoryIcon sx={{ color: '#667eea' }} />
+            Report Generation History
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              setShowHistory(!showHistory)
+              if (!showHistory && reportHistory.length === 0) {
+                loadReportHistory()
+              }
+            }}
+            startIcon={<i className="fas fa-history"></i>}
+          >
+            {showHistory ? 'Hide' : 'Show'} History
+          </Button>
+        </Box>
+
+        {showHistory && (
+          <>
+            {loadingHistory ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : reportHistory.length > 0 ? (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Report Type</TableCell>
+                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Period</TableCell>
+                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Date Range</TableCell>
+                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Format</TableCell>
+                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Generated By</TableCell>
+                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Generated At</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {reportHistory.map((report) => (
+                      <TableRow key={report._id}>
+                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                          <Chip 
+                            label={report.reportType.toUpperCase()} 
+                            size="small" 
+                            color="primary"
+                            sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                          <Chip 
+                            label={report.periodType === '6months' ? '6 Months' : 
+                                   report.periodType === 'quarterly' ? 'Quarterly' : 
+                                   report.periodType === 'yearly' ? 'Yearly' : 'Custom'} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>
+                          {formatDate(report.startDate)} - {formatDate(report.endDate)}
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                          <Chip 
+                            label={report.format.toUpperCase()} 
+                            size="small" 
+                            sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>
+                          {report.generatedBy?.name || report.generatedBy?.email || 'N/A'}
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>
+                          {new Date(report.generatedAt).toLocaleString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', p: 3 }}>
+                No report history available
+              </Typography>
+            )}
+          </>
+        )}
+      </Paper>
     </div>
   )
 }

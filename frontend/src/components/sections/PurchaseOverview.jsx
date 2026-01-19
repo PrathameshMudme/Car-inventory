@@ -97,15 +97,19 @@ const PurchaseOverview = () => {
     return vehicles
   }
 
-  // Helper function to get vehicle purchase date (for purchase notes - uses purchaseMonth/purchaseYear or purchaseDate)
+  // Helper function to get vehicle purchase date (for purchase notes - uses purchaseMonth/purchaseYear or purchaseDate or createdAt)
   const getVehiclePurchaseDate = (vehicle) => {
     // First try purchaseDate
     if (vehicle.purchaseDate) {
       return new Date(vehicle.purchaseDate)
     }
-    // Then try purchaseMonth and purchaseYear (used for generating purchase notes)
+    // Then try purchaseMonth and purchaseYear (auto-set from createdAt, used for generating purchase notes)
     if (vehicle.purchaseMonth && vehicle.purchaseYear) {
       return new Date(vehicle.purchaseYear, vehicle.purchaseMonth - 1, 1)
+    }
+    // Fallback to createdAt (when vehicle was added to system)
+    if (vehicle.createdAt) {
+      return new Date(vehicle.createdAt)
     }
     return null
   }

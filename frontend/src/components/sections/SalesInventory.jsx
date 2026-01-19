@@ -3,7 +3,8 @@ import VehicleDetailsFullPage from '../VehicleDetailsFullPage'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { formatVehicleNumber } from '../../utils/formatUtils'
+import { formatVehicleNumber, formatManufacturingDate } from '../../utils/formatUtils'
+import { getDistricts, getTalukas } from '../../utils/maharashtraData'
 import {
   LoadingState,
   EmptyState,
@@ -33,7 +34,10 @@ const SalesInventory = () => {
     customerContact: '',
     customerAlternateContact: '',
     customerEmail: '',
-    customerAddress: '',
+    customerAddressLine1: '',
+    customerDistrict: '',
+    customerTaluka: '',
+    customerPincode: '',
     customerAadhaar: '',
     customerPAN: '',
     customerSource: '',
@@ -53,6 +57,7 @@ const SalesInventory = () => {
     },
     saleNotes: ''
   })
+  const [availableTalukas, setAvailableTalukas] = useState([])
   const { showToast } = useToast()
   const { token, user } = useAuth()
 
@@ -138,6 +143,21 @@ const SalesInventory = () => {
           [subField]: subField === 'enabled' ? value : (subField === 'amount' ? parseFloat(value) || 0 : value)
         }
       }))
+    } else if (field === 'customerDistrict') {
+      // When district changes, update talukas and clear taluka selection
+      setSaleFormData(prev => ({
+        ...prev,
+        customerDistrict: value,
+        customerTaluka: '' // Clear taluka when district changes
+      }))
+      setAvailableTalukas(value ? getTalukas(value) : [])
+    } else if (field === 'customerPincode') {
+      // Only allow numeric input and limit to 6 digits
+      const numericValue = value.replace(/\D/g, '').slice(0, 6)
+      setSaleFormData(prev => ({
+        ...prev,
+        customerPincode: numericValue
+      }))
     } else {
       setSaleFormData(prev => ({
         ...prev,
@@ -219,7 +239,23 @@ const SalesInventory = () => {
       formData.append('customerContact', saleFormData.customerContact)
       formData.append('customerAlternateContact', saleFormData.customerAlternateContact || '')
       formData.append('customerEmail', saleFormData.customerEmail || '')
-      formData.append('customerAddress', saleFormData.customerAddress || '')
+      
+      // Construct customerAddress from structured fields for backward compatibility
+      const addressParts = [
+        saleFormData.customerAddressLine1,
+        saleFormData.customerTaluka,
+        saleFormData.customerDistrict,
+        saleFormData.customerPincode
+      ].filter(part => part && part.trim() !== '')
+      const customerAddress = addressParts.join(', ') || ''
+      formData.append('customerAddress', customerAddress)
+      
+      // Also send structured fields separately (for future use)
+      formData.append('customerAddressLine1', saleFormData.customerAddressLine1 || '')
+      formData.append('customerDistrict', saleFormData.customerDistrict || '')
+      formData.append('customerTaluka', saleFormData.customerTaluka || '')
+      formData.append('customerPincode', saleFormData.customerPincode || '')
+      
       formData.append('customerAadhaar', saleFormData.customerAadhaar || '')
       formData.append('customerPAN', saleFormData.customerPAN || '')
       formData.append('customerSource', saleFormData.customerSource)
@@ -282,7 +318,10 @@ const SalesInventory = () => {
         customerContact: '',
         customerAlternateContact: '',
         customerEmail: '',
-        customerAddress: '',
+        customerAddressLine1: '',
+        customerDistrict: '',
+        customerTaluka: '',
+        customerPincode: '',
         customerAadhaar: '',
         customerPAN: '',
         customerSource: '',
@@ -315,7 +354,10 @@ const SalesInventory = () => {
       customerContact: '',
       customerAlternateContact: '',
       customerEmail: '',
-      customerAddress: '',
+      customerAddressLine1: '',
+      customerDistrict: '',
+      customerTaluka: '',
+      customerPincode: '',
       customerAadhaar: '',
       customerPAN: '',
       customerSource: '',
@@ -341,8 +383,18 @@ const SalesInventory = () => {
   useEffect(() => {
     if (showMarkSoldModal && selectedVehicle) {
       resetSaleForm()
+      setAvailableTalukas([])
     }
   }, [showMarkSoldModal, selectedVehicle])
+
+  // Update available talukas when district changes
+  useEffect(() => {
+    if (saleFormData.customerDistrict) {
+      setAvailableTalukas(getTalukas(saleFormData.customerDistrict))
+    } else {
+      setAvailableTalukas([])
+    }
+  }, [saleFormData.customerDistrict])
 
   const formatPrice = (price) => {
     if (!price) return 'N/A'
@@ -427,8 +479,8 @@ const SalesInventory = () => {
             },
             { 
               key: 'year', 
-              label: 'Year', 
-              render: (v) => v.year || 'N/A' 
+              label: 'Mfg. Date', 
+              render: (v) => formatManufacturingDate(v)
             },
             { 
               key: 'askingPrice', 
@@ -476,7 +528,7 @@ const SalesInventory = () => {
                       setShowMarkSoldModal(true)
                     }}
                     title="Mark Sold"
-                    color="success"
+                    color="info"
                   />
                 </div>
               )
@@ -568,14 +620,62 @@ const SalesInventory = () => {
             />
           </div>
 
+          <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '16px', color: '#495057', fontWeight: '600' }}>
+            <i className="fas fa-map-marker-alt"></i> Customer Address
+          </h4>
+          
           <div className="form-group">
-            <label>Address</label>
-            <textarea 
-              placeholder="Enter customer address" 
-              rows="3"
-              value={saleFormData.customerAddress}
-              onChange={(e) => handleSaleFormChange('customerAddress', e.target.value)}
+            <label>Address Line 1</label>
+            <input 
+              type="text" 
+              placeholder="House/Flat No., Building Name, Street..." 
+              value={saleFormData.customerAddressLine1}
+              onChange={(e) => handleSaleFormChange('customerAddressLine1', e.target.value)}
             />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div className="form-group">
+              <label>District</label>
+              <select 
+                value={saleFormData.customerDistrict}
+                onChange={(e) => handleSaleFormChange('customerDistrict', e.target.value)}
+              >
+                <option value="">Select District</option>
+                {getDistricts().map(district => (
+                  <option key={district} value={district}>{district}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Taluka</label>
+              <select 
+                value={saleFormData.customerTaluka}
+                onChange={(e) => handleSaleFormChange('customerTaluka', e.target.value)}
+                disabled={!saleFormData.customerDistrict}
+              >
+                <option value="">{saleFormData.customerDistrict ? 'Select Taluka' : 'Select District first'}</option>
+                {availableTalukas.map(taluka => (
+                  <option key={taluka} value={taluka}>{taluka}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Pincode</label>
+            <input 
+              type="text" 
+              placeholder="400001" 
+              maxLength="6"
+              value={saleFormData.customerPincode}
+              onChange={(e) => handleSaleFormChange('customerPincode', e.target.value)}
+            />
+            {saleFormData.customerPincode.length > 0 && saleFormData.customerPincode.length !== 6 && (
+              <small style={{ color: '#dc3545', display: 'block', marginTop: '5px' }}>
+                Pincode must be exactly 6 digits
+              </small>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
@@ -857,7 +957,7 @@ const SalesInventory = () => {
                 e.target.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)'
               }}
             >
-              <i className="fas fa-check-circle" style={{ marginRight: '8px' }}></i>
+              <i className="fas fa-check-circle" style={{ marginRight: '8px', color: '#667eea' }}></i>
               Mark as Sold
             </button>
           </div>
@@ -881,7 +981,7 @@ const SalesInventory = () => {
               <option value="">Choose a vehicle...</option>
               {vehicles.map(v => (
                 <option key={v._id} value={v._id}>
-                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {v.year || ''}
+                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {formatManufacturingDate(v)}
                 </option>
               ))}
             </select>
@@ -894,7 +994,7 @@ const SalesInventory = () => {
         {selectedVehicle && compareVehicle && (
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
+              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {formatManufacturingDate(selectedVehicle)} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
               <StatusBadge status={selectedVehicle.status} />
             </div>
 

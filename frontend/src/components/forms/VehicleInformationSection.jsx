@@ -77,6 +77,52 @@ const VehicleInformationSection = ({
           placeholder="City, Swift..."
           required={!isEdit}
         />
+        <Box sx={{ width: '100%' }}>
+          <DatePicker
+            label="Manufacturing Month & Year"
+            value={formData.vehicleMonth && formData.vehicleYear 
+              ? new Date(formData.vehicleYear, formData.vehicleMonth - 1, 1)
+              : (formData.year ? new Date(parseInt(formData.year), 0, 1) : null)}
+            onChange={(newValue) => {
+              if (newValue) {
+                const month = newValue.getMonth() + 1
+                const year = newValue.getFullYear()
+                handleInputChange({ 
+                  target: { 
+                    name: 'vehicleMonth', 
+                    value: month.toString() 
+                  } 
+                })
+                handleInputChange({ 
+                  target: { 
+                    name: 'vehicleYear', 
+                    value: year.toString() 
+                  } 
+                })
+                handleInputChange({ 
+                  target: { 
+                    name: 'year', 
+                    value: year.toString() 
+                  } 
+                })
+              } else {
+                handleInputChange({ target: { name: 'vehicleMonth', value: '' } })
+                handleInputChange({ target: { name: 'vehicleYear', value: '' } })
+                handleInputChange({ target: { name: 'year', value: '' } })
+              }
+            }}
+            views={['month', 'year']}
+            openTo="month"
+            slotProps={{
+              textField: {
+                fullWidth: true,
+                required: !isEdit,
+                size: 'medium',
+                placeholder: 'Select Month & Year'
+              }
+            }}
+          />
+        </Box>
         <FormTextField
           label="Color"
           name="color"

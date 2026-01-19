@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Modal from '../Modal'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
-import { formatVehicleNumber } from '../../utils/formatUtils'
+import { formatVehicleNumber, formatManufacturingDate } from '../../utils/formatUtils'
 import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
@@ -13,6 +13,8 @@ const AdminPendingPayments = () => {
   const [loading, setLoading] = useState(true)
   const [selectedVehicle, setSelectedVehicle] = useState(null)
   const [showMarkPaidModal, setShowMarkPaidModal] = useState(false)
+  const [showSettlementHistory, setShowSettlementHistory] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [paymentMode, setPaymentMode] = useState('cash')
   const [paymentAmount, setPaymentAmount] = useState('')
   const [filterType, setFilterType] = useState('all') // 'all', 'from_customer', 'to_seller'
@@ -74,12 +76,20 @@ const AdminPendingPayments = () => {
   }
 
   const formatMonthYear = (vehicle) => {
+    // Try purchaseMonth/purchaseYear first (may be set from createdAt)
     if (vehicle.purchaseMonth && vehicle.purchaseYear) {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       return `${monthNames[vehicle.purchaseMonth - 1]} ${vehicle.purchaseYear}`
     }
+    // Fallback to purchaseDate
     if (vehicle.purchaseDate) {
       const date = new Date(vehicle.purchaseDate)
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+    }
+    // Fallback to createdAt (when vehicle was added)
+    if (vehicle.createdAt) {
+      const date = new Date(vehicle.createdAt)
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
     }
@@ -263,8 +273,10 @@ const AdminPendingPayments = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2> Pending Payments</h2>
-          <p>Vehicles with outstanding payments ({vehicles.length} vehicles)</p>
+          <h2 style={{ fontSize: '28px', marginBottom: '8px' }}>Pending Payments</h2>
+          <p style={{ fontSize: '16px', color: '#6c757d', margin: 0 }}>
+            Vehicles with outstanding payments ({vehicles.length} vehicles)
+          </p>
         </div>
         <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select
@@ -278,8 +290,8 @@ const AdminPendingPayments = () => {
             }}
           >
             <option value="all">All Pending</option>
-            <option value="from_customer">Pending from Customer</option>
-            <option value="to_seller">Pending to Seller</option>
+            <option value="from_customer">From Customer</option>
+            <option value="to_seller">To Customer</option>
           </select>
           <button className="btn btn-secondary" onClick={() => loadVehicles()} title="Refresh">
             <i className="fas fa-sync-alt"></i> Refresh
@@ -288,103 +300,351 @@ const AdminPendingPayments = () => {
       </div>
 
       {vehicles.length === 0 ? (
-        <div className="empty-state">
-          <i className="fas fa-check-circle"></i>
-          <h3>No Pending Payments</h3>
-          <p>All vehicles have been fully paid</p>
+        <div className="empty-state" style={{ padding: '60px 20px' }}>
+          <i className="fas fa-check-circle" style={{ fontSize: '64px', color: '#28a745', marginBottom: '20px' }}></i>
+          <h3 style={{ fontSize: '24px', marginBottom: '12px', color: '#212529' }}>No Pending Payments</h3>
+          <p style={{ fontSize: '16px', color: '#6c757d' }}>All vehicles have been fully paid</p>
         </div>
       ) : (
-        <Table sx={{ minWidth: 700 }} aria-label="pending payments table">
+        <Table sx={{ minWidth: 900 }} aria-label="pending payments table">
           <TableHead>
             <TableRow>
-              <TableCell>Vehicle No.</TableCell>
-              <TableCell>Make</TableCell>
-              <TableCell>Model</TableCell>
-              <TableCell>Purchase Date</TableCell>
-              <TableCell>Added By</TableCell>
-              <TableCell>Agent Name</TableCell>
-              <TableCell>Notes</TableCell>
-              <TableCell>Pending From Customer</TableCell>
-              <TableCell>Pending To Seller</TableCell>
-              <TableCell align="center">Action</TableCell>
+              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Vehicle No.</TableCell>
+              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Make/Model</TableCell>
+              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Purchase Date</TableCell>
+              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Pending Payment</TableCell>
+              <TableCell align="center" sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {vehicles.map((vehicle) => (
-              <TableRow key={vehicle._id}>
-                <TableCell>
-                  <strong>{formatVehicleNumber(vehicle.vehicleNo) || 'N/A'}</strong>
-                </TableCell>
-                <TableCell>{vehicle.make || 'N/A'}</TableCell>
-                <TableCell>{vehicle.model || 'N/A'}</TableCell>
-                <TableCell>{formatMonthYear(vehicle)}</TableCell>
-                <TableCell>
-                  {vehicle.createdBy?.name || vehicle.createdBy?.email || 'N/A'}
-                </TableCell>
-                <TableCell>{vehicle.agentName || vehicle.dealerName || 'N/A'}</TableCell>
-                <TableCell>
-                  <span style={{ 
-                    display: 'block', 
-                    maxWidth: '200px', 
-                    overflow: 'hidden', 
-                    textOverflow: 'ellipsis', 
-                    whiteSpace: 'nowrap' 
-                  }} title={vehicle.saleNotes || vehicle.notes || ''}>
-                    {vehicle.saleNotes || vehicle.notes || 'N/A'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {(parseFloat(vehicle.remainingAmount) || 0) > 0 ? (
-                    <strong style={{ color: '#dc3545' }}>
-                      {formatPrice(vehicle.remainingAmount)}
-                    </strong>
-                  ) : (
-                    <span style={{ color: '#6c757d' }}>N/A</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {(parseFloat(vehicle.remainingAmountToSeller) || 0) > 0 ? (
-                    <strong style={{ color: '#ff9800' }}>
-                      {formatPrice(vehicle.remainingAmountToSeller)}
-                    </strong>
-                  ) : (
-                    <span style={{ color: '#6c757d' }}>N/A</span>
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
-                    {(parseFloat(vehicle.remainingAmount) || 0) > 0 && (
+            {vehicles.map((vehicle) => {
+              const fromCustomer = parseFloat(vehicle.remainingAmount) || 0
+              const toSeller = parseFloat(vehicle.remainingAmountToSeller) || 0
+              
+              return (
+                <TableRow key={vehicle._id} sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
+                  <TableCell sx={{ fontSize: '15px', padding: '16px', fontWeight: '600' }}>
+                    <div style={{ fontSize: '16px', color: '#212529' }}>
+                      {formatVehicleNumber(vehicle.vehicleNo) || 'N/A'}
+                    </div>
+                  </TableCell>
+                  <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '600', color: '#495057' }}>
+                      {vehicle.make || 'N/A'}
+                    </div>
+                    {vehicle.model && (
+                      <div style={{ fontSize: '14px', color: '#6c757d', marginTop: '4px' }}>
+                        {vehicle.model}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                    <div style={{ fontSize: '15px', color: '#495057' }}>
+                      {formatMonthYear(vehicle)}
+                    </div>
+                  </TableCell>
+                  <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                    {(() => {
+                      if (fromCustomer > 0 && toSeller > 0) {
+                        // Both pending
+                        return (
+                          <div>
+                            <div style={{ 
+                              marginBottom: '10px',
+                              padding: '10px',
+                              backgroundColor: '#d4edda',
+                              borderRadius: '6px',
+                              borderLeft: '4px solid #28a745'
+                            }}>
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: '#155724', 
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                marginBottom: '6px',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}>
+                                <i className="fas fa-arrow-down" style={{ color: '#28a745', marginRight: '6px' }}></i>
+                                From Customer
+                              </div>
+                              <div style={{ fontSize: '18px', fontWeight: '700', color: '#28a745' }}>
+                                {formatPrice(fromCustomer)}
+                              </div>
+                            </div>
+                            <div style={{ 
+                              padding: '10px',
+                              backgroundColor: '#f8d7da',
+                              borderRadius: '6px',
+                              borderLeft: '4px solid #dc3545'
+                            }}>
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: '#721c24', 
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                marginBottom: '6px',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}>
+                                <i className="fas fa-arrow-up" style={{ color: '#dc3545', marginRight: '6px' }}></i>
+                                To Customer
+                              </div>
+                              <div style={{ fontSize: '18px', fontWeight: '700', color: '#dc3545' }}>
+                                {formatPrice(toSeller)}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      } else if (fromCustomer > 0) {
+                        // Only from customer
+                        return (
+                          <div style={{ 
+                            padding: '12px 16px',
+                            backgroundColor: '#d4edda',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #28a745'
+                          }}>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: '#155724', 
+                              fontWeight: '700',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              marginBottom: '8px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <i className="fas fa-arrow-down" style={{ color: '#28a745', marginRight: '6px' }}></i>
+                              From Customer
+                            </div>
+                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#28a745' }}>
+                              {formatPrice(fromCustomer)}
+                            </div>
+                          </div>
+                        )
+                      } else if (toSeller > 0) {
+                        // Only to seller
+                        return (
+                          <div style={{ 
+                            padding: '12px 16px',
+                            backgroundColor: '#f8d7da',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #dc3545'
+                          }}>
+                            <div style={{ 
+                              fontSize: '12px', 
+                              color: '#721c24', 
+                              fontWeight: '700',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              marginBottom: '8px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <i className="fas fa-arrow-up" style={{ color: '#dc3545', marginRight: '6px' }}></i>
+                              To Customer
+                            </div>
+                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#dc3545' }}>
+                              {formatPrice(toSeller)}
+                            </div>
+                          </div>
+                        )
+                      } else {
+                        return <span style={{ color: '#6c757d', fontSize: '15px' }}>N/A</span>
+                      }
+                    })()}
+                  </TableCell>
+                  <TableCell align="center" sx={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {/* Details Button */}
                       <button
                         className="btn-icon-small"
-                        title="Mark Customer Payment as Paid"
-                        onClick={() => handleMarkAsPaid(vehicle, 'from_customer')}
+                        title="View Details"
+                        onClick={(e) => {
+                          setSelectedVehicle(vehicle)
+                          setShowDetailsModal(true)
+                          // Reset button state after click
+                          e.currentTarget.style.background = '#6c757d'
+                        }}
+                        onMouseDown={(e) => {
+                          e.currentTarget.style.background = '#4a5258'
+                        }}
+                        onMouseUp={(e) => {
+                          e.currentTarget.style.background = '#5a6268'
+                        }}
                         style={{
-                          background: 'var(--primary-color, #667eea)',
+                          background: '#6c757d',
                           color: 'white',
-                          border: 'none'
+                          border: 'none',
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '40px',
+                          height: '40px'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (document.activeElement !== e.currentTarget) {
+                            e.currentTarget.style.background = '#5a6268'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#6c757d'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.background = '#6c757d'
                         }}
                       >
-                        <i className="fas fa-check"></i> Customer
+                        <i className="fas fa-info-circle" style={{ fontSize: '18px' }}></i>
                       </button>
-                    )}
-                    {(parseFloat(vehicle.remainingAmountToSeller) || 0) > 0 && (
-                      <button
-                        className="btn-icon-small"
-                        title="Mark Seller Payment as Paid"
-                        onClick={() => handleMarkAsPaid(vehicle, 'to_seller')}
-                        style={{
-                          background: '#ff9800',
-                          color: 'white',
-                          border: 'none'
-                        }}
-                      >
-                        <i className="fas fa-check"></i> Seller
-                      </button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      
+                      {/* Settlement History Button */}
+                      {vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0 && (
+                        <button
+                          className="btn-icon-small"
+                          title="View Settlement History"
+                          onClick={(e) => {
+                            setSelectedVehicle(vehicle)
+                            setShowSettlementHistory(true)
+                            // Reset button state after click
+                            e.currentTarget.style.background = '#667eea'
+                          }}
+                          onMouseDown={(e) => {
+                            e.currentTarget.style.background = '#4458b3'
+                          }}
+                          onMouseUp={(e) => {
+                            e.currentTarget.style.background = '#5568d3'
+                          }}
+                          style={{
+                            background: '#667eea',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '40px',
+                            height: '40px'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (document.activeElement !== e.currentTarget) {
+                              e.currentTarget.style.background = '#5568d3'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#667eea'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.background = '#667eea'
+                          }}
+                        >
+                          <i className="fas fa-history" style={{ fontSize: '18px' }}></i>
+                        </button>
+                      )}
+                      
+                      {/* Mark as Paid Buttons */}
+                      {fromCustomer > 0 && (
+                        <button
+                          className="btn-icon-small"
+                          title="Mark Customer Payment as Paid"
+                          onClick={(e) => {
+                            handleMarkAsPaid(vehicle, 'from_customer')
+                            // Reset button state after click
+                            e.currentTarget.style.background = 'var(--primary-color, #667eea)'
+                          }}
+                          onMouseDown={(e) => {
+                            e.currentTarget.style.background = '#4458b3'
+                          }}
+                          onMouseUp={(e) => {
+                            e.currentTarget.style.background = '#5568d3'
+                          }}
+                          style={{
+                            background: 'var(--primary-color, #667eea)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '40px',
+                            height: '40px'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (document.activeElement !== e.currentTarget) {
+                              e.currentTarget.style.background = '#5568d3'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'var(--primary-color, #667eea)'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.background = 'var(--primary-color, #667eea)'
+                          }}
+                        >
+                          <i className="fas fa-check" style={{ fontSize: '18px' }}></i>
+                        </button>
+                      )}
+                      {toSeller > 0 && (
+                        <button
+                          className="btn-icon-small"
+                          title="Mark Seller Payment as Paid"
+                          onClick={(e) => {
+                            handleMarkAsPaid(vehicle, 'to_seller')
+                            // Reset button state after click
+                            e.currentTarget.style.background = '#ff9800'
+                          }}
+                          onMouseDown={(e) => {
+                            e.currentTarget.style.background = '#e68900'
+                          }}
+                          onMouseUp={(e) => {
+                            e.currentTarget.style.background = '#f57c00'
+                          }}
+                          style={{
+                            background: '#ff9800',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '40px',
+                            height: '40px'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (document.activeElement !== e.currentTarget) {
+                              e.currentTarget.style.background = '#f57c00'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#ff9800'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.background = '#ff9800'
+                          }}
+                        >
+                          <i className="fas fa-check" style={{ fontSize: '18px' }}></i>
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       )}
@@ -404,44 +664,88 @@ const AdminPendingPayments = () => {
         {selectedVehicle && (
           <form onSubmit={handleSubmitMarkPaid}>
             <div className="form-group">
-              <label>Vehicle</label>
+              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', display: 'block' }}>Vehicle</label>
               <input 
                 type="text" 
                 value={`${formatVehicleNumber(selectedVehicle.vehicleNo)} - ${selectedVehicle.make} ${selectedVehicle.model}`}
                 disabled
-                style={{ background: '#f5f5f5' }}
+                style={{ 
+                  background: '#f5f5f5', 
+                  padding: '14px',
+                  fontSize: '16px',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '8px',
+                  width: '100%'
+                }}
               />
             </div>
 
             <div className="form-group">
-              <label>Payment Type</label>
-              <input 
-                type="text" 
-                value={getPaymentType(selectedVehicle) === 'from_customer' ? 'Pending from Customer' : 
-                       getPaymentType(selectedVehicle) === 'to_seller' ? 'Pending to Seller' : 'Both'}
-                disabled
-                style={{ background: '#f5f5f5', fontWeight: 'bold' }}
-              />
+              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', display: 'block' }}>Payment Type</label>
+              <div style={{ 
+                background: '#f5f5f5', 
+                fontWeight: 'bold',
+                padding: '14px',
+                fontSize: '16px',
+                border: '1px solid #e9ecef',
+                borderRadius: '8px',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                {getPaymentType(selectedVehicle) === 'from_customer' ? (
+                  <>
+                    <i className="fas fa-arrow-down" style={{ color: '#28a745' }}></i>
+                    <span>From Customer</span>
+                  </>
+                ) : getPaymentType(selectedVehicle) === 'to_seller' ? (
+                  <>
+                    <i className="fas fa-arrow-up" style={{ color: '#dc3545' }}></i>
+                    <span>To Customer</span>
+                  </>
+                ) : (
+                  <span>Both</span>
+                )}
+              </div>
             </div>
             <div className="form-group">
-              <label>Remaining Amount</label>
+              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', display: 'block' }}>Remaining Amount</label>
               <input 
                 type="text" 
                 value={formatPrice(getPaymentType(selectedVehicle) === 'from_customer' ? 
                   (selectedVehicle.remainingAmount || 0) : 
                   (selectedVehicle.remainingAmountToSeller || 0))}
                 disabled
-                style={{ background: '#f5f5f5', color: '#dc3545', fontWeight: 'bold' }}
+                style={{ 
+                  background: '#f5f5f5', 
+                  color: '#dc3545', 
+                  fontWeight: 'bold',
+                  padding: '14px',
+                  fontSize: '18px',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '8px',
+                  width: '100%'
+                }}
               />
             </div>
 
             <div className="form-group">
-              <label>Payment Mode <span className="required">*</span></label>
+              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', display: 'block' }}>
+                Payment Mode <span className="required">*</span>
+              </label>
               <select
                 value={paymentMode}
                 onChange={(e) => setPaymentMode(e.target.value)}
                 required
-                style={{ width: '100%', padding: '12px', border: '1px solid #e9ecef', borderRadius: '8px' }}
+                style={{ 
+                  width: '100%', 
+                  padding: '14px', 
+                  border: '1px solid #e9ecef', 
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  backgroundColor: 'white'
+                }}
               >
                 <option value="cash">Cash</option>
                 <option value="bankTransfer">Bank Transfer (RTGS/NEFT)</option>
@@ -451,7 +755,9 @@ const AdminPendingPayments = () => {
             </div>
 
             <div className="form-group">
-              <label>Payment Amount <span className="required">*</span></label>
+              <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', display: 'block' }}>
+                Payment Amount <span className="required">*</span>
+              </label>
               <input 
                 type="number" 
                 placeholder="Enter amount" 
@@ -460,8 +766,15 @@ const AdminPendingPayments = () => {
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 required
+                style={{
+                  padding: '14px',
+                  fontSize: '16px',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '8px',
+                  width: '100%'
+                }}
               />
-              <small style={{ color: '#6c757d', marginTop: '5px', display: 'block' }}>
+              <small style={{ color: '#6c757d', marginTop: '8px', display: 'block', fontSize: '14px' }}>
                 Maximum: {formatPrice(selectedVehicle.remainingAmount)}
               </small>
             </div>
@@ -506,6 +819,344 @@ const AdminPendingPayments = () => {
               </button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      {/* Vehicle Details Modal */}
+      <Modal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false)
+          setSelectedVehicle(null)
+        }}
+        title={`Vehicle Details - ${selectedVehicle ? formatVehicleNumber(selectedVehicle.vehicleNo) : ''}`}
+        size="large"
+      >
+        {selectedVehicle && (
+          <div style={{ padding: '30px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '30px' }}>
+              <div style={{ 
+                padding: '20px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '12px',
+                border: '1px solid #e9ecef'
+              }}>
+                <h4 style={{ 
+                  marginBottom: '20px', 
+                  color: '#667eea', 
+                  borderBottom: '3px solid #667eea', 
+                  paddingBottom: '12px',
+                  fontSize: '18px',
+                  fontWeight: '700'
+                }}>
+                  <i className="fas fa-car" style={{ marginRight: '10px' }}></i>Vehicle Information
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Make/Model:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {selectedVehicle.make || 'N/A'} {selectedVehicle.model || ''}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Year:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {formatManufacturingDate(selectedVehicle)}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Color:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {selectedVehicle.color || 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Purchase Date:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {formatMonthYear(selectedVehicle)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ 
+                padding: '20px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '12px',
+                border: '1px solid #e9ecef'
+              }}>
+                <h4 style={{ 
+                  marginBottom: '20px', 
+                  color: '#667eea', 
+                  borderBottom: '3px solid #667eea', 
+                  paddingBottom: '12px',
+                  fontSize: '18px',
+                  fontWeight: '700'
+                }}>
+                  <i className="fas fa-users" style={{ marginRight: '10px' }}></i>People Information
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Added By:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {selectedVehicle.createdBy?.name || selectedVehicle.createdBy?.email || 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Agent Name:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {selectedVehicle.agentName || selectedVehicle.dealerName || 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ 
+                      color: '#6c757d', 
+                      fontSize: '13px', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'block',
+                      marginBottom: '8px'
+                    }}>Seller Name:</strong>
+                    <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
+                      {selectedVehicle.sellerName || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '30px' }}>
+              <h4 style={{ 
+                marginBottom: '15px', 
+                color: '#667eea', 
+                borderBottom: '3px solid #667eea', 
+                paddingBottom: '12px',
+                fontSize: '18px',
+                fontWeight: '700'
+              }}>
+                <i className="fas fa-sticky-note" style={{ marginRight: '10px' }}></i>Notes
+              </h4>
+              <div style={{ 
+                padding: '20px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '12px',
+                minHeight: '80px',
+                whiteSpace: 'pre-wrap',
+                color: '#495057',
+                fontSize: '15px',
+                lineHeight: '1.6',
+                border: '1px solid #e9ecef'
+              }}>
+                {selectedVehicle.saleNotes || selectedVehicle.notes || 'No notes available'}
+              </div>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              gap: '15px', 
+              justifyContent: 'flex-end', 
+              marginTop: '30px', 
+              paddingTop: '25px', 
+              borderTop: '2px solid #e9ecef' 
+            }}>
+              {selectedVehicle.paymentSettlementHistory && selectedVehicle.paymentSettlementHistory.length > 0 && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowDetailsModal(false)
+                    setShowSettlementHistory(true)
+                  }}
+                  style={{
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '15px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = '#5568d3'}
+                  onMouseLeave={(e) => e.target.style.background = '#667eea'}
+                >
+                  <i className="fas fa-history" style={{ marginRight: '8px' }}></i>
+                  View Settlement History ({selectedVehicle.paymentSettlementHistory.length})
+                </button>
+              )}
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDetailsModal(false)
+                  setSelectedVehicle(null)
+                }}
+                style={{
+                  background: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#5a6268'}
+                onMouseLeave={(e) => e.target.style.background = '#6c757d'}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Settlement History Modal */}
+      <Modal
+        isOpen={showSettlementHistory}
+        onClose={() => {
+          setShowSettlementHistory(false)
+          setSelectedVehicle(null)
+        }}
+        title={`Settlement History - ${selectedVehicle ? formatVehicleNumber(selectedVehicle.vehicleNo) : ''}`}
+        size="large"
+      >
+        {selectedVehicle && selectedVehicle.paymentSettlementHistory && selectedVehicle.paymentSettlementHistory.length > 0 ? (
+          <div style={{ padding: '30px' }}>
+            <Table sx={{ minWidth: 800 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Date</TableCell>
+                  <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Type</TableCell>
+                  <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Amount</TableCell>
+                  <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Payment Mode</TableCell>
+                  <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Settled By</TableCell>
+                  <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Notes</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[...selectedVehicle.paymentSettlementHistory]
+                  .sort((a, b) => new Date(b.settledAt) - new Date(a.settledAt))
+                  .map((settlement, index) => (
+                    <TableRow key={index} sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
+                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                        <div style={{ fontSize: '15px', color: '#495057' }}>
+                          {new Date(settlement.settledAt).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#6c757d', marginTop: '4px' }}>
+                          {new Date(settlement.settledAt).toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                        <span style={{
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          backgroundColor: settlement.settlementType === 'FROM_CUSTOMER' 
+                            ? 'rgba(40, 167, 69, 0.15)' 
+                            : 'rgba(220, 53, 69, 0.15)',
+                          color: settlement.settlementType === 'FROM_CUSTOMER' 
+                            ? '#28a745' 
+                            : '#dc3545',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {settlement.settlementType === 'FROM_CUSTOMER' ? (
+                            <>
+                              <i className="fas fa-arrow-down" style={{ marginRight: '6px' }}></i>
+                              From Customer
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-arrow-up" style={{ marginRight: '6px' }}></i>
+                              To Customer
+                            </>
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                        <strong style={{ fontSize: '17px', color: '#212529' }}>
+                          {formatPrice(settlement.amount)}
+                        </strong>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                        <div style={{ fontSize: '15px', color: '#495057', fontWeight: '500' }}>
+                          {settlement.paymentMode === 'cash' ? 'Cash' :
+                           settlement.paymentMode === 'bankTransfer' ? 'Bank Transfer' :
+                           settlement.paymentMode === 'online' ? 'Online (UPI)' :
+                           settlement.paymentMode === 'loan' ? 'Loan' : settlement.paymentMode}
+                        </div>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                        <div style={{ fontSize: '15px', color: '#495057' }}>
+                          {settlement.settledBy?.name || settlement.settledBy?.email || 'Unknown'}
+                        </div>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                        <div style={{ fontSize: '15px', color: '#6c757d' }}>
+                          {settlement.notes || '-'}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+          ) : (
+          <div style={{ textAlign: 'center', padding: '60px 40px', color: '#6c757d' }}>
+            <i className="fas fa-history" style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.5, color: '#adb5bd' }}></i>
+            <p style={{ fontSize: '18px', fontWeight: '500' }}>No settlement history available</p>
+          </div>
         )}
       </Modal>
     </div>

@@ -5,6 +5,7 @@ import SalesOverview from '../../components/sections/SalesOverview'
 import SalesInventory from '../../components/sections/SalesInventory'
 import SalesRecords from '../../components/sections/SalesRecords'
 import SalesCustomers from '../../components/sections/SalesCustomers'
+import DeliveryNotes from '../../components/sections/DeliveryNotes'
 import '../../styles/Dashboard.css'
 
 const SalesDashboard = () => {
@@ -14,14 +15,16 @@ const SalesDashboard = () => {
     { id: 'overview', label: 'Overview', icon: 'fas fa-chart-line' },
     { id: 'inventory', label: 'Inventory', icon: 'fas fa-warehouse' },
     { id: 'records', label: 'Sales Records', icon: 'fas fa-handshake' },
-    { id: 'customers', label: 'Customers', icon: 'fas fa-users' }
+    { id: 'customers', label: 'Customers', icon: 'fas fa-users' },
+    { id: 'notes', label: 'Delivery Notes', icon: 'fas fa-file-invoice' }
   ]
 
   const sectionTitles = {
     overview: 'Sales Overview',
     inventory: 'Sales Inventory',
     records: 'Sales Records',
-    customers: 'Customers'
+    customers: 'Customers',
+    notes: 'Delivery Notes'
   }
 
   const renderSection = () => {
@@ -34,6 +37,8 @@ const SalesDashboard = () => {
         return <SalesRecords />
       case 'customers':
         return <SalesCustomers />
+      case 'notes':
+        return <DeliveryNotes />
       default:
         return <SalesOverview />
     }

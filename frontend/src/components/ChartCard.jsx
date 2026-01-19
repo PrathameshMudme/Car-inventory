@@ -7,16 +7,18 @@ import {
   LineElement,
   BarElement,
   ArcElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Legend
 } from 'chart.js'
-import { Line, Bar, Doughnut } from 'react-chartjs-2'
+import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2'
 import '../styles/ChartCard.css'
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  RadialLinearScale,
   PointElement,
   LineElement,
   BarElement,
@@ -47,6 +49,8 @@ const ChartCard = ({ title, type, data, options }) => {
         return <Bar data={data} options={chartOptions} />
       case 'doughnut':
         return <Doughnut data={data} options={chartOptions} />
+      case 'radar':
+        return <Radar data={data} options={chartOptions} />
       default:
         return <Line data={data} options={chartOptions} />
     }

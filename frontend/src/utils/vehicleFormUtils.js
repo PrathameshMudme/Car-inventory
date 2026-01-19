@@ -78,16 +78,30 @@ export const prepareVehicleFormData = (formData, purchasePaymentModes, deduction
       return
     }
     
+    // Skip purchaseMonth/purchaseYear - these are now auto-set from createdAt on backend
+    if (key === 'purchaseMonth' || key === 'purchaseYear') {
+      return
+    }
+    
+    // Skip vehicleMonth/vehicleYear - these are used to set the year field, handled separately
+    if (key === 'vehicleMonth' || key === 'vehicleYear') {
+      return
+    }
+    
     if (key === 'purchaseDate' && formData[key]) {
       formDataToSend.append(key, formData[key].toISOString().split('T')[0])
-    } else if (key === 'purchaseMonth' && formData[key]) {
-      formDataToSend.append(key, formData[key])
-    } else if (key === 'purchaseYear' && formData[key]) {
-      formDataToSend.append(key, formData[key])
     } else if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
       formDataToSend.append(key, formData[key])
     }
   })
+  
+  // Handle vehicle manufacturing month/year - send as year field
+  // Use vehicleYear if available, otherwise use year field directly
+  if (formData.vehicleYear) {
+    formDataToSend.append('year', formData.vehicleYear)
+  } else if (formData.year) {
+    formDataToSend.append('year', formData.year)
+  }
 
   // Handle legacy dealerName/dealerPhone fields in edit mode (use agentName/agentPhone instead)
   if (isEdit) {
@@ -181,7 +195,7 @@ export const validateVehicleForm = (formData, purchasePaymentModes, showToast, i
       color: 'Color',
       kilometers: 'Kilometers',
       purchasePrice: 'Purchase Price',
-      purchaseMonth: 'Purchase Month & Year',
+      vehicleYear: 'Manufacturing Month & Year',
       sellerName: 'Seller Name',
       sellerContact: 'Seller Contact',
       agentName: 'Agent Name',
@@ -192,15 +206,16 @@ export const validateVehicleForm = (formData, purchasePaymentModes, showToast, i
     }
 
     for (const [key, label] of Object.entries(requiredFields)) {
-      if (key === 'purchaseMonth') {
-        if (!formData.purchaseMonth || !formData.purchaseYear) {
-          showToast('Purchase Month & Year is required', 'error')
+      if (key === 'vehicleYear') {
+        // Check if vehicleMonth and vehicleYear are provided
+        if (!formData.vehicleMonth || !formData.vehicleYear) {
+          showToast('Manufacturing Month & Year is required', 'error')
           return false
         }
         continue
       }
-      if (key === 'purchaseYear') {
-        continue
+      if (key === 'vehicleMonth') {
+        continue // Already checked above
       }
       
       if (!formData[key] || (typeof formData[key] === 'string' && !formData[key].trim())) {

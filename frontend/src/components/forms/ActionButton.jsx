@@ -40,6 +40,12 @@ const ActionButton = ({
             background: `${buttonColor}22`,
             transform: 'translateY(-1px)'
           },
+          '& svg': {
+            fontSize: '20px' // Material-UI icons size
+          },
+          '& i': {
+            fontSize: '20px !important' // Font Awesome icons size
+          },
           ...props.sx
         }}
         {...props}

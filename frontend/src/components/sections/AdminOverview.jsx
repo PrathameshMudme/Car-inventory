@@ -3,6 +3,7 @@ import StatCard from '../StatCard'
 import ChartCard from '../ChartCard'
 import { useAuth } from '../../context/AuthContext'
 import { useApp } from '../../context/AppContext'
+import { useToast } from '../../context/ToastContext'
 import { formatVehicleNumber } from '../../utils/formatUtils'
 import '../../styles/Sections.css'
 
@@ -11,17 +12,28 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 const AdminOverview = () => {
   const { token } = useAuth()
   const { setActiveSection } = useApp()
+  const { showToast } = useToast()
   const [stats, setStats] = useState({
     totalVehicles: 0,
     inStock: 0,
     sold: 0,
     onModification: 0,
+    reserved: 0,
     totalRevenue: 0,
     netProfit: 0,
+    profitMargin: 0,
+    avgSalePrice: 0,
     thisMonthRevenue: 0,
     thisMonthNetProfit: 0,
+    thisMonthExpenses: 0,
+    thisMonthInvestment: 0,
+    revenueChange: 0,
+    totalPendingFromCustomer: 0,
+    totalPendingToSeller: 0,
+    conversionRate: 0,
     pendingModifications: 0,
-    lowStock: 0
+    lowStock: 0,
+    topMakes: []
   })
   const [topAgents, setTopAgents] = useState([])
   const [vehicles, setVehicles] = useState([])
@@ -46,8 +58,29 @@ const AdminOverview = () => {
         })
       ])
 
+      // Check if responses are ok
+      if (!vehiclesRes.ok) {
+        throw new Error(`Failed to fetch vehicles: ${vehiclesRes.statusText}`)
+      }
+      if (!agentsRes.ok) {
+        throw new Error(`Failed to fetch agents: ${agentsRes.statusText}`)
+      }
+
       const vehiclesData = await vehiclesRes.json()
       const agents = await agentsRes.json()
+
+      // Validate that vehiclesData is an array
+      if (!Array.isArray(vehiclesData)) {
+        console.error('Vehicles data is not an array:', vehiclesData)
+        // If it's an error object, show the message
+        if (vehiclesData && vehiclesData.message) {
+          throw new Error(vehiclesData.message)
+        }
+        throw new Error('Invalid vehicles data format received from server')
+      }
+
+      // Validate that agents is an array, default to empty array if not
+      const agentsArray = Array.isArray(agents) ? agents : []
 
       setVehicles(vehiclesData)
 
@@ -58,49 +91,140 @@ const AdminOverview = () => {
       const reserved = vehiclesData.filter(v => v.status === 'Reserved').length
       
       // Calculate financial stats
-      const totalRevenue = vehiclesData
-        .filter(v => v.status === 'Sold' && v.salePrice)
-        .reduce((sum, v) => sum + (v.salePrice || 0), 0)
+      const soldVehicles = vehiclesData.filter(v => v.status === 'Sold')
       
-      const totalCost = vehiclesData
-        .filter(v => v.status === 'Sold')
-        .reduce((sum, v) => sum + (v.purchasePrice || 0) + (v.modificationCost || 0), 0)
+      // Calculate total payment received (excluding security cheques, including settled payments)
+      const calculateTotalPayment = (vehicle) => {
+        const cash = parseFloat(vehicle.paymentCash) || 0
+        const bankTransfer = parseFloat(vehicle.paymentBankTransfer) || 0
+        const online = parseFloat(vehicle.paymentOnline) || 0
+        const loan = parseFloat(vehicle.paymentLoan) || 0
+        let totalPayment = cash + bankTransfer + online + loan
+        
+        // Add settled payments from customers
+        if (vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0) {
+          const settledFromCustomer = vehicle.paymentSettlementHistory
+            .filter(s => s.settlementType === 'FROM_CUSTOMER')
+            .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
+          totalPayment += settledFromCustomer
+        }
+        return totalPayment
+      }
+      
+      const totalRevenue = soldVehicles
+        .filter(v => v.lastPrice)
+        .reduce((sum, v) => sum + calculateTotalPayment(v), 0)
+      
+      const totalCost = soldVehicles.reduce((sum, v) => 
+        sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0), 0)
       
       const netProfit = totalRevenue - totalCost
+      const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0
+      const avgSalePrice = soldVehicles.length > 0 
+        ? soldVehicles.filter(v => v.lastPrice).reduce((sum, v) => sum + calculateTotalPayment(v), 0) / soldVehicles.filter(v => v.lastPrice).length
+        : 0
 
       // Calculate this month revenue and profit
       const now = new Date()
       const currentMonth = now.getMonth()
       const currentYear = now.getFullYear()
+      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
+      const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
       
       const thisMonthSold = vehiclesData.filter(v => {
-        if (v.status !== 'Sold' || !v.updatedAt) return false
-        const soldDate = new Date(v.updatedAt)
+        if (v.status !== 'Sold') return false
+        // Use saleDate if available, otherwise fall back to updatedAt (when status was changed to Sold)
+        const soldDate = v.saleDate ? new Date(v.saleDate) : (v.updatedAt ? new Date(v.updatedAt) : null)
+        if (!soldDate) return false
         return soldDate.getMonth() === currentMonth && soldDate.getFullYear() === currentYear
       })
       
-      const thisMonthRevenue = thisMonthSold.reduce((sum, v) => sum + (v.salePrice || 0), 0)
-      const thisMonthCost = thisMonthSold.reduce((sum, v) => sum + (v.purchasePrice || 0) + (v.modificationCost || 0), 0)
+      const lastMonthSold = vehiclesData.filter(v => {
+        if (v.status !== 'Sold') return false
+        // Use saleDate if available, otherwise fall back to updatedAt (when status was changed to Sold)
+        const soldDate = v.saleDate ? new Date(v.saleDate) : (v.updatedAt ? new Date(v.updatedAt) : null)
+        if (!soldDate) return false
+        return soldDate.getMonth() === lastMonth && soldDate.getFullYear() === lastMonthYear
+      })
+      
+      const thisMonthRevenue = thisMonthSold.reduce((sum, v) => sum + calculateTotalPayment(v), 0)
+      const thisMonthCost = thisMonthSold.reduce((sum, v) => 
+        sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0), 0)
       const thisMonthNetProfit = thisMonthRevenue - thisMonthCost
+      
+      const lastMonthRevenue = lastMonthSold.reduce((sum, v) => sum + calculateTotalPayment(v), 0)
+      const revenueChange = lastMonthRevenue > 0 
+        ? (((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100).toFixed(1)
+        : thisMonthRevenue > 0 ? 100 : 0
+      
+      // Calculate pending payments
+      const totalPendingFromCustomer = vehiclesData.reduce((sum, v) => 
+        sum + (parseFloat(v.remainingAmount) || 0), 0)
+      const totalPendingToSeller = vehiclesData.reduce((sum, v) => 
+        sum + (parseFloat(v.remainingAmountToSeller) || 0), 0)
+      
+      // Calculate expenses this month
+      const thisMonthVehicles = vehiclesData.filter(v => {
+        if (!v.createdAt) return false
+        const createdDate = new Date(v.createdAt)
+        return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear
+      })
+      
+      const thisMonthExpenses = thisMonthVehicles.reduce((sum, v) => 
+        sum + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.modificationCost) || 0), 0)
+      
+      // Calculate total investment this month
+      const thisMonthInvestment = thisMonthVehicles.reduce((sum, v) => 
+        sum + (parseFloat(v.purchasePrice) || 0), 0)
+      
+      // Calculate conversion rate
+      const conversionRate = vehiclesData.length > 0 
+        ? ((sold / vehiclesData.length) * 100).toFixed(1)
+        : 0
+      
+      // Get top selling makes
+      const makeCounts = {}
+      soldVehicles.forEach(v => {
+        const make = v.make || 'Unknown'
+        makeCounts[make] = (makeCounts[make] || 0) + 1
+      })
+      const topMakes = Object.entries(makeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([make, count]) => ({ make, count }))
 
       setStats({
         totalVehicles: vehiclesData.length,
         inStock,
         sold,
         onModification,
+        reserved,
         totalRevenue,
         netProfit,
+        profitMargin,
+        avgSalePrice,
         thisMonthRevenue,
         thisMonthNetProfit,
+        thisMonthExpenses,
+        thisMonthInvestment,
+        revenueChange,
+        totalPendingFromCustomer,
+        totalPendingToSeller,
+        conversionRate,
         pendingModifications: onModification,
-        lowStock: inStock < 10 ? inStock : 0
+        lowStock: inStock < 10 ? inStock : 0,
+        topMakes
       })
 
       // Get top 5 agents
-      setTopAgents(agents.slice(0, 5))
+      setTopAgents(agentsArray.slice(0, 5))
       setLoading(false)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
+      showToast(error.message || 'Failed to load dashboard data', 'error')
+      // Set empty arrays to prevent further errors
+      setVehicles([])
+      setTopAgents([])
       setLoading(false)
     }
   }
@@ -243,12 +367,12 @@ const AdminOverview = () => {
 
   return (
     <div className="admin-overview-container">
-      {/* Stats Grid - 5 cards */}
+      {/* Stats Grid - 5 cards (first row) */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(5, 1fr)', 
         gap: '20px', 
-        marginBottom: '30px' 
+        marginBottom: '20px' 
       }}>
         <StatCard
           icon="fas fa-car"
@@ -287,6 +411,50 @@ const AdminOverview = () => {
         />
       </div>
 
+      {/* Additional Stats Grid - 5 more cards (second row) */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(5, 1fr)', 
+        gap: '20px', 
+        marginBottom: '30px' 
+      }}>
+        <StatCard
+          icon="fas fa-bookmark"
+          iconClass="purple"
+          title="Reserved"
+          value={loading ? '...' : stats.reserved.toString()}
+          label="booked vehicles"
+        />
+        <StatCard
+          icon="fas fa-tag"
+          iconClass="teal"
+          title="Avg Sale Price"
+          value={loading ? '...' : formatPrice(stats.avgSalePrice)}
+          label="per vehicle"
+        />
+        <StatCard
+          icon="fas fa-percentage"
+          iconClass="indigo"
+          title="Profit Margin"
+          value={loading ? '...' : `${stats.profitMargin.toFixed(1)}%`}
+          label="overall margin"
+        />
+        <StatCard
+          icon="fas fa-wallet"
+          iconClass="red"
+          title="Pending Payments"
+          value={loading ? '...' : formatPrice(stats.totalPendingFromCustomer + stats.totalPendingToSeller)}
+          label={`From: ${formatPrice(stats.totalPendingFromCustomer)} | To: ${formatPrice(stats.totalPendingToSeller)}`}
+        />
+        <StatCard
+          icon="fas fa-chart-pie"
+          iconClass="orange"
+          title="Conversion Rate"
+          value={loading ? '...' : `${stats.conversionRate}%`}
+          label="sold vs total"
+        />
+      </div>
+
       {/* Main Content - 3 column layout */}
       <div style={{ 
         display: 'grid', 
@@ -310,6 +478,58 @@ const AdminOverview = () => {
 
         {/* Middle Column - Quick Actions & Alerts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Financial Summary Card */}
+          <div style={{
+            background: 'linear-gradient(135deg, #27ae60 0%, #229954 100%)',
+            padding: '25px',
+            borderRadius: '15px',
+            boxShadow: '0 4px 16px rgba(39,174,96,0.3)',
+            color: 'white'
+          }}>
+            <h3 style={{ 
+              fontSize: '18px', 
+              marginBottom: '20px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px',
+              opacity: 0.95
+            }}>
+              <i className="fas fa-chart-line"></i>
+              This Month Summary
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                <span>Revenue</span>
+                <strong>{formatPrice(stats.thisMonthRevenue)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                <span>Investment</span>
+                <strong>{formatPrice(stats.thisMonthInvestment)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                <span>Expenses</span>
+                <strong>{formatPrice(stats.thisMonthExpenses)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.3)' }}>
+                <span>Net Profit</span>
+                <strong style={{ fontSize: '16px' }}>{formatPrice(stats.thisMonthNetProfit)}</strong>
+              </div>
+              {stats.revenueChange !== 0 && (
+                <div style={{ 
+                  fontSize: '12px', 
+                  paddingTop: '8px', 
+                  borderTop: '1px solid rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <i className={`fas fa-arrow-${stats.revenueChange > 0 ? 'up' : 'down'}`}></i>
+                  <span>{Math.abs(stats.revenueChange)}% vs last month</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Quick Actions */}
           <div style={{
             background: 'white',
@@ -537,6 +757,64 @@ const AdminOverview = () => {
               )}
             </div>
           </div>
+
+          {/* Top Selling Makes */}
+          {stats.topMakes && stats.topMakes.length > 0 && (
+            <div style={{
+              background: 'white',
+              padding: '25px',
+              borderRadius: '15px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}>
+              <h3 style={{ 
+                fontSize: '18px', 
+                marginBottom: '20px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                color: '#2c3e50'
+              }}>
+                <i className="fas fa-star" style={{ color: '#f39c12' }}></i>
+                Top Selling Makes
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {stats.topMakes.map((item, idx) => (
+                  <div key={idx} style={{
+                    padding: '12px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: idx === 0 ? '#f39c12' : idx === 1 ? '#95a5a6' : '#cd7f32',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: '700',
+                        fontSize: '12px',
+                        flexShrink: 0
+                      }}>
+                        {idx + 1}
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#2c3e50' }}>
+                        {item.make}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#667eea' }}>
+                      {item.count} sold
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Recent Activity */}
           <div style={{

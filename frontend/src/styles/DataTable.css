@@ -18,6 +18,35 @@
     border: 1px solid #e8ecf0 !important;
 }
 
+/* MUI Table Cell Font Sizes - Global Consistency */
+.MuiTableCell-root {
+    font-size: 15px !important;
+    padding: 18px 20px !important;
+}
+
+.MuiTableCell-head {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+}
+
+.MuiTableCell-body {
+    font-size: 15px !important;
+    font-weight: 500 !important;
+}
+
+.MuiTableCell-root * {
+    font-size: 15px !important;
+}
+
+.MuiTableCell-root .MuiChip-root {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+
+.MuiTableCell-root span {
+    font-size: 15px !important;
+}
+
 /* MUI Table Row Button and Icon Styles */
 .MuiTableRow-root .btn-icon-small {
     background: transparent !important;
@@ -27,18 +56,18 @@
     cursor: pointer !important;
     color: #6c757d !important;
     transition: all 0.2s ease !important;
-    font-size: 16px !important;
-    width: 40px !important;
-    height: 40px !important;
+    font-size: 20px !important;
+    width: 44px !important;
+    height: 44px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
 }
 
 .MuiTableRow-root .btn-icon-small i {
-    font-size: 16px !important;
+    font-size: 20px !important;
     display: inline-block !important;
     line-height: 1 !important;
     width: auto !important;
@@ -79,7 +108,7 @@
     font-weight: 900 !important;
     font-style: normal !important;
     display: inline-block !important;
-    font-size: 16px !important;
+    font-size: 20px !important;
     line-height: 1 !important;
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
@@ -262,7 +291,7 @@
     padding: 18px 20px;
     color: var(--dark-color);
     font-weight: 700;
-    font-size: 14px;
+    font-size: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
     border-bottom: 2px solid #e0e4e8;
@@ -306,7 +335,7 @@
 
 .data-table td {
     padding: 18px 20px;
-    font-size: 16px;
+    font-size: 15px;
     color: var(--dark-color);
     vertical-align: middle;
     border-bottom: 1px solid #f0f2f5;
@@ -315,13 +344,13 @@
 
 /* Ensure all text in cells uses consistent font size */
 .data-table td * {
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: 500;
 }
 
 /* Amount column - ensure consistent font size */
 .data-table td:nth-child(4) {
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: 600;
     color: var(--dark-color);
     font-family: inherit;
@@ -329,7 +358,7 @@
 
 /* Ensure currency symbols and numbers are same size */
 .data-table td:nth-child(4) * {
-    font-size: 16px !important;
+    font-size: 15px !important;
 }
 
 .data-table td:first-child {
@@ -373,7 +402,7 @@
 }
 
 .user-cell strong {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--dark-color);
     letter-spacing: 0.3px;
@@ -389,7 +418,7 @@
 .data-table td:nth-child(4) {
     color: #6c757d;
     font-family: 'Courier New', monospace;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 /* Action Buttons Container */
@@ -415,19 +444,19 @@
     cursor: pointer !important;
     color: #6c757d !important;
     transition: all 0.2s ease !important;
-    font-size: 16px !important;
-    width: 40px !important;
-    height: 40px !important;
+    font-size: 20px !important;
+    width: 44px !important;
+    height: 44px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
 }
 
 .data-table .btn-icon-small i,
 .data-table-container .btn-icon-small i {
-    font-size: 16px !important;
+    font-size: 20px !important;
     display: inline-block !important;
     line-height: 1 !important;
     width: auto !important;

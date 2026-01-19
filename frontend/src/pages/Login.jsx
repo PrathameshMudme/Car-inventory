@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext'
 import '../styles/Login.css'
 
 const Login = () => {
-  const [email, setEmail] = useState('admin@vehicle.com')
+  const [email, setEmail] = useState('admin@test.com')
   const [password, setPassword] = useState('admin123')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -56,17 +56,36 @@ const Login = () => {
   }
 
   const handleQuickLogin = async (role) => {
-    const credentials = {
-      admin: { email: 'admin@vehicle.com', password: 'admin123' },
-      purchase: { email: 'rajesh@vehicle.com', password: 'password123' },
-      sales: { email: 'priya@vehicle.com', password: 'password123' }
-    }
+    try {
+      console.log('Quick login clicked for role:', role)
+      
+      if (loading) {
+        console.log('Login already in progress, ignoring click')
+        return
+      }
 
-    const creds = credentials[role]
-    if (creds) {
+      const credentials = {
+        admin: { email: 'admin@test.com', password: 'admin123' },
+        purchase: { email: 'purchase1@test.com', password: 'password123' },
+        sales: { email: 'sales1@test.com', password: 'password123' }
+      }
+
+      const creds = credentials[role]
+      if (!creds) {
+        console.error('Invalid role for quick login:', role)
+        setError(`Invalid role: ${role}`)
+        showToast('Invalid login role', 'error')
+        return
+      }
+
+      console.log('Attempting quick login with:', creds.email)
       setEmail(creds.email)
       setPassword(creds.password)
       await performLogin(creds.email, creds.password)
+    } catch (error) {
+      console.error('Quick login error:', error)
+      setError('Quick login failed. Please try again.')
+      showToast('Quick login failed', 'error')
     }
   }
 
@@ -137,7 +156,11 @@ const Login = () => {
             <button
               type="button"
               className="btn-quick-login btn-quick-admin"
-              onClick={() => handleQuickLogin('admin')}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleQuickLogin('admin')
+              }}
               disabled={loading}
               title="Login as Admin"
             >
@@ -147,7 +170,11 @@ const Login = () => {
             <button
               type="button"
               className="btn-quick-login btn-quick-purchase"
-              onClick={() => handleQuickLogin('purchase')}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleQuickLogin('purchase')
+              }}
               disabled={loading}
               title="Login as Purchase Manager"
             >
@@ -157,7 +184,11 @@ const Login = () => {
             <button
               type="button"
               className="btn-quick-login btn-quick-sales"
-              onClick={() => handleQuickLogin('sales')}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleQuickLogin('sales')
+              }}
               disabled={loading}
               title="Login as Sales Manager"
             >
@@ -168,10 +199,12 @@ const Login = () => {
         </div>
 
         <div className="login-footer">
-          <p><strong>Demo Credentials:</strong></p>
-          <p>Admin: admin@vehicle.com / admin123</p>
-          <p>Purchase: rajesh@vehicle.com / password123</p>
-          <p>Sales: priya@vehicle.com / password123</p>
+          <p><strong>Test Credentials:</strong></p>
+          <p>Admin: admin@test.com / admin123</p>
+          <p>Purchase Manager 1: purchase1@test.com / password123</p>
+          <p>Purchase Manager 2: purchase2@test.com / password123</p>
+          <p>Sales Manager 1: sales1@test.com / password123</p>
+          <p>Sales Manager 2: sales2@test.com / password123</p>
         </div>
       </div>
     </div>

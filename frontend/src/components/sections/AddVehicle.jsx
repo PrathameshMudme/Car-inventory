@@ -208,7 +208,6 @@ const AddVehicle = () => {
               isEdit={false}
               isAdmin={isAdmin}
               handleInputChange={handleInputChange}
-              handlePurchaseDateChange={handlePurchaseDateChange}
             />
 
             {/* Purchase Payment Methods */}

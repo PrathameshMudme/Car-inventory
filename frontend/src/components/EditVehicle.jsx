@@ -107,13 +107,12 @@ const EditVehicle = ({ vehicle, onClose, onSuccess }) => {
         />
 
         {/* Purchase Details */}
-        <PurchaseDetailsSection
-          formData={formData}
-          isEdit={true}
-          isAdmin={isAdmin}
-          handleInputChange={handleInputChange}
-          handlePurchaseDateChange={handlePurchaseDateChange}
-        />
+            <PurchaseDetailsSection
+              formData={formData}
+              isEdit={true}
+              isAdmin={isAdmin}
+              handleInputChange={handleInputChange}
+            />
 
         {/* Purchase Payment Methods */}
         <PurchasePaymentSection

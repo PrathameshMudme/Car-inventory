@@ -13,7 +13,7 @@ import {
 } from '../common'
 import { ActionButton } from '../forms'
 import { Edit as EditIcon, Delete as DeleteIcon, CompareArrows as CompareIcon, Refresh as RefreshIcon } from '@mui/icons-material'
-import { formatVehicleNumber } from '../../utils/formatUtils'
+import { formatVehicleNumber, formatManufacturingDate } from '../../utils/formatUtils'
 import '../../styles/Sections.css'
 import '../../styles/main.css'
 
@@ -147,6 +147,17 @@ const AdminInventory = () => {
     return `₹${price.toLocaleString('en-IN')}`
   }
 
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'In Stock': return 'badge-success'
+      case 'On Modification': return 'badge-warning'
+      case 'Reserved': return 'badge-purple'
+      case 'Sold': return 'badge-info'
+      case 'DELETED': return 'badge-danger'
+      default: return 'badge-secondary'
+    }
+  }
+
   const getVehicleImage = (vehicle) => {
     // Get primary image or first front image (prioritize after-modification, then by order)
     const images = vehicle.images || []
@@ -217,7 +228,7 @@ const AdminInventory = () => {
   const tableColumns = [
     { key: 'vehicleNo', label: 'Vehicle No.', render: (v) => <strong>{formatVehicleNumber(v.vehicleNo)}</strong> },
     { key: 'makeModel', label: 'Make/Model', render: (v) => `${v.make} ${v.model || ''}`.trim() },
-    { key: 'year', label: 'Year', render: (v) => v.year || 'N/A' },
+    { key: 'year', label: 'Mfg. Date', render: (v) => formatManufacturingDate(v) },
     { key: 'purchasePrice', label: 'Purchase Price', render: (v) => formatPrice(v.purchasePrice) },
     { key: 'askingPrice', label: 'Asking Price', render: (v) => formatPrice(v.askingPrice) },
     {
@@ -253,11 +264,6 @@ const AdminInventory = () => {
       label: 'Status',
       render: (v) => <StatusBadge status={v.status} />
     },
-    ...(vehicles.some(v => v.status === 'Sold' && v.remainingAmount > 0) ? [{
-      key: 'remainingAmount',
-      label: 'Remaining Amount',
-      render: (v) => v.status === 'Sold' && v.remainingAmount > 0 ? formatPrice(v.remainingAmount) : 'NIL'
-    }] : []),
     {
       key: 'actions',
       label: 'Actions',
@@ -366,7 +372,7 @@ const AdminInventory = () => {
                   </div>
                   <div className="vehicle-card-content">
                     <div className="vehicle-card-header">
-                      <h3>{vehicle.make} {vehicle.model || ''} {vehicle.year || ''}</h3>
+                      <h3>{vehicle.make} {vehicle.model || ''} {formatManufacturingDate(vehicle)}</h3>
                       <span className="vehicle-number">{formatVehicleNumber(vehicle.vehicleNo)}</span>
                     </div>
                     <div className="vehicle-card-specs">
@@ -485,7 +491,7 @@ const AdminInventory = () => {
               <option value="">Choose a vehicle...</option>
               {vehicles.map(v => (
                 <option key={v._id} value={v._id}>
-                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {v.year || ''}
+                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {formatManufacturingDate(v)}
                 </option>
               ))}
             </select>
@@ -498,7 +504,7 @@ const AdminInventory = () => {
         {selectedVehicle && compareVehicle && (
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {selectedVehicle.year || ''} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
+              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {formatManufacturingDate(selectedVehicle)} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
               <span className={`badge ${getStatusBadgeClass(selectedVehicle.status)}`}>
                 {selectedVehicle.status}
               </span>
