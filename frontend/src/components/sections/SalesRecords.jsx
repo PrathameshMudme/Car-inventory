@@ -207,7 +207,7 @@ const SalesRecords = () => {
           <p style={{ fontSize: '16px', color: '#6c757d' }}>No completed sales transactions found</p>
         </div>
       ) : (
-        <Table sx={{ minWidth: 700 }} aria-label="sales records table">
+        <Table sx={{ minWidth: 900 }} aria-label="sales records table">
           <TableHead>
             <TableRow>
               <TableCell><strong>Sale Date</strong></TableCell>
@@ -448,7 +448,6 @@ const SalesRecords = () => {
             )}
           </div>
         </Modal>
-      )}
       )}
     </div>
   )

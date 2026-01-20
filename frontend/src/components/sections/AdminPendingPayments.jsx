@@ -262,9 +262,27 @@ const AdminPendingPayments = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <i className="fas fa-spinner fa-spin"></i>
-        <p>Loading pending payments...</p>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '60px 20px',
+        borderRadius: '16px',
+        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(255, 255, 255, 0.5) 100%)',
+        border: '2px dashed rgba(102, 126, 234, 0.2)'
+      }}>
+        <i className="fas fa-spinner fa-spin" style={{ 
+          fontSize: '48px', 
+          color: '#667eea',
+          marginBottom: '20px'
+        }}></i>
+        <p style={{ 
+          fontSize: '16px', 
+          color: '#667eea',
+          fontWeight: '600',
+          margin: 0
+        }}>Loading pending payments...</p>
       </div>
     )
   }
@@ -273,25 +291,18 @@ const AdminPendingPayments = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2 style={{ fontSize: '28px', marginBottom: '8px' }}>Pending Payments</h2>
-          <p style={{ fontSize: '16px', color: '#6c757d', margin: 0 }}>
-            Vehicles with outstanding payments ({vehicles.length} vehicles)
-          </p>
+          <h2>Pending Payments</h2>
+          <p>Vehicles with outstanding payments ({vehicles.length} vehicles)</p>
         </div>
-        <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="header-actions">
           <select
+            className="filter-select"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            style={{ 
-              padding: '8px 12px', 
-              border: '1px solid #e9ecef', 
-              borderRadius: '6px',
-              fontSize: '14px'
-            }}
           >
             <option value="all">All Pending</option>
             <option value="from_customer">From Customer</option>
-            <option value="to_seller">To Customer</option>
+            <option value="to_seller">To Seller</option>
           </select>
           <button className="btn btn-secondary" onClick={() => loadVehicles()} title="Refresh">
             <i className="fas fa-sync-alt"></i> Refresh
@@ -300,20 +311,20 @@ const AdminPendingPayments = () => {
       </div>
 
       {vehicles.length === 0 ? (
-        <div className="empty-state" style={{ padding: '60px 20px' }}>
-          <i className="fas fa-check-circle" style={{ fontSize: '64px', color: '#28a745', marginBottom: '20px' }}></i>
-          <h3 style={{ fontSize: '24px', marginBottom: '12px', color: '#212529' }}>No Pending Payments</h3>
-          <p style={{ fontSize: '16px', color: '#6c757d' }}>All vehicles have been fully paid</p>
+        <div className="empty-state">
+          <i className="fas fa-check-circle"></i>
+          <h3>No Pending Payments</h3>
+          <p>All vehicles have been fully paid</p>
         </div>
       ) : (
-        <Table sx={{ minWidth: 900 }} aria-label="pending payments table">
+        <Table sx={{ minWidth: 700 }} aria-label="pending payments table">
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Vehicle No.</TableCell>
-              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Make/Model</TableCell>
-              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Purchase Date</TableCell>
-              <TableCell sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Pending Payment</TableCell>
-              <TableCell align="center" sx={{ fontSize: '15px', fontWeight: '700', padding: '16px' }}>Actions</TableCell>
+              <TableCell>Vehicle No.</TableCell>
+              <TableCell>Company/Model</TableCell>
+              <TableCell>Purchase Date</TableCell>
+              <TableCell>Pending Payment</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -322,322 +333,88 @@ const AdminPendingPayments = () => {
               const toSeller = parseFloat(vehicle.remainingAmountToSeller) || 0
               
               return (
-                <TableRow key={vehicle._id} sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
-                  <TableCell sx={{ fontSize: '15px', padding: '16px', fontWeight: '600' }}>
-                    <div style={{ fontSize: '16px', color: '#212529' }}>
-                      {formatVehicleNumber(vehicle.vehicleNo) || 'N/A'}
-                    </div>
+                <TableRow key={vehicle._id}>
+                  <TableCell>
+                    <strong>{formatVehicleNumber(vehicle.vehicleNo) || 'N/A'}</strong>
                   </TableCell>
-                  <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
-                    <div style={{ fontSize: '15px', fontWeight: '600', color: '#495057' }}>
-                      {vehicle.make || 'N/A'}
-                    </div>
-                    {vehicle.model && (
-                      <div style={{ fontSize: '14px', color: '#6c757d', marginTop: '4px' }}>
-                        {vehicle.model}
-                      </div>
-                    )}
+                  <TableCell>
+                    {vehicle.company || 'N/A'} {vehicle.model || ''}
                   </TableCell>
-                  <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
-                    <div style={{ fontSize: '15px', color: '#495057' }}>
-                      {formatMonthYear(vehicle)}
-                    </div>
-                  </TableCell>
-                  <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                  <TableCell>{formatMonthYear(vehicle)}</TableCell>
+                  <TableCell>
                     {(() => {
                       if (fromCustomer > 0 && toSeller > 0) {
-                        // Both pending
                         return (
                           <div>
-                            <div style={{ 
-                              marginBottom: '10px',
-                              padding: '10px',
-                              backgroundColor: '#d4edda',
-                              borderRadius: '6px',
-                              borderLeft: '4px solid #28a745'
-                            }}>
-                              <div style={{ 
-                                fontSize: '12px', 
-                                color: '#155724', 
-                                fontWeight: '700',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px',
-                                marginBottom: '6px',
-                                display: 'flex',
-                                alignItems: 'center'
-                              }}>
-                                <i className="fas fa-arrow-down" style={{ color: '#28a745', marginRight: '6px' }}></i>
-                                From Customer
-                              </div>
-                              <div style={{ fontSize: '18px', fontWeight: '700', color: '#28a745' }}>
-                                {formatPrice(fromCustomer)}
-                              </div>
+                            <div style={{ marginBottom: '8px' }}>
+                              <span className="badge badge-success" style={{ marginRight: '8px' }}>From Customer</span>
+                              <strong>{formatPrice(fromCustomer)}</strong>
                             </div>
-                            <div style={{ 
-                              padding: '10px',
-                              backgroundColor: '#f8d7da',
-                              borderRadius: '6px',
-                              borderLeft: '4px solid #dc3545'
-                            }}>
-                              <div style={{ 
-                                fontSize: '12px', 
-                                color: '#721c24', 
-                                fontWeight: '700',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px',
-                                marginBottom: '6px',
-                                display: 'flex',
-                                alignItems: 'center'
-                              }}>
-                                <i className="fas fa-arrow-up" style={{ color: '#dc3545', marginRight: '6px' }}></i>
-                                To Customer
-                              </div>
-                              <div style={{ fontSize: '18px', fontWeight: '700', color: '#dc3545' }}>
-                                {formatPrice(toSeller)}
-                              </div>
+                            <div>
+                              <span className="badge badge-danger" style={{ marginRight: '8px' }}>To Seller</span>
+                              <strong>{formatPrice(toSeller)}</strong>
                             </div>
                           </div>
                         )
                       } else if (fromCustomer > 0) {
-                        // Only from customer
                         return (
-                          <div style={{ 
-                            padding: '12px 16px',
-                            backgroundColor: '#d4edda',
-                            borderRadius: '8px',
-                            borderLeft: '4px solid #28a745'
-                          }}>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: '#155724', 
-                              fontWeight: '700',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                              marginBottom: '8px',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}>
-                              <i className="fas fa-arrow-down" style={{ color: '#28a745', marginRight: '6px' }}></i>
-                              From Customer
-                            </div>
-                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#28a745' }}>
-                              {formatPrice(fromCustomer)}
-                            </div>
+                          <div>
+                            <span className="badge badge-success" style={{ marginRight: '8px' }}>From Customer</span>
+                            <strong>{formatPrice(fromCustomer)}</strong>
                           </div>
                         )
                       } else if (toSeller > 0) {
-                        // Only to seller
                         return (
-                          <div style={{ 
-                            padding: '12px 16px',
-                            backgroundColor: '#f8d7da',
-                            borderRadius: '8px',
-                            borderLeft: '4px solid #dc3545'
-                          }}>
-                            <div style={{ 
-                              fontSize: '12px', 
-                              color: '#721c24', 
-                              fontWeight: '700',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                              marginBottom: '8px',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}>
-                              <i className="fas fa-arrow-up" style={{ color: '#dc3545', marginRight: '6px' }}></i>
-                              To Customer
-                            </div>
-                            <div style={{ fontSize: '20px', fontWeight: '700', color: '#dc3545' }}>
-                              {formatPrice(toSeller)}
-                            </div>
+                          <div>
+                            <span className="badge badge-danger" style={{ marginRight: '8px' }}>To Seller</span>
+                            <strong>{formatPrice(toSeller)}</strong>
                           </div>
                         )
                       } else {
-                        return <span style={{ color: '#6c757d', fontSize: '15px' }}>N/A</span>
+                        return 'N/A'
                       }
                     })()}
                   </TableCell>
-                  <TableCell align="center" sx={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      {/* Details Button */}
+                  <TableCell align="center">
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                       <button
                         className="btn-icon-small"
                         title="View Details"
-                        onClick={(e) => {
+                        onClick={() => {
                           setSelectedVehicle(vehicle)
                           setShowDetailsModal(true)
-                          // Reset button state after click
-                          e.currentTarget.style.background = '#6c757d'
-                        }}
-                        onMouseDown={(e) => {
-                          e.currentTarget.style.background = '#4a5258'
-                        }}
-                        onMouseUp={(e) => {
-                          e.currentTarget.style.background = '#5a6268'
-                        }}
-                        style={{
-                          background: '#6c757d',
-                          color: 'white',
-                          border: 'none',
-                          padding: '10px 12px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          minWidth: '40px',
-                          height: '40px'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (document.activeElement !== e.currentTarget) {
-                            e.currentTarget.style.background = '#5a6268'
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#6c757d'
-                        }}
-                        onBlur={(e) => {
-                          e.currentTarget.style.background = '#6c757d'
                         }}
                       >
-                        <i className="fas fa-info-circle" style={{ fontSize: '18px' }}></i>
+                        <i className="fas fa-info-circle"></i>
                       </button>
-                      
-                      {/* Settlement History Button */}
-                      {vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0 && (
-                        <button
-                          className="btn-icon-small"
-                          title="View Settlement History"
-                          onClick={(e) => {
-                            setSelectedVehicle(vehicle)
-                            setShowSettlementHistory(true)
-                            // Reset button state after click
-                            e.currentTarget.style.background = '#667eea'
-                          }}
-                          onMouseDown={(e) => {
-                            e.currentTarget.style.background = '#4458b3'
-                          }}
-                          onMouseUp={(e) => {
-                            e.currentTarget.style.background = '#5568d3'
-                          }}
-                          style={{
-                            background: '#667eea',
-                            color: 'white',
-                            border: 'none',
-                            padding: '10px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '40px',
-                            height: '40px'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (document.activeElement !== e.currentTarget) {
-                              e.currentTarget.style.background = '#5568d3'
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#667eea'
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.background = '#667eea'
-                          }}
-                        >
-                          <i className="fas fa-history" style={{ fontSize: '18px' }}></i>
-                        </button>
-                      )}
-                      
-                      {/* Mark as Paid Buttons */}
                       {fromCustomer > 0 && (
                         <button
                           className="btn-icon-small"
                           title="Mark Customer Payment as Paid"
-                          onClick={(e) => {
-                            handleMarkAsPaid(vehicle, 'from_customer')
-                            // Reset button state after click
-                            e.currentTarget.style.background = 'var(--primary-color, #667eea)'
-                          }}
-                          onMouseDown={(e) => {
-                            e.currentTarget.style.background = '#4458b3'
-                          }}
-                          onMouseUp={(e) => {
-                            e.currentTarget.style.background = '#5568d3'
-                          }}
-                          style={{
-                            background: 'var(--primary-color, #667eea)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '10px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '40px',
-                            height: '40px'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (document.activeElement !== e.currentTarget) {
-                              e.currentTarget.style.background = '#5568d3'
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'var(--primary-color, #667eea)'
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.background = 'var(--primary-color, #667eea)'
-                          }}
+                          onClick={() => handleMarkAsPaid(vehicle, 'from_customer')}
                         >
-                          <i className="fas fa-check" style={{ fontSize: '18px' }}></i>
+                          <i className="fas fa-check"></i>
                         </button>
                       )}
                       {toSeller > 0 && (
                         <button
                           className="btn-icon-small"
                           title="Mark Seller Payment as Paid"
-                          onClick={(e) => {
-                            handleMarkAsPaid(vehicle, 'to_seller')
-                            // Reset button state after click
-                            e.currentTarget.style.background = '#ff9800'
-                          }}
-                          onMouseDown={(e) => {
-                            e.currentTarget.style.background = '#e68900'
-                          }}
-                          onMouseUp={(e) => {
-                            e.currentTarget.style.background = '#f57c00'
-                          }}
-                          style={{
-                            background: '#ff9800',
-                            color: 'white',
-                            border: 'none',
-                            padding: '10px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '40px',
-                            height: '40px'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (document.activeElement !== e.currentTarget) {
-                              e.currentTarget.style.background = '#f57c00'
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#ff9800'
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.background = '#ff9800'
+                          onClick={() => handleMarkAsPaid(vehicle, 'to_seller')}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                      )}
+                      {vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0 && (
+                        <button
+                          className="btn-icon-small"
+                          title="View Settlement History"
+                          onClick={() => {
+                            setSelectedVehicle(vehicle)
+                            setShowSettlementHistory(true)
                           }}
                         >
-                          <i className="fas fa-check" style={{ fontSize: '18px' }}></i>
+                          <i className="fas fa-history"></i>
                         </button>
                       )}
                     </div>
@@ -667,7 +444,7 @@ const AdminPendingPayments = () => {
               <label style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', display: 'block' }}>Vehicle</label>
               <input 
                 type="text" 
-                value={`${formatVehicleNumber(selectedVehicle.vehicleNo)} - ${selectedVehicle.make} ${selectedVehicle.model}`}
+                value={`${formatVehicleNumber(selectedVehicle.vehicleNo)} - ${selectedVehicle.company} ${selectedVehicle.model}`}
                 disabled
                 style={{ 
                   background: '#f5f5f5', 
@@ -860,9 +637,9 @@ const AdminPendingPayments = () => {
                       letterSpacing: '0.5px',
                       display: 'block',
                       marginBottom: '8px'
-                    }}>Make/Model:</strong>
+                    }}>Company/Model:</strong>
                     <div style={{ marginTop: '4px', fontSize: '17px', fontWeight: '600', color: '#212529' }}>
-                      {selectedVehicle.make || 'N/A'} {selectedVehicle.model || ''}
+                      {selectedVehicle.company || 'N/A'} {selectedVehicle.model || ''}
                     </div>
                   </div>
                   <div>
@@ -1081,7 +858,7 @@ const AdminPendingPayments = () => {
                   .sort((a, b) => new Date(b.settledAt) - new Date(a.settledAt))
                   .map((settlement, index) => (
                     <TableRow key={index} sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
-                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                      <TableCell>
                         <div style={{ fontSize: '15px', color: '#495057' }}>
                           {new Date(settlement.settledAt).toLocaleDateString('en-IN', {
                             day: 'numeric',
@@ -1096,7 +873,7 @@ const AdminPendingPayments = () => {
                           })}
                         </div>
                       </TableCell>
-                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                      <TableCell>
                         <span style={{
                           padding: '8px 12px',
                           borderRadius: '6px',
@@ -1124,25 +901,30 @@ const AdminPendingPayments = () => {
                           )}
                         </span>
                       </TableCell>
-                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                      <TableCell>
                         <strong style={{ fontSize: '17px', color: '#212529' }}>
                           {formatPrice(settlement.amount)}
                         </strong>
                       </TableCell>
-                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                      <TableCell>
                         <div style={{ fontSize: '15px', color: '#495057', fontWeight: '500' }}>
-                          {settlement.paymentMode === 'cash' ? 'Cash' :
-                           settlement.paymentMode === 'bankTransfer' ? 'Bank Transfer' :
-                           settlement.paymentMode === 'online' ? 'Online (UPI)' :
-                           settlement.paymentMode === 'loan' ? 'Loan' : settlement.paymentMode}
+                          {(() => {
+                            const modeMap = {
+                              'cash': 'Cash',
+                              'bankTransfer': 'Bank Transfer',
+                              'online': 'Online (UPI)',
+                              'loan': 'Loan'
+                            }
+                            return modeMap[settlement.paymentMode] || settlement.paymentMode
+                          })()}
                         </div>
                       </TableCell>
-                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                      <TableCell>
                         <div style={{ fontSize: '15px', color: '#495057' }}>
                           {settlement.settledBy?.name || settlement.settledBy?.email || 'Unknown'}
                         </div>
                       </TableCell>
-                      <TableCell sx={{ fontSize: '15px', padding: '16px' }}>
+                      <TableCell>
                         <div style={{ fontSize: '15px', color: '#6c757d' }}>
                           {settlement.notes || '-'}
                         </div>

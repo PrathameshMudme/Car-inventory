@@ -257,7 +257,7 @@ class ReportService {
         const saleDate = vehicle.saleDate ? formatDate(vehicle.saleDate) : 'N/A'
         const salePrice = vehicle.lastPrice || 0
         
-        doc.text(`${idx + 1}. ${vehicle.vehicleNo} - ${vehicle.make} ${vehicle.model || ''}`, this.leftMargin, currentY)
+        doc.text(`${idx + 1}. ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model || ''}`, this.leftMargin, currentY)
         currentY += 15
         doc.text(`   Sale Date: ${saleDate} | Price: ₹${salePrice.toLocaleString('en-IN')}`, this.leftMargin + 10, currentY)
         currentY += 20
@@ -360,7 +360,7 @@ class ReportService {
 
     const totalRevenue = soldVehicles.reduce((sum, v) => sum + calculateTotalPayment(v), 0)
     const totalCost = soldVehicles.reduce((sum, v) => 
-      sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0), 0)
+      sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.otherCost) || 0), 0)
     const netProfit = totalRevenue - totalCost
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0
 
@@ -494,7 +494,7 @@ class ReportService {
         const purchaseDate = vehicle.createdAt ? formatDate(vehicle.createdAt) : 'N/A'
         const price = vehicle.purchasePrice || 0
         
-        doc.text(`${idx + 1}. ${vehicle.vehicleNo} - ${vehicle.make} ${vehicle.model || ''}`, this.leftMargin, currentY)
+        doc.text(`${idx + 1}. ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model || ''}`, this.leftMargin, currentY)
         currentY += 15
         doc.text(`   Date: ${purchaseDate} | Price: ₹${price.toLocaleString('en-IN')}`, this.leftMargin + 10, currentY)
         currentY += 20
@@ -643,7 +643,7 @@ class ReportService {
     const soldVehicles = vehicles.filter(v => v.status === 'Sold' && v.lastPrice)
     const totalRevenue = soldVehicles.reduce((sum, v) => sum + calculateTotalPayment(v), 0)
     const totalCost = soldVehicles.reduce((sum, v) => 
-      sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0), 0)
+      sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.otherCost) || 0), 0)
     const netProfit = totalRevenue - totalCost
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0
 
@@ -674,6 +674,7 @@ class ReportService {
         { header: 'Purchase Price', width: 90, align: 'right' },
         { header: 'Modifications', width: 90, align: 'right' },
         { header: 'Commission', width: 80, align: 'right' },
+        { header: 'Other Cost', width: 80, align: 'right' },
         { header: 'Total Cost', width: 85, align: 'right' },
         { header: 'Sale Price', width: 85, align: 'right' },
         { header: 'Payment Received', width: 100, align: 'right' },
@@ -686,7 +687,8 @@ class ReportService {
         const purchasePrice = parseFloat(vehicle.purchasePrice) || 0
         const modificationCost = parseFloat(vehicle.modificationCost) || 0
         const commission = parseFloat(vehicle.agentCommission) || 0
-        const cost = purchasePrice + modificationCost + commission
+        const otherCost = parseFloat(vehicle.otherCost) || 0
+        const cost = purchasePrice + modificationCost + commission + otherCost
         const salePrice = parseFloat(vehicle.lastPrice) || 0
         const profit = payment - cost
         const margin = payment > 0 ? ((profit / payment) * 100).toFixed(1) : '0.0'
@@ -790,7 +792,8 @@ class ReportService {
     // Summary
     const totalCommission = vehicles.reduce((sum, v) => sum + (parseFloat(v.agentCommission) || 0), 0)
     const totalModifications = vehicles.reduce((sum, v) => sum + (parseFloat(v.modificationCost) || 0), 0)
-    const totalExpenses = totalCommission + totalModifications
+    const totalOtherCosts = vehicles.reduce((sum, v) => sum + (parseFloat(v.otherCost) || 0), 0)
+    const totalExpenses = totalCommission + totalModifications + totalOtherCosts
 
     doc.fontSize(14).font('Times-Bold')
       .text('Summary', this.leftMargin, currentY)
@@ -800,6 +803,8 @@ class ReportService {
       .text(`Total Agent Commission: ₹${totalCommission.toLocaleString('en-IN')}`, this.leftMargin, currentY)
     currentY += this.lineHeight
     doc.text(`Total Modification Costs: ₹${totalModifications.toLocaleString('en-IN')}`, this.leftMargin, currentY)
+    currentY += this.lineHeight
+    doc.text(`Total Other Costs: ₹${totalOtherCosts.toLocaleString('en-IN')}`, this.leftMargin, currentY)
     currentY += this.lineHeight
     doc.font('Times-Bold')
       .text(`Total Expenses: ₹${totalExpenses.toLocaleString('en-IN')}`, this.leftMargin, currentY)
@@ -832,7 +837,7 @@ class ReportService {
             formattedDate,
             vehicle.vehicleNo || 'N/A',
             'Commission',
-            `Agent Commission - ${vehicle.make || ''} ${vehicle.model || ''}`.trim() || 'Agent Commission',
+            `Agent Commission - ${vehicle.company || ''} ${vehicle.model || ''}`.trim() || 'Agent Commission',
             `₹${commission.toLocaleString('en-IN')}`
           ])
         }
@@ -844,6 +849,15 @@ class ReportService {
             'Modification',
             vehicle.modificationNotes || 'Vehicle Modification',
             `₹${modification.toLocaleString('en-IN')}`
+          ])
+        }
+        if (otherCost > 0) {
+          expenseRows.push([
+            formattedDate,
+            vehicle.vehicleNo || 'N/A',
+            'Other Cost',
+            vehicle.otherCostNotes || 'Other Expenses',
+            `₹${otherCost.toLocaleString('en-IN')}`
           ])
         }
       })
@@ -902,28 +916,29 @@ class ReportService {
       vehicles.filter(v => v.status === 'Sold').forEach(v => {
         const saleDate = v.saleDate ? formatDate(v.saleDate) : 'N/A'
         const payment = calculateTotalPayment(v)
-        csv += `${escapeCSV(v.vehicleNo)},${escapeCSV(v.make || '')},${escapeCSV(v.model || '')},${escapeCSV(saleDate)},${v.lastPrice || 0},${payment}\n`
+        csv += `${escapeCSV(v.vehicleNo)},${escapeCSV(v.company || '')},${escapeCSV(v.model || '')},${escapeCSV(saleDate)},${v.lastPrice || 0},${payment}\n`
       })
     } else if (reportType === 'purchase') {
       csv = 'Vehicle No,Make,Model,Purchase Date,Purchase Price,Agent Commission,Modification Cost\n'
       vehicles.forEach(v => {
         const purchaseDate = v.createdAt ? formatDate(v.createdAt) : 'N/A'
-        csv += `${escapeCSV(v.vehicleNo)},${escapeCSV(v.make || '')},${escapeCSV(v.model || '')},${escapeCSV(purchaseDate)},${v.purchasePrice || 0},${v.agentCommission || 0},${v.modificationCost || 0}\n`
+        csv += `${escapeCSV(v.vehicleNo)},${escapeCSV(v.company || '')},${escapeCSV(v.model || '')},${escapeCSV(purchaseDate)},${v.purchasePrice || 0},${v.agentCommission || 0},${v.modificationCost || 0}\n`
       })
     } else if (reportType === 'financial' || reportType === 'profit_loss') {
-      csv = 'Vehicle No,Make,Model,Purchase Price,Modification Cost,Commission,Total Cost,Sale Price,Payment Received,Net Profit,Margin\n'
+      csv = 'Vehicle No,Company,Model,Purchase Price,Modification Cost,Commission,Other Cost,Total Cost,Sale Price,Payment Received,Net Profit,Margin\n'
       vehicles.filter(v => v.status === 'Sold').forEach(v => {
         const payment = calculateTotalPayment(v)
         const purchasePrice = parseFloat(v.purchasePrice) || 0
         const modificationCost = parseFloat(v.modificationCost) || 0
         const commission = parseFloat(v.agentCommission) || 0
-        const cost = purchasePrice + modificationCost + commission
+        const otherCost = parseFloat(v.otherCost) || 0
+        const cost = purchasePrice + modificationCost + commission + otherCost
         const profit = payment - cost
         const margin = payment > 0 ? ((profit / payment) * 100).toFixed(2) : '0.00'
-        csv += `${escapeCSV(v.vehicleNo)},${escapeCSV(v.make || '')},${escapeCSV(v.model || '')},${purchasePrice},${modificationCost},${commission},${cost},${v.lastPrice || 0},${payment},${profit},${margin}%\n`
+        csv += `${escapeCSV(v.vehicleNo)},${escapeCSV(v.make || '')},${escapeCSV(v.model || '')},${purchasePrice},${modificationCost},${commission},${otherCost},${cost},${v.lastPrice || 0},${payment},${profit},${margin}%\n`
       })
     } else if (reportType === 'expenses') {
-      csv = 'Date,Vehicle No,Make,Model,Expense Type,Description,Amount\n'
+      csv = 'Date,Vehicle No,Company,Model,Expense Type,Description,Amount\n'
       vehicles.forEach(v => {
         const date = v.purchaseDate || v.createdAt || v.updatedAt
         const formattedDate = date ? formatDate(date) : 'N/A'
@@ -935,7 +950,7 @@ class ReportService {
         }
 
         if (modification > 0) {
-          csv += `${escapeCSV(formattedDate)},${escapeCSV(v.vehicleNo || 'N/A')},${escapeCSV(v.make || '')},${escapeCSV(v.model || '')},Modification,${escapeCSV(v.modificationNotes || 'Vehicle Modification')},${modification}\n`
+          csv += `${escapeCSV(formattedDate)},${escapeCSV(v.vehicleNo || 'N/A')},${escapeCSV(v.company || '')},${escapeCSV(v.model || '')},Modification,${escapeCSV(v.modificationNotes || 'Vehicle Modification')},${modification}\n`
         }
       })
     }
@@ -977,7 +992,7 @@ class ReportService {
         const payment = calculateTotalPayment(v)
         worksheetData.push([
           v.vehicleNo || '',
-          v.make || '',
+          v.company || '',
           v.model || '',
           saleDate,
           v.lastPrice || 0,
@@ -991,7 +1006,7 @@ class ReportService {
         const purchaseDate = v.createdAt ? formatDate(v.createdAt) : 'N/A'
         worksheetData.push([
           v.vehicleNo || '',
-          v.make || '',
+          v.company || '',
           v.model || '',
           purchaseDate,
           v.purchasePrice || 0,
@@ -1000,24 +1015,26 @@ class ReportService {
         ])
       })
     } else if (reportType === 'financial' || reportType === 'profit_loss') {
-      worksheetData.push(['Vehicle No', 'Make', 'Model', 'Purchase Price', 'Modification Cost', 'Commission', 'Total Cost', 'Sale Price', 'Payment Received', 'Net Profit', 'Margin %'])
+      worksheetData.push(['Vehicle No', 'Company', 'Model', 'Purchase Price', 'Modification Cost', 'Commission', 'Other Cost', 'Total Cost', 'Sale Price', 'Payment Received', 'Net Profit', 'Margin %'])
       
       vehicles.filter(v => v.status === 'Sold').forEach(v => {
         const payment = calculateTotalPayment(v)
         const purchasePrice = parseFloat(v.purchasePrice) || 0
         const modificationCost = parseFloat(v.modificationCost) || 0
         const commission = parseFloat(v.agentCommission) || 0
-        const cost = purchasePrice + modificationCost + commission
+        const otherCost = parseFloat(v.otherCost) || 0
+        const cost = purchasePrice + modificationCost + commission + otherCost
         const profit = payment - cost
         const margin = payment > 0 ? ((profit / payment) * 100).toFixed(2) : '0.00'
         
         worksheetData.push([
           v.vehicleNo || '',
-          v.make || '',
+          v.company || '',
           v.model || '',
           purchasePrice,
           modificationCost,
           commission,
+          otherCost,
           cost,
           v.lastPrice || 0,
           payment,
@@ -1026,7 +1043,7 @@ class ReportService {
         ])
       })
     } else if (reportType === 'expenses') {
-      worksheetData.push(['Date', 'Vehicle No', 'Make', 'Model', 'Expense Type', 'Description', 'Amount'])
+      worksheetData.push(['Date', 'Vehicle No', 'Company', 'Model', 'Expense Type', 'Description', 'Amount'])
       
       vehicles.forEach(v => {
         const date = v.purchaseDate || v.createdAt || v.updatedAt
@@ -1041,7 +1058,7 @@ class ReportService {
             v.make || '',
             v.model || '',
             'Commission',
-            `Agent Commission - ${v.make || ''} ${v.model || ''}`.trim() || 'Agent Commission',
+            `Agent Commission - ${v.company || ''} ${v.model || ''}`.trim() || 'Agent Commission',
             commission
           ])
         }

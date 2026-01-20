@@ -78,7 +78,7 @@ const AdminAgents = () => {
     <div>
       <div className="section-header">
         <div>
-          <h2> Agents</h2>
+          <h2>Agents</h2>
           <p>View agents and their vehicle purchase history ({agents.length} agents)</p>
         </div>
         <div className="header-actions">
@@ -121,9 +121,9 @@ const AdminAgents = () => {
           <TableBody>
             {filteredAgents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} sx={{ textAlign: 'center', padding: '40px' }}>
-                  <i className="fas fa-search" style={{ fontSize: '32px', color: '#ccc', marginBottom: '10px', display: 'block' }}></i>
-                  No agents match your search criteria
+                <TableCell colSpan={4} align="center" style={{ padding: '40px', color: '#999' }}>
+                  <i className="fas fa-search" style={{ fontSize: '48px', marginBottom: '15px', opacity: 0.5 }}></i>
+                  <p>No agents match your search criteria</p>
                 </TableCell>
               </TableRow>
             ) : (
@@ -144,7 +144,6 @@ const AdminAgents = () => {
                           gap: '5px'
                         }}
                       >
-                        <i className="fas fa-phone" style={{ fontSize: '14px' }}></i>
                         {agent.phone}
                       </a>
                     ) : (
@@ -152,8 +151,7 @@ const AdminAgents = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                      <i className="fas fa-car" style={{ fontSize: '14px' }}></i>
+                    <span className="badge badge-orange" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                       {agent.vehicleCount || 0}
                     </span>
                   </TableCell>

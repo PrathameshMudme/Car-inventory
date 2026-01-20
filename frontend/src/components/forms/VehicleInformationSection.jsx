@@ -62,9 +62,9 @@ const VehicleInformationSection = ({
           sx={isEdit && !isAdmin ? { '& .MuiInputBase-input': { backgroundColor: '#f5f5f5' } } : {}}
         />
         <FormTextField
-          label="Make"
-          name="make"
-          value={formData.make}
+          label="Company"
+          name="company"
+          value={formData.company}
           onChange={handleInputChange}
           placeholder="Honda, Maruti..."
           required={!isEdit}

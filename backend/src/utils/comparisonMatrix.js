@@ -95,12 +95,12 @@ const calculatePeriodMetrics = (vehicles, startDate, endDate) => {
 
   const totalRevenue = periodSold.reduce((sum, v) => sum + calculateTotalPayment(v), 0)
   const totalCost = periodSold.reduce((sum, v) => 
-    sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0), 0)
+    sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.otherCost) || 0), 0)
   const netProfit = totalRevenue - totalCost
   const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0
   
   const totalExpenses = periodPurchased.reduce((sum, v) => 
-    sum + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.modificationCost) || 0), 0)
+    sum + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.otherCost) || 0), 0)
   
   const avgSalePrice = periodSold.length > 0 
     ? periodSold.reduce((sum, v) => sum + calculateTotalPayment(v), 0) / periodSold.length

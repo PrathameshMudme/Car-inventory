@@ -90,7 +90,7 @@ const PurchaseInventory = () => {
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = 
       vehicle.vehicleNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'All' || vehicle.status === statusFilter
@@ -148,7 +148,7 @@ const PurchaseInventory = () => {
           <TableHead>
             <TableRow>
               <TableCell>Vehicle No.</TableCell>
-              <TableCell>Make/Model</TableCell>
+              <TableCell>Company/Model</TableCell>
               <TableCell>Mfg. Date</TableCell>
               {isAdmin && <TableCell>Purchase Price</TableCell>}
               <TableCell>Purchase Date</TableCell>
@@ -173,11 +173,9 @@ const PurchaseInventory = () => {
                     key={vehicle._id}
                     onClick={() => handleViewDetails(vehicle)}
                     style={{ cursor: 'pointer' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <TableCell><strong>{formatVehicleNumber(vehicle.vehicleNo)}</strong></TableCell>
-                    <TableCell>{vehicle.make} {vehicle.model || ''}</TableCell>
+                    <TableCell>{vehicle.company} {vehicle.model || ''}</TableCell>
                     <TableCell>{formatManufacturingDate(vehicle)}</TableCell>
                     {isAdmin && (
                       <TableCell>{formatPrice(vehicle.purchasePrice)}</TableCell>

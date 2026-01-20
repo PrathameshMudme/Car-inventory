@@ -11,12 +11,6 @@ import {
   FormControl,
   InputLabel,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   CircularProgress
 } from '@mui/material'
@@ -30,6 +24,7 @@ import {
 } from '@mui/icons-material'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
+import { Table, TableHead, TableCell, TableRow, TableBody } from '../StyledTable'
 import '../../styles/Sections.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
@@ -198,6 +193,15 @@ const AdminReports = () => {
     return `₹${price.toLocaleString('en-IN')}`
   }
 
+  const formatDate = (date) => {
+    if (!date) return 'N/A'
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
   return (
     <div>
       <div className="section-header">
@@ -269,23 +273,22 @@ const AdminReports = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <TableContainer>
-              <Table>
+            <Table sx={{ minWidth: 700 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Period</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Revenue</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Cost</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Profit</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Margin</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Sold</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Purchased</TableCell>
+                    <TableCell>Period</TableCell>
+                    <TableCell align="right">Revenue</TableCell>
+                    <TableCell align="right">Cost</TableCell>
+                    <TableCell align="right">Profit</TableCell>
+                    <TableCell align="right">Margin</TableCell>
+                    <TableCell align="right">Sold</TableCell>
+                    <TableCell align="right">Purchased</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {comparisonData.periods.map((period, idx) => (
                     <TableRow key={idx}>
-                      <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                      <TableCell>
                         <Chip 
                           label={period.period} 
                           size="small" 
@@ -293,9 +296,9 @@ const AdminReports = () => {
                           sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
                         />
                       </TableCell>
-                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{formatPrice(period.metrics.totalRevenue)}</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{formatPrice(period.metrics.totalCost)}</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                      <TableCell align="right">{formatPrice(period.metrics.totalRevenue)}</TableCell>
+                      <TableCell align="right">{formatPrice(period.metrics.totalCost)}</TableCell>
+                      <TableCell align="right">
                         <span style={{ 
                           color: period.metrics.netProfit >= 0 ? '#27ae60' : '#e74c3c',
                           fontWeight: '600',
@@ -304,7 +307,7 @@ const AdminReports = () => {
                           {formatPrice(period.metrics.netProfit)}
                         </span>
                       </TableCell>
-                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                      <TableCell align="right">
                         <span style={{ 
                           color: period.metrics.profitMargin >= 0 ? '#27ae60' : '#e74c3c',
                           fontWeight: '600',
@@ -313,13 +316,12 @@ const AdminReports = () => {
                           {period.metrics.profitMargin.toFixed(1)}%
                         </span>
                       </TableCell>
-                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{period.metrics.vehiclesSold}</TableCell>
-                      <TableCell align="right" sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>{period.metrics.vehiclesPurchased}</TableCell>
+                      <TableCell align="right">{period.metrics.vehiclesSold}</TableCell>
+                      <TableCell align="right">{period.metrics.vehiclesPurchased}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </TableContainer>
           )}
         </Paper>
       )}
@@ -390,22 +392,21 @@ const AdminReports = () => {
                 <CircularProgress />
               </Box>
             ) : reportHistory.length > 0 ? (
-              <TableContainer>
-                <Table>
+              <Table sx={{ minWidth: 700 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Report Type</TableCell>
-                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Period</TableCell>
-                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Date Range</TableCell>
-                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Format</TableCell>
-                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Generated By</TableCell>
-                      <TableCell sx={{ fontWeight: '700', fontSize: '15px', padding: '18px 20px' }}>Generated At</TableCell>
+                      <TableCell>Report Type</TableCell>
+                      <TableCell>Period</TableCell>
+                      <TableCell>Date Range</TableCell>
+                      <TableCell>Format</TableCell>
+                      <TableCell>Generated By</TableCell>
+                      <TableCell>Generated At</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {reportHistory.map((report) => (
                       <TableRow key={report._id}>
-                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                        <TableCell>
                           <Chip 
                             label={report.reportType.toUpperCase()} 
                             size="small" 
@@ -413,7 +414,7 @@ const AdminReports = () => {
                             sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
                           />
                         </TableCell>
-                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                        <TableCell>
                           <Chip 
                             label={report.periodType === '6months' ? '6 Months' : 
                                    report.periodType === 'quarterly' ? 'Quarterly' : 
@@ -423,20 +424,20 @@ const AdminReports = () => {
                             sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
                           />
                         </TableCell>
-                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>
+                        <TableCell>
                           {formatDate(report.startDate)} - {formatDate(report.endDate)}
                         </TableCell>
-                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px' }}>
+                        <TableCell>
                           <Chip 
                             label={report.format.toUpperCase()} 
                             size="small" 
                             sx={{ fontSize: '14px', fontWeight: '600', height: '28px' }}
                           />
                         </TableCell>
-                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>
+                        <TableCell>
                           {report.generatedBy?.name || report.generatedBy?.email || 'N/A'}
                         </TableCell>
-                        <TableCell sx={{ fontSize: '15px', padding: '18px 20px', fontWeight: '500' }}>
+                        <TableCell>
                           {new Date(report.generatedAt).toLocaleString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -449,7 +450,6 @@ const AdminReports = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </TableContainer>
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', p: 3 }}>
                 No report history available

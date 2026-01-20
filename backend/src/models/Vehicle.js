@@ -21,9 +21,9 @@ const vehicleSchema = new mongoose.Schema({
     trim: true,
     uppercase: true
   },
-  make: {
+  company: {
     type: String,
-    required: [true, 'Make is required'],
+    required: [true, 'Company is required'],
     trim: true
   },
   model: {
@@ -211,6 +211,17 @@ const vehicleSchema = new mongoose.Schema({
   modificationNotes: {
     type: String,
     trim: true
+  },
+  otherCost: {
+    type: Number,
+    default: 0, // Default to 0 for calculations (display shows "NIL" when 0)
+    min: [0, 'Other cost cannot be negative']
+    // Admin-only field - additional costs like insurance, registration, etc.
+  },
+  otherCostNotes: {
+    type: String,
+    trim: true
+    // Admin-only field - description of other costs
   },
   status: {
     type: String,

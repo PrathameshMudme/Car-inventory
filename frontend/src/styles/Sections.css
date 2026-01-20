@@ -637,8 +637,8 @@
 /* Vehicle Grid */
 .vehicle-grid {
     display: none;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
     margin-bottom: 30px;
 }
 
@@ -727,7 +727,7 @@
 }
 
 .vehicle-card-content {
-    padding: 20px;
+    padding: 16px;
 }
 
 .vehicle-card-header {
@@ -735,12 +735,18 @@
     justify-content: space-between;
     align-items: start;
     margin-bottom: 15px;
+    gap: 10px;
 }
 
 .vehicle-card-header h3 {
-    font-size: 18px;
+    font-size: 16px;
     color: var(--dark-color);
-    margin-bottom: 5px;
+    margin-bottom: 4px;
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.4;
 }
 
 .vehicle-number {
@@ -750,6 +756,8 @@
     padding: 4px 12px;
     border-radius: 12px;
     font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .vehicle-card-specs {
@@ -758,6 +766,7 @@
     margin-bottom: 15px;
     padding-bottom: 15px;
     border-bottom: 1px solid var(--light-color);
+    flex-wrap: wrap;
 }
 
 .vehicle-card-specs span {
@@ -766,6 +775,8 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .vehicle-card-specs i {
@@ -775,31 +786,38 @@
 .vehicle-card-pricing {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 15px;
-    padding: 15px;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 12px;
     background: #f8f9fa;
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 .price-item {
     text-align: center;
+    min-width: 0;
 }
 
 .price-item label {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .price-item strong {
     display: block;
-    font-size: 16px;
+    font-size: 13px;
     color: var(--dark-color);
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .vehicle-card-actions {
@@ -1144,7 +1162,7 @@
     }
     
     .vehicle-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     }
     
     .vehicle-card-pricing {

@@ -232,28 +232,11 @@ const AdminHistory = () => {
 
 
     return (
-      <div style={{
-        borderRadius: '16px',
-        overflow: 'hidden',
-        border: `1px solid ${categoryColor.border}`,
-        backgroundColor: '#ffffff',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-      }}>
-        <Table sx={{ minWidth: 700 }} aria-label={`${activeTab} history table`}>
+      <Table sx={{ minWidth: 700 }} aria-label={`${activeTab} history table`}>
           <TableHead>
-            <TableRow style={{
-              background: `linear-gradient(135deg, ${categoryColor.bg} 0%, rgba(255, 255, 255, 0.5) 100%)`,
-              borderBottom: `2px solid ${categoryColor.border}`
-            }}>
+            <TableRow>
               {columns.map((col, idx) => (
-                <TableCell key={idx} style={{
-                  fontWeight: '700',
-                  fontSize: '14px',
-                  color: categoryColor.icon,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  padding: '16px'
-                }}>
+                <TableCell key={idx}>
                   {col.label}
                 </TableCell>
               ))}
@@ -261,23 +244,9 @@ const AdminHistory = () => {
           </TableHead>
           <TableBody>
             {data.map((item, index) => (
-              <TableRow 
-                key={index}
-                style={{
-                  transition: 'all 0.2s ease',
-                  borderBottom: index < data.length - 1 ? `1px solid ${categoryColor.border}` : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = categoryColor.bg
-                  e.currentTarget.style.transform = 'scale(1.01)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.transform = 'scale(1)'
-                }}
-              >
+              <TableRow key={index}>
                 {columns.map((col, idx) => (
-                  <TableCell key={idx} style={{ padding: '14px 16px', fontSize: '14px' }}>
+                  <TableCell key={idx}>
                     {col.render ? col.render(item) : item[col.key]}
                   </TableCell>
                 ))}
@@ -285,7 +254,6 @@ const AdminHistory = () => {
             ))}
           </TableBody>
         </Table>
-      </div>
     )
   }
 
@@ -307,7 +275,7 @@ const AdminHistory = () => {
       )
     },
     { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{formatVehicleNumber(item.vehicleNo)}</strong> },
-    { label: 'Make/Model', key: 'makeModel', render: (item) => `${item.make} ${item.model || ''}`.trim() },
+    { label: 'Company/Model', key: 'makeModel', render: (item) => `${item.company} ${item.model || ''}`.trim() },
     { label: 'Purchase Price', key: 'purchasePrice', render: (item) => (
       <span style={{ 
         color: '#3b82f6', 
@@ -353,7 +321,7 @@ const AdminHistory = () => {
       )
     },
     { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{formatVehicleNumber(item.vehicleNo)}</strong> },
-    { label: 'Make/Model', key: 'makeModel', render: (item) => `${item.make} ${item.model || ''}`.trim() },
+    { label: 'Company/Model', key: 'makeModel', render: (item) => `${item.company} ${item.model || ''}`.trim() },
     { label: 'Purchase Price', key: 'purchasePrice', render: (item) => formatPrice(item.purchasePrice) },
     { label: 'Sale Price', key: 'lastPrice', render: (item) => (
       <span style={{ 
@@ -400,7 +368,7 @@ const AdminHistory = () => {
       )
     },
     { label: 'Vehicle No.', key: 'vehicleNo', render: (item) => <strong>{formatVehicleNumber(item.vehicleNo)}</strong> },
-    { label: 'Make/Model', key: 'makeModel', render: (item) => `${item.make} ${item.model || ''}`.trim() },
+    { label: 'Company/Model', key: 'makeModel', render: (item) => `${item.company} ${item.model || ''}`.trim() },
     { label: 'Modified By', key: 'user', render: (item) => (
       <span style={{ 
         display: 'inline-flex', 
@@ -446,7 +414,7 @@ const AdminHistory = () => {
   }
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       <div className="section-header">
         <div>
           <h2><i className="fas fa-history"></i> History</h2>

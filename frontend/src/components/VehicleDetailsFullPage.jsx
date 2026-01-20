@@ -223,7 +223,7 @@ const VehicleDetailsFullPage = ({ vehicle, onClose, onEdit, onDelete }) => {
           <div className="carousel-image-wrapper">
             <img 
               src={finalImages[currentImageIndex]} 
-              alt={`${vehicle.make} ${vehicle.model || ''} - Image ${currentImageIndex + 1}`}
+              alt={`${vehicle.company} ${vehicle.model || ''} - Image ${currentImageIndex + 1}`}
               className="carousel-main-image"
             />
             {finalImages.length > 1 && (
@@ -307,8 +307,8 @@ const VehicleDetailsFullPage = ({ vehicle, onClose, onEdit, onDelete }) => {
                 <strong>{vehicle.engineNo || 'N/A'}</strong>
               </div>
               <div className="info-item">
-                <label>Make</label>
-                <strong>{vehicle.make}</strong>
+                <label>Company</label>
+                <strong>{vehicle.company}</strong>
               </div>
               <div className="info-item">
                 <label>Model</label>

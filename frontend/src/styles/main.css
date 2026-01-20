@@ -1312,6 +1312,18 @@ body {
     }
 }
 
+/* Table Row Animation */
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 8px;
@@ -1697,8 +1709,8 @@ body {
 /* Vehicle Grid View */
 .vehicle-grid {
     display: none;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
     margin-bottom: 30px;
 }
 
@@ -1724,7 +1736,7 @@ body {
 
 .vehicle-card-image {
     position: relative;
-    height: 240px;
+    height: 180px;
     overflow: hidden;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
@@ -1779,6 +1791,16 @@ body {
     backdrop-filter: blur(2px);
 }
 
+.vehicle-card-overlay i {
+    font-size: 24px !important;
+    margin-bottom: 6px !important;
+}
+
+.vehicle-card-overlay p {
+    font-size: 12px !important;
+    margin: 0 !important;
+}
+
 .vehicle-card:hover .vehicle-card-overlay {
     opacity: 1;
 }
@@ -1798,9 +1820,9 @@ body {
 }
 
 .vehicle-card-header h3 {
-    font-size: 18px;
+    font-size: 16px;
     color: var(--dark-color);
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: 700;
     line-height: 1.3;
     display: -webkit-box;
@@ -1820,10 +1842,11 @@ body {
 
 .vehicle-card-specs {
     display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--light-color);
+    flex-wrap: wrap;
 }
 
 .vehicle-card-specs span {
@@ -1841,11 +1864,11 @@ body {
 .vehicle-card-pricing {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 0;
-    padding: 15px;
+    padding: 12px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid #dee2e6;
 }
 
@@ -1854,6 +1877,7 @@ body {
 }
 
 .price-item label {
+    font-size: 11px;
     display: block;
     font-size: 11px;
     color: var(--text-muted);
@@ -1864,7 +1888,7 @@ body {
 
 .price-item strong {
     display: block;
-    font-size: 16px;
+    font-size: 13px;
     color: var(--dark-color);
     font-weight: 700;
 }
@@ -2303,6 +2327,31 @@ body.dark-mode .data-table tbody tr:hover {
     background: #1c2128;
 }
 
+/* Global Sticky Table Headers - Ensure all table headers stay frozen while scrolling */
+.MuiTableContainer-root,
+.data-table-container,
+.table-container {
+    position: relative;
+    overflow: auto !important;
+}
+
+.MuiTableHead-root,
+.data-table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.MuiTableCell-head,
+.data-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    z-index: 11 !important;
+}
+
 /* Responsive Enhancements */
 @media (max-width: 768px) {
     .notification-panel {
@@ -2314,7 +2363,7 @@ body.dark-mode .data-table tbody tr:hover {
     }
     
     .vehicle-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     }
     
     .vehicle-card-pricing {

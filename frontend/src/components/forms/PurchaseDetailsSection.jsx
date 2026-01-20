@@ -97,6 +97,24 @@ const PurchaseDetailsSection = ({
               onChange={handleInputChange}
               placeholder="+91 98765 43210"
             />
+            <FormTextField
+              label="Other Cost (₹)"
+              name="otherCost"
+              type="number"
+              value={formData.otherCost}
+              onChange={handleInputChange}
+              inputProps={{ min: 0, step: 100 }}
+              helperText="Additional costs like insurance, registration, documentation, etc."
+            />
+            <FormTextField
+              label="Other Cost Notes"
+              name="otherCostNotes"
+              value={formData.otherCostNotes}
+              onChange={handleInputChange}
+              placeholder="e.g., Insurance ₹5000, Registration ₹2000"
+              multiline
+              rows={2}
+            />
           </>
         )}
         {isEdit && (

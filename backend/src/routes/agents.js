@@ -27,25 +27,36 @@ router.get('/', authenticate, authorize('admin'), async (req, res) => {
       ]
     }).lean()
 
-    // Normalize agent names and group them
+    // Group agents by phone number (same phone = same agent, regardless of name)
     const agentMap = new Map()
 
     vehicles.forEach(vehicle => {
-      // Prefer agentName, fallback to legacy dealerName field for backward compatibility
-      const agentName = vehicle.agentName || vehicle.dealerName || ''
+      // Prefer agentPhone, fallback to legacy dealerPhone field for backward compatibility
       const agentPhone = vehicle.agentPhone || vehicle.dealerPhone || 'N/A'
       
-      // Normalize agent name (capitalize first letter)
-      const normalizedName = capitalizeName(agentName)
-      const key = `${normalizedName}|${agentPhone}`
+      // Skip if no phone number
+      if (!agentPhone || agentPhone === 'N/A') {
+        return
+      }
+      
+      // Use phone number as the key for grouping
+      const key = agentPhone.trim()
 
       if (!agentMap.has(key)) {
+        // Get the first agent name encountered for this phone number
+        // (all vehicles with same phone should have same agent name ideally)
+        const agentName = vehicle.agentName || vehicle.dealerName || 'Unknown Agent'
+        const normalizedName = capitalizeName(agentName)
+        
         agentMap.set(key, {
           name: normalizedName,
           phone: agentPhone,
           vehicleCount: 0,
           totalCommission: 0
         })
+      } else {
+        // If name differs but phone is same, keep the existing name
+        // (this handles cases where same agent might have slight name variations)
       }
 
       const agent = agentMap.get(key)

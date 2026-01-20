@@ -69,7 +69,8 @@ const SalesOverview = () => {
     const purchasePrice = parseFloat(vehicle.purchasePrice) || 0
     const modificationCost = parseFloat(vehicle.modificationCost) || 0
     const agentCommission = parseFloat(vehicle.agentCommission) || 0
-    const totalCost = purchasePrice + modificationCost + agentCommission
+    const otherCost = parseFloat(vehicle.otherCost) || 0
+    const totalCost = purchasePrice + modificationCost + agentCommission + otherCost
     return totalPayment - totalCost
   }
 
@@ -241,8 +242,8 @@ const SalesOverview = () => {
     const makeCounts = {}
     
     soldVehicles.forEach(v => {
-      const make = v.make || 'Unknown'
-      makeCounts[make] = (makeCounts[make] || 0) + 1
+      const company = v.company || 'Unknown'
+      makeCounts[company] = (makeCounts[company] || 0) + 1
     })
 
     const sorted = Object.entries(makeCounts)
@@ -250,7 +251,7 @@ const SalesOverview = () => {
       .slice(0, 5)
 
     return {
-      labels: sorted.map(([make]) => make),
+      labels: sorted.map(([company]) => company),
       datasets: [{
         label: 'Sales',
         data: sorted.map(([, count]) => count),
@@ -259,23 +260,23 @@ const SalesOverview = () => {
     }
   }
 
-  // Make performance comparison (revenue by make)
+  // Company performance comparison (revenue by company)
   const getMakePerformanceComparison = () => {
     const soldVehicles = getSoldVehicles()
-    const makeRevenue = {}
+    const companyRevenue = {}
     
     soldVehicles.forEach(v => {
-      const make = v.make || 'Unknown'
+      const company = v.company || 'Unknown'
       const revenue = calculateTotalPayment(v)
-      makeRevenue[make] = (makeRevenue[make] || 0) + revenue
+      companyRevenue[company] = (companyRevenue[company] || 0) + revenue
     })
 
-    const sorted = Object.entries(makeRevenue)
+    const sorted = Object.entries(companyRevenue)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
 
     return {
-      labels: sorted.map(([make]) => make),
+      labels: sorted.map(([company]) => company),
       datasets: [{
         label: 'Revenue (₹)',
         data: sorted.map(([, revenue]) => revenue),
@@ -787,7 +788,7 @@ const SalesOverview = () => {
       {/* Charts Grid - Row 3 */}
       <div className="chart-grid-container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
         <div className="chart-card">
-          <h3><i className="fas fa-chart-bar"></i> Make Performance (Revenue)</h3>
+          <h3><i className="fas fa-chart-bar"></i> Company Performance (Revenue)</h3>
           <ChartCard
             title=""
             type="bar"
@@ -953,7 +954,7 @@ const SalesOverview = () => {
               {stats.recentSales.map((sale, index) => (
                 <TableRow key={index}>
                   <TableCell><strong>{formatVehicleNumber(sale.vehicleNo)}</strong></TableCell>
-                  <TableCell>{`${sale.make} ${sale.model || ''}`.trim()}</TableCell>
+                  <TableCell>{`${sale.company} ${sale.model || ''}`.trim()}</TableCell>
                   <TableCell>
                     {sale.saleDate 
                       ? new Date(sale.saleDate).toLocaleDateString('en-IN', {

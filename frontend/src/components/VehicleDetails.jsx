@@ -112,7 +112,7 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
       )}
       <div className="vehicle-images-section">
         <div className="main-image">
-          <img src={displayImages[mainImage]} alt={`${vehicle.make} ${vehicle.model || ''}`} />
+          <img src={displayImages[mainImage]} alt={`${vehicle.company} ${vehicle.model || ''}`} />
           <span className={`status-badge ${getStatusBadgeClass(vehicle.status)}`}>
             {vehicle.status}
           </span>
@@ -149,8 +149,8 @@ const VehicleDetails = ({ vehicle, onEdit }) => {
             <strong>{vehicle.chassisNo || 'N/A'}</strong>
           </div>
           <div className="info-item">
-            <label>Make</label>
-            <strong>{vehicle.make}</strong>
+            <label>Company</label>
+            <strong>{vehicle.company}</strong>
           </div>
           <div className="info-item">
             <label>Model</label>

@@ -114,7 +114,7 @@ const AdminExpenses = () => {
           date: formattedDate,
           vehicle: vehicle.vehicleNo || 'N/A',
           expenseType: 'Commission',
-          description: `Agent Commission - ${vehicle.make || ''} ${vehicle.model || ''}`.trim() || 'Agent Commission',
+          description: `Agent Commission - ${vehicle.company || ''} ${vehicle.model || ''}`.trim() || 'Agent Commission',
           amount: agentCommission,
           badgeClass: 'badge-purple'
         })
@@ -131,6 +131,20 @@ const AdminExpenses = () => {
           description: vehicle.modificationNotes || 'Vehicle Modification',
           amount: modificationCost,
           badgeClass: 'badge-blue'
+        })
+      }
+
+      // Add other cost expense
+      const otherCost = parseFloat(vehicle.otherCost) || 0
+      if (otherCost > 0) {
+        expenses.push({
+          id: `${vehicle._id}-other`,
+          date: formattedDate,
+          vehicle: vehicle.vehicleNo || 'N/A',
+          expenseType: 'Other Cost',
+          description: vehicle.otherCostNotes || 'Other Expenses',
+          amount: otherCost,
+          badgeClass: 'badge-orange'
         })
       }
     })
@@ -152,21 +166,24 @@ const AdminExpenses = () => {
     let totalExpenses = 0
     let totalCommission = 0
     let totalModifications = 0
+    let totalOtherCosts = 0
 
     filteredVehicles.forEach(vehicle => {
       const commission = parseFloat(vehicle.agentCommission) || 0
       const modification = parseFloat(vehicle.modificationCost) || 0
+      const otherCost = parseFloat(vehicle.otherCost) || 0
       
       totalCommission += commission
       totalModifications += modification
-      totalExpenses += commission + modification
+      totalOtherCosts += otherCost
+      totalExpenses += commission + modification + otherCost
     })
 
     return {
       totalExpenses,
       totalCommission,
       totalModifications,
-      otherExpenses: 0 // Currently no other expenses tracked
+      otherExpenses: totalOtherCosts
     }
   }
 
@@ -336,17 +353,17 @@ const AdminExpenses = () => {
       </div>
 
       <Table sx={{ minWidth: 700 }} aria-label="expenses table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Date</TableCell>
-            <TableCell>Vehicle</TableCell>
-            <TableCell>Expense Type</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Amount</TableCell>
-            <TableCell align="center">Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
+          <TableHead>
+            <TableRow>
+              <TableCell>Date</TableCell>
+              <TableCell>Vehicle</TableCell>
+              <TableCell>Expense Type</TableCell>
+              <TableCell>Description</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell align="center">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
           {expenses.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} align="center" style={{ padding: '40px', color: '#999' }}>
@@ -374,8 +391,8 @@ const AdminExpenses = () => {
               </TableRow>
             ))
           )}
-        </TableBody>
-      </Table>
+          </TableBody>
+        </Table>
     </div>
   )
 }

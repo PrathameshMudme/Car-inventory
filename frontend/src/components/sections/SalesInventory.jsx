@@ -413,7 +413,7 @@ const SalesInventory = () => {
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = 
       vehicle.vehicleNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'All' || vehicle.status === statusFilter
@@ -422,7 +422,7 @@ const SalesInventory = () => {
   })
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       <div className="section-header">
         <div>
           <h2> Available Inventory</h2>
@@ -466,7 +466,7 @@ const SalesInventory = () => {
         />
       ) : (
         <DataTable
-          columns={[
+            columns={[
             { 
               key: 'vehicleNo', 
               label: 'Vehicle No.', 
@@ -474,8 +474,8 @@ const SalesInventory = () => {
             },
             { 
               key: 'makeModel', 
-              label: 'Make/Model', 
-              render: (v) => `${v.make} ${v.model || ''}`.trim() 
+              label: 'Company/Model', 
+              render: (v) => `${v.company} ${v.model || ''}`.trim() 
             },
             { 
               key: 'year', 
@@ -564,7 +564,7 @@ const SalesInventory = () => {
         <form onSubmit={handleMarkAsSold}>
           {selectedVehicle && (
             <div style={{ padding: '15px', background: '#f8f9fa', borderRadius: '10px', marginBottom: '20px' }}>
-              <strong>{formatVehicleNumber(selectedVehicle.vehicleNo)}</strong> - {selectedVehicle.make} {selectedVehicle.model || ''}
+              <strong>{formatVehicleNumber(selectedVehicle.vehicleNo)}</strong> - {selectedVehicle.company} {selectedVehicle.model || ''}
               {selectedVehicle.askingPrice && (
                 <div style={{ marginTop: '8px', color: '#6c757d', fontSize: '14px' }}>
                   Asking Price: ₹{selectedVehicle.askingPrice.toLocaleString('en-IN')}
@@ -981,7 +981,7 @@ const SalesInventory = () => {
               <option value="">Choose a vehicle...</option>
               {vehicles.map(v => (
                 <option key={v._id} value={v._id}>
-                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {formatManufacturingDate(v)}
+                  {formatVehicleNumber(v.vehicleNo)} - {v.company} {v.model || ''} {formatManufacturingDate(v)}
                 </option>
               ))}
             </select>
@@ -994,7 +994,7 @@ const SalesInventory = () => {
         {selectedVehicle && compareVehicle && (
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {formatManufacturingDate(selectedVehicle)} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
+              <h3>{selectedVehicle.company} {selectedVehicle.model || ''} {formatManufacturingDate(selectedVehicle)} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
               <StatusBadge status={selectedVehicle.status} />
             </div>
 

@@ -33,14 +33,16 @@ const checkModificationComplete = async (vehicle) => {
   
   const hasAskingPrice = vehicle.askingPrice && parseFloat(vehicle.askingPrice) > 0
   const hasLastPrice = vehicle.lastPrice && parseFloat(vehicle.lastPrice) > 0
-  const hasModificationCost = vehicle.modificationCost && vehicle.modificationCost > 0
-  const hasModificationNotes = vehicle.modificationNotes && vehicle.modificationNotes.trim()
-  const hasAgentPhone = vehicle.agentPhone && vehicle.agentPhone.trim()
-  const hasAgentCommission = vehicle.agentCommission && vehicle.agentCommission > 0
+  // modificationCost and agentCommission must be > 0 (matching frontend validation)
+  const hasModificationCost = vehicle.modificationCost !== null && vehicle.modificationCost !== undefined && parseFloat(vehicle.modificationCost) > 0
+  const hasModificationNotes = vehicle.modificationNotes && vehicle.modificationNotes.trim().length > 0
+  const hasAgentPhone = vehicle.agentPhone && vehicle.agentPhone.trim().length > 0
+  const hasAgentCommission = vehicle.agentCommission !== null && vehicle.agentCommission !== undefined && parseFloat(vehicle.agentCommission) > 0
   
+  // All fields must be present and valid
   return hasAskingPrice && hasLastPrice && 
-         hasModificationCost !== null && hasModificationNotes && 
-         hasAgentPhone && hasAgentCommission !== null && 
+         hasModificationCost && hasModificationNotes && 
+         hasAgentPhone && hasAgentCommission && 
          hasPostModificationImages !== null
 }
 
@@ -111,7 +113,7 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       vehicleNo,
       chassisNo,
       engineNo,
-      make,
+      company,
       model,
       year,
       color,
@@ -132,7 +134,7 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       vehicleNo: 'Vehicle Number',
       chassisNo: 'Chassis Number',
       engineNo: 'Engine Number',
-      make: 'Make',
+      company: 'Company',
       model: 'Model',
       color: 'Color',
       kilometers: 'Kilometers',
@@ -257,7 +259,7 @@ router.post('/', authenticate, authorize('purchase', 'admin'), upload.fields([
       vehicleNo: vehicleNo.toUpperCase(),
       chassisNo: chassisNo ? chassisNo.toUpperCase() : '',
       engineNo: engineNo ? engineNo.toUpperCase() : '',
-      make,
+      company,
       model,
       color,
       fuelType: fuelType || 'Petrol',
@@ -500,7 +502,7 @@ router.get('/', authenticate, async (req, res) => {
     if (search) {
       query.$or = [
         { vehicleNo: { $regex: search, $options: 'i' } },
-        { make: { $regex: search, $options: 'i' } },
+        { company: { $regex: search, $options: 'i' } },
         { model: { $regex: search, $options: 'i' } }
       ]
     }
@@ -647,7 +649,7 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
     if (isAdmin) {
       // Admin can update all fields
       updateFields = [
-        'make', 'model', 'year', 'vehicleMonth', 'vehicleYear', 'color', 'fuelType', 'kilometers',
+        'company', 'model', 'year', 'vehicleMonth', 'vehicleYear', 'color', 'fuelType', 'kilometers',
         'purchasePrice', 'askingPrice', 'lastPrice', 'purchaseDate', 'paymentMethod',
         'agentCommission', 'sellerName', 'sellerContact', 'agentName',
         'agentPhone', 'dealerName', 'dealerPhone', 'notes', 'status',
@@ -657,6 +659,8 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
         'addressLine1', 'district', 'taluka', 'pincode',
         // Modification workflow fields
         'modificationCost', 'modificationNotes',
+        // Other cost fields (admin only)
+        'otherCost', 'otherCostNotes',
         // Chassis and engine numbers (admin only for chassis)
         'chassisNo', 'engineNo',
         // Customer information
@@ -745,7 +749,8 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
                'paymentMethod', 'purchasePaymentMethods', 'agentCommission', 'agentPhone',
                'sellerName', 'sellerContact', 'dealerName', 'dealerPhone', 'ownerType', 
                'ownerTypeCustom', 'addressLine1', 'district', 'taluka', 'pincode',
-               'remainingAmountToSeller', 'pendingPaymentType', 'chassisNo', 'engineNo'].includes(field)) {
+               'remainingAmountToSeller', 'pendingPaymentType', 'chassisNo', 'engineNo',
+               'otherCost', 'otherCostNotes'].includes(field)) {
             return // Skip this field for sales role
           }
         }
@@ -760,9 +765,9 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
           return // Skip engine number update for non-admin
         }
         
-        // Agent commission and agent phone can only be edited by admin
-        if ((field === 'agentCommission' || field === 'agentPhone') && !isAdmin) {
-          return // Skip agent commission and phone update for non-admin
+        // Agent commission, agent phone, and other cost can only be edited by admin
+        if ((field === 'agentCommission' || field === 'agentPhone' || field === 'otherCost' || field === 'otherCostNotes') && !isAdmin) {
+          return // Skip agent commission, phone, and other cost update for non-admin
         }
 
         // purchaseMonth and purchaseYear are auto-set from createdAt, don't allow manual editing
@@ -788,7 +793,7 @@ router.put('/:id', authenticate, authorize('admin', 'sales'), upload.fields([
           }
         } else if (['purchasePrice', 'askingPrice', 'lastPrice', 'agentCommission', 
                      'paymentCash', 'paymentBankTransfer', 'paymentOnline', 'paymentLoan', 
-                     'remainingAmount', 'remainingAmountToSeller', 'modificationCost'].includes(field)) {
+                     'remainingAmount', 'remainingAmountToSeller', 'modificationCost', 'otherCost'].includes(field)) {
           // Handle "NIL" string values and empty strings - convert to 0 for calculation fields
           const value = req.body[field]
           
@@ -1138,12 +1143,12 @@ router.get('/:id/purchase-note', authenticate, authorize('purchase', 'admin'), a
     await saveHistoryIfNeeded(vehicle, req.user, isDownloadOnly)
 
     // Generate PDF filename
-    const filename = `Purchase_Note_${vehicle.vehicleNo}_${Date.now()}.pdf`
+        const filename = `Purchase_Note_${vehicle.vehicleNo}_${Date.now()}.pdf`
 
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-
+    
     // Generate PDF using service
     const pdfService = new PurchaseNotePDFService()
     const doc = pdfService.generatePDF(vehicle)

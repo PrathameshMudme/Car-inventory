@@ -116,7 +116,7 @@ const AdminOverview = () => {
         .reduce((sum, v) => sum + calculateTotalPayment(v), 0)
       
       const totalCost = soldVehicles.reduce((sum, v) => 
-        sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0), 0)
+        sum + (parseFloat(v.purchasePrice) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.otherCost) || 0), 0)
       
       const netProfit = totalRevenue - totalCost
       const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0
@@ -171,7 +171,7 @@ const AdminOverview = () => {
       })
       
       const thisMonthExpenses = thisMonthVehicles.reduce((sum, v) => 
-        sum + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.modificationCost) || 0), 0)
+        sum + (parseFloat(v.agentCommission) || 0) + (parseFloat(v.modificationCost) || 0) + (parseFloat(v.otherCost) || 0), 0)
       
       // Calculate total investment this month
       const thisMonthInvestment = thisMonthVehicles.reduce((sum, v) => 
@@ -182,16 +182,16 @@ const AdminOverview = () => {
         ? ((sold / vehiclesData.length) * 100).toFixed(1)
         : 0
       
-      // Get top selling makes
-      const makeCounts = {}
+      // Get top selling companies
+      const companyCounts = {}
       soldVehicles.forEach(v => {
-        const make = v.make || 'Unknown'
-        makeCounts[make] = (makeCounts[make] || 0) + 1
+        const company = v.company || 'Unknown'
+        companyCounts[company] = (companyCounts[company] || 0) + 1
       })
-      const topMakes = Object.entries(makeCounts)
+      const topMakes = Object.entries(companyCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
-        .map(([make, count]) => ({ make, count }))
+        .map(([company, count]) => ({ company, count }))
 
       setStats({
         totalVehicles: vehiclesData.length,
@@ -775,7 +775,7 @@ const AdminOverview = () => {
                 color: '#2c3e50'
               }}>
                 <i className="fas fa-star" style={{ color: '#f39c12' }}></i>
-                Top Selling Makes
+                Top Selling Companies
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {stats.topMakes.map((item, idx) => (
@@ -804,7 +804,7 @@ const AdminOverview = () => {
                         {idx + 1}
                       </div>
                       <span style={{ fontSize: '14px', fontWeight: '600', color: '#2c3e50' }}>
-                        {item.make}
+                        {item.company}
                       </span>
                     </div>
                     <span style={{ fontSize: '14px', fontWeight: '600', color: '#667eea' }}>

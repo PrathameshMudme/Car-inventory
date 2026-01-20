@@ -288,7 +288,7 @@ const PurchaseOverview = () => {
         return {
           id: vehicle._id || vehicle.id,
           vehicleNo: formatVehicleNumber(vehicle.vehicleNo || 'N/A'),
-          makeModel: `${vehicle.make || ''} ${vehicle.model || ''}`.trim() || 'N/A',
+          makeModel: `${vehicle.company || ''} ${vehicle.model || ''}`.trim() || 'N/A',
           purchaseDate: formattedDate, // Date when added by Purchase Manager
           vehiclePurchaseDate: purchaseDateDisplay, // Vehicle's actual purchase date
           amount: amount,

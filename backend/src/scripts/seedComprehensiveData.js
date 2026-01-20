@@ -1,15 +1,19 @@
 /**
  * Comprehensive Test Data Seeding Script
  * 
- * This script creates test data covering:
+ * This script creates high-quality test data covering:
  * - All user roles (admin, purchase, sales)
  * - All vehicle statuses (On Modification, In Stock, Reserved, Sold, Processing, DELETED)
  * - All payment scenarios (full payment, partial payment, pending payments, settlements)
  * - All vehicle fields and edge cases
- * - Payment settlement history
+ * - Payment settlement history with various scenarios
  * - Purchase note history
+ * - Delivery note history
  * - Chassis/Engine number history
- * - Various date ranges for testing reports
+ * - Various date ranges for testing reports and filters
+ * - Customer data with different sources
+ * - Agent data with commission tracking
+ * - Expense scenarios (commission, modification, other costs)
  */
 
 const mongoose = require('mongoose')
@@ -29,7 +33,7 @@ const randomDate = (start, end) => {
 
 // Helper function to generate vehicle number
 const generateVehicleNo = (index) => {
-  const states = ['MH', 'GJ', 'DL', 'KA', 'TN']
+  const states = ['MH', 'GJ', 'DL', 'KA', 'TN', 'RJ', 'UP', 'MP']
   const state = states[Math.floor(Math.random() * states.length)]
   const district = String(Math.floor(Math.random() * 50) + 1).padStart(2, '0')
   const series = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + String.fromCharCode(65 + Math.floor(Math.random() * 26))
@@ -38,8 +42,8 @@ const generateVehicleNo = (index) => {
 }
 
 // Helper function to generate chassis/engine number
-const generateChassisNo = (index) => `CHASSIS${String(index).padStart(10, '0')}`
-const generateEngineNo = (index) => `ENGINE${String(index).padStart(10, '0')}`
+const generateChassisNo = (index) => `CH${String(index).padStart(12, '0')}`
+const generateEngineNo = (index) => `EN${String(index).padStart(12, '0')}`
 
 const seedComprehensiveData = async () => {
   try {
@@ -62,7 +66,7 @@ const seedComprehensiveData = async () => {
       {
         name: 'Admin User',
         email: 'admin@test.com',
-        password: 'admin123',
+        password: 'admin123', // Plain text - will be hashed by User model's pre-save hook
         role: 'admin',
         contact: '+91 99999 99999',
         status: 'Active'
@@ -70,7 +74,7 @@ const seedComprehensiveData = async () => {
       {
         name: 'Rajesh Kumar',
         email: 'purchase1@test.com',
-        password: 'password123',
+        password: 'password123', // Plain text - will be hashed by User model's pre-save hook
         role: 'purchase',
         contact: '+91 98765 43210',
         status: 'Active'
@@ -78,7 +82,7 @@ const seedComprehensiveData = async () => {
       {
         name: 'Amit Patil',
         email: 'purchase2@test.com',
-        password: 'password123',
+        password: 'password123', // Plain text - will be hashed by User model's pre-save hook
         role: 'purchase',
         contact: '+91 87654 32109',
         status: 'Active'
@@ -86,7 +90,7 @@ const seedComprehensiveData = async () => {
       {
         name: 'Priya Sharma',
         email: 'sales1@test.com',
-        password: 'password123',
+        password: 'password123', // Plain text - will be hashed by User model's pre-save hook
         role: 'sales',
         contact: '+91 76543 21098',
         status: 'Active'
@@ -94,7 +98,7 @@ const seedComprehensiveData = async () => {
       {
         name: 'Sneha Desai',
         email: 'sales2@test.com',
-        password: 'password123',
+        password: 'password123', // Plain text - will be hashed by User model's pre-save hook
         role: 'sales',
         contact: '+91 65432 10987',
         status: 'Active'
@@ -102,7 +106,7 @@ const seedComprehensiveData = async () => {
       {
         name: 'Vikram Singh',
         email: 'purchase3@test.com',
-        password: 'password123',
+        password: 'password123', // Plain text - will be hashed by User model's pre-save hook
         role: 'purchase',
         contact: '+91 54321 09876',
         status: 'Disabled' // Test disabled user
@@ -119,29 +123,29 @@ const seedComprehensiveData = async () => {
     console.log(`✅ Created ${createdUsers.length} users\n`)
 
     const adminUser = createdUsers.find(u => u.role === 'admin')
-    const purchaseUsers = createdUsers.filter(u => u.role === 'purchase')
+    const purchaseUsers = createdUsers.filter(u => u.role === 'purchase' && u.status === 'Active')
     const salesUsers = createdUsers.filter(u => u.role === 'sales')
 
     // ============================================
-    // CREATE VEHICLES (All Statuses & Scenarios)
+    // VEHICLE DATA CONFIGURATION
     // ============================================
-    console.log('🚗 Creating vehicles...')
-
-    const makes = ['Maruti Suzuki', 'Hyundai', 'Honda', 'Toyota', 'Tata', 'Mahindra', 'Ford', 'Volkswagen']
+    const companies = ['Maruti Suzuki', 'Hyundai', 'Honda', 'Toyota', 'Tata', 'Mahindra', 'Ford', 'Volkswagen', 'Kia', 'MG']
     const models = {
-      'Maruti Suzuki': ['Swift', 'Dzire', 'Baleno', 'Wagon R', 'Alto'],
-      'Hyundai': ['i20', 'Creta', 'Verna', 'Grand i10', 'Venue'],
-      'Honda': ['City', 'Amaze', 'WR-V', 'Jazz'],
-      'Toyota': ['Innova', 'Fortuner', 'Glanza', 'Urban Cruiser'],
-      'Tata': ['Nexon', 'Tiago', 'Harrier', 'Safari'],
-      'Mahindra': ['XUV700', 'Scorpio', 'Bolero', 'Thar'],
-      'Ford': ['EcoSport', 'Endeavour', 'Figo'],
-      'Volkswagen': ['Polo', 'Vento', 'Virtus']
+      'Maruti Suzuki': ['Swift', 'Dzire', 'Baleno', 'Wagon R', 'Alto', 'Ertiga'],
+      'Hyundai': ['i20', 'Creta', 'Verna', 'Grand i10', 'Venue', 'i10'],
+      'Honda': ['City', 'Amaze', 'WR-V', 'Jazz', 'Civic'],
+      'Toyota': ['Innova', 'Fortuner', 'Glanza', 'Urban Cruiser', 'Camry'],
+      'Tata': ['Nexon', 'Tiago', 'Harrier', 'Safari', 'Altroz'],
+      'Mahindra': ['XUV700', 'Scorpio', 'Bolero', 'Thar', 'XUV300'],
+      'Ford': ['EcoSport', 'Endeavour', 'Figo', 'Aspire'],
+      'Volkswagen': ['Polo', 'Vento', 'Virtus', 'Taigun'],
+      'Kia': ['Seltos', 'Sonet', 'Carnival', 'EV6'],
+      'MG': ['Hector', 'Astor', 'Gloster', 'ZS EV']
     }
-    const colors = ['White', 'Black', 'Silver', 'Red', 'Blue', 'Grey', 'Brown']
+    const colors = ['White', 'Black', 'Silver', 'Red', 'Blue', 'Grey', 'Brown', 'Golden']
     const fuelTypes = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid']
     const ownerTypes = ['1st Owner', '2nd Owner', '3rd Owner', 'Custom']
-        const districts = ['Pune', 'Mumbai City', 'Mumbai Suburban', 'Nagpur', 'Nashik', 'Aurangabad', 'Solapur', 'Thane', 'Kolhapur']
+    const districts = ['Pune', 'Mumbai City', 'Mumbai Suburban', 'Nagpur', 'Nashik', 'Aurangabad', 'Solapur', 'Thane', 'Kolhapur']
     const talukasMap = {
       'Pune': ['Pune City', 'Haveli', 'Baramati', 'Daund'],
       'Mumbai City': ['Mumbai City'],
@@ -154,210 +158,261 @@ const seedComprehensiveData = async () => {
       'Kolhapur': ['Kolhapur', 'Karveer', 'Hatkanangle']
     }
     
-    // Helper to get talukas for a district
     const getTalukasForDistrict = (district) => {
       return talukasMap[district] || ['City']
     }
 
     const vehicles = []
     const now = new Date()
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1)
     const oneYearAgo = new Date(now.getFullYear() - 1, 0, 1)
     const twoYearsAgo = new Date(now.getFullYear() - 2, 0, 1)
 
+    // Agent phone numbers - consistent phone for same agent name to enable grouping
+    const agentPhones = {
+      'Agent 1': '+91 98765 43210',
+      'Agent 2': '+91 98765 43211',
+      'Agent 3': '+91 98765 43212',
+      'Agent 4': '+91 98765 43213',
+      'Agent 5': '+91 98765 43214'
+    }
+
+    let vehicleIndex = 1
+
     // ============================================
-    // 1. VEHICLES ON MODIFICATION (10 vehicles)
+    // 1. VEHICLES ON MODIFICATION (8 vehicles)
+    // Mix: Current month (3), Last month (2), Older (3)
+    // Each vehicle will have different missing fields for testing Action Required tab
     // ============================================
-    for (let i = 1; i <= 10; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
-      // Mix dates: some in current month for testing
-      const dateRangeEnd = i <= 3 
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - Math.floor(Math.random() * 5)) // Current month
-        : sixMonthsAgo
-      const purchaseDate = randomDate(twoYearsAgo, dateRangeEnd)
+    console.log('🔧 Creating vehicles on modification...')
+    for (let i = 0; i < 8; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
+      let purchaseDate
+      if (i < 3) {
+        // Current month
+        purchaseDate = randomDate(currentMonthStart, now)
+      } else if (i < 5) {
+        // Last month
+        purchaseDate = randomDate(lastMonthStart, lastMonthEnd)
+      } else {
+        // Older
+        purchaseDate = randomDate(sixMonthsAgo, lastMonthStart)
+      }
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
+      
+      const purchasePrice = Math.floor(Math.random() * 500000) + 200000
+      const hasPendingToSeller = Math.random() > 0.4
+      const remainingToSeller = hasPendingToSeller ? Math.floor(Math.random() * 100000) + 20000 : 0
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
         year: 2018 + Math.floor(Math.random() * 6),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
         vehicleYear: 2018 + Math.floor(Math.random() * 6),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
         kilometers: `${Math.floor(Math.random() * 100000) + 10000} km`,
         
-        // Purchase info
-        purchasePrice: Math.floor(Math.random() * 500000) + 200000,
+        purchasePrice,
         purchaseDate,
         ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         ownerTypeCustom: Math.random() > 0.7 ? '4th Owner' : '',
         
-        // Purchase payment
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 200000) + 100000],
-          ['bank_transfer', Math.floor(Math.random() * 300000) + 200000]
+          ['cash', Math.floor((purchasePrice - remainingToSeller) * 0.4)],
+          ['bank_transfer', Math.floor((purchasePrice - remainingToSeller) * 0.6)]
         ]),
-        remainingAmountToSeller: Math.random() > 0.5 ? Math.floor(Math.random() * 50000) : 0,
-        pendingPaymentType: Math.random() > 0.5 ? 'PENDING_TO_SELLER' : '',
+        remainingAmountToSeller: remainingToSeller,
+        pendingPaymentType: hasPendingToSeller ? 'PENDING_TO_SELLER' : '',
         
-        // Seller & Agent
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentCommission: Math.floor(Math.random() * 50000) + 10000,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        otherCost: Math.random() > 0.5 ? Math.floor(Math.random() * 30000) + 5000 : 0,
+        otherCostNotes: Math.random() > 0.5 ? 'Insurance ₹8000, Registration ₹12000, Documentation ₹5000' : '',
         
-        // Address
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
         
-        // Modification
-        askingPrice: Math.floor(Math.random() * 600000) + 300000,
-        modificationCost: Math.floor(Math.random() * 50000) + 10000,
-        modificationNotes: `Modification work in progress for vehicle ${i}`,
+        // Vary missing fields for different vehicles to test Action Required tab
+        // Each vehicle will have different combinations of missing fields
+        askingPrice: (i % 8 !== 0) ? Math.floor(purchasePrice * 1.3) + Math.floor(Math.random() * 100000) : undefined, // Missing for vehicle 0, 8, 16...
+        lastPrice: (i % 8 !== 1 && i % 8 !== 0) ? Math.floor(purchasePrice * 1.2) + Math.floor(Math.random() * 50000) : undefined, // Missing for vehicle 1, 9, 17...
+        modificationCost: (i % 8 !== 2 && i % 8 !== 0 && i % 8 !== 1) ? Math.floor(Math.random() * 50000) + 10000 : 0, // Missing (0) for vehicle 2, 10, 18...
+        modificationNotes: (i % 8 !== 3 && i % 8 !== 0 && i % 8 !== 1 && i % 8 !== 2) ? `Modification work in progress - ${['Paint job', 'Interior upgrade', 'Engine service', 'Body repair'][Math.floor(Math.random() * 4)]}` : '', // Missing for vehicle 3, 11, 19...
+        agentPhone: (i % 8 !== 4 && i % 8 !== 0 && i % 8 !== 1 && i % 8 !== 2 && i % 8 !== 3) ? agentPhones[`Agent ${(vehicleIndex % 5) + 1}`] : '', // Missing for vehicle 4, 12, 20...
+        agentCommission: (i % 8 !== 5 && i % 8 !== 0 && i % 8 !== 1 && i % 8 !== 2 && i % 8 !== 3 && i % 8 !== 4) ? Math.floor(Math.random() * 50000) + 10000 : 0, // Missing (0) for vehicle 5, 13, 21...
+        
         status: 'On Modification',
         modificationComplete: false,
         
-        // Audit
         createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
-        notes: `Test vehicle ${i} - On Modification`
-      })
-      
-      vehicle.createdAt = purchaseDate // Set createdAt to control purchase month/year
-      try {
-        await vehicle.save()
-        vehicles.push(vehicle)
-        console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status}`)
-      } catch (error) {
-        console.error(`   ❌ Failed to create vehicle ${i}:`, error.message)
-        throw error
-      }
-    }
-
-    // ============================================
-    // 2. VEHICLES IN STOCK (15 vehicles)
-    // ============================================
-    for (let i = 11; i <= 25; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
-      // Mix dates: some in current month, some in past months for better test coverage
-      const dateRangeEnd = i <= 15 
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - Math.floor(Math.random() * 10)) // Current month
-        : new Date(now.getFullYear(), now.getMonth() - 1, 1) // Last month
-      const purchaseDate = randomDate(sixMonthsAgo, dateRangeEnd)
-      const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
-      const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
-      const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
-        year: 2019 + Math.floor(Math.random() * 5),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
-        vehicleYear: 2019 + Math.floor(Math.random() * 5),
-        color: colors[Math.floor(Math.random() * colors.length)],
-        fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-        kilometers: `${Math.floor(Math.random() * 80000) + 15000} km`,
-        
-        purchasePrice: Math.floor(Math.random() * 600000) + 250000,
-        purchaseDate,
-        ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
-        
-        purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 250000) + 150000],
-          ['bank_transfer', Math.floor(Math.random() * 400000) + 200000]
-        ]),
-        remainingAmountToSeller: 0,
-        
-        sellerName: `Seller ${i}`,
-        sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentCommission: Math.floor(Math.random() * 60000) + 15000,
-        
-        addressLine1: `Address Line 1, Building ${i}`,
-        district: selectedDistrict,
-        taluka: selectedTaluka,
-        pincode: String(Math.floor(Math.random() * 900000) + 100000),
-        
-        askingPrice: Math.floor(Math.random() * 700000) + 350000,
-        lastPrice: Math.floor(Math.random() * 700000) + 350000,
-        modificationCost: Math.floor(Math.random() * 60000) + 20000,
-        modificationNotes: `Modification completed for vehicle ${i}`,
-        status: 'In Stock',
-        modificationComplete: true,
-        
-        createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
-        notes: `Test vehicle ${i} - In Stock`
+        notes: `Test vehicle ${vehicleIndex} - On Modification`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status}`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status})`)
     }
 
     // ============================================
-    // 3. RESERVED VEHICLES (5 vehicles)
+    // 2. VEHICLES IN STOCK (12 vehicles)
+    // Mix: Current month (4), Last month (3), Older (5)
     // ============================================
-    for (let i = 26; i <= 30; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
-      const purchaseDate = randomDate(sixMonthsAgo, new Date(now.getFullYear(), now.getMonth() - 2, 1))
+    console.log('\n📦 Creating vehicles in stock...')
+    for (let i = 0; i < 12; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
+      let purchaseDate
+      if (i < 4) {
+        purchaseDate = randomDate(currentMonthStart, now)
+      } else if (i < 7) {
+        purchaseDate = randomDate(lastMonthStart, lastMonthEnd)
+      } else {
+        purchaseDate = randomDate(sixMonthsAgo, lastMonthStart)
+      }
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
-      const customerDistrict = districts[Math.floor(Math.random() * districts.length)]
-      const customerTaluka = getTalukasForDistrict(customerDistrict)[Math.floor(Math.random() * getTalukasForDistrict(customerDistrict).length)]
+      
+      const purchasePrice = Math.floor(Math.random() * 600000) + 250000
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
-        year: 2020 + Math.floor(Math.random() * 4),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
-        vehicleYear: 2020 + Math.floor(Math.random() * 4),
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
+        year: 2019 + Math.floor(Math.random() * 5),
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
+        vehicleYear: 2019 + Math.floor(Math.random() * 5),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-        kilometers: `${Math.floor(Math.random() * 60000) + 20000} km`,
+        kilometers: `${Math.floor(Math.random() * 80000) + 15000} km`,
         
-        purchasePrice: Math.floor(Math.random() * 700000) + 300000,
+        purchasePrice,
         purchaseDate,
-        ownerType: ownerTypes[Math.floor(Math.random() * 3)], // 1st, 2nd, 3rd only
+        ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 300000) + 200000],
-          ['bank_transfer', Math.floor(Math.random() * 500000) + 300000]
+          ['cash', Math.floor(purchasePrice * 0.4)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.6)]
         ]),
         remainingAmountToSeller: 0,
         
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentCommission: Math.floor(Math.random() * 70000) + 20000,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        agentPhone: agentPhones[`Agent ${(vehicleIndex % 5) + 1}`],
+        agentCommission: Math.floor(Math.random() * 60000) + 15000,
+        otherCost: Math.random() > 0.4 ? Math.floor(Math.random() * 30000) + 5000 : 0,
+        otherCostNotes: Math.random() > 0.4 ? 'Insurance ₹10000, Registration ₹15000' : '',
         
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
         
-        askingPrice: Math.floor(Math.random() * 800000) + 400000,
-        lastPrice: Math.floor(Math.random() * 800000) + 400000,
+        askingPrice: Math.floor(purchasePrice * 1.4) + Math.floor(Math.random() * 100000),
+        lastPrice: Math.floor(purchasePrice * 1.35) + Math.floor(Math.random() * 80000),
+        modificationCost: Math.floor(Math.random() * 60000) + 20000,
+        modificationNotes: `Modification completed - ${['Full service', 'Paint touch-up', 'Interior cleaning', 'AC service'][Math.floor(Math.random() * 4)]}`,
+        status: 'In Stock',
+        modificationComplete: true,
+        
+        createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
+        notes: `Test vehicle ${vehicleIndex} - In Stock`
+      })
+      
+      vehicle.createdAt = purchaseDate
+      await vehicle.save()
+      vehicles.push(vehicle)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status})`)
+    }
+
+    // ============================================
+    // 3. RESERVED VEHICLES (6 vehicles)
+    // Mix: Current month (2), Last month (2), Older (2)
+    // ============================================
+    console.log('\n🔒 Creating reserved vehicles...')
+    for (let i = 0; i < 6; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
+      let purchaseDate
+      if (i < 2) {
+        purchaseDate = randomDate(currentMonthStart, now)
+      } else if (i < 4) {
+        purchaseDate = randomDate(lastMonthStart, lastMonthEnd)
+      } else {
+        purchaseDate = randomDate(sixMonthsAgo, lastMonthStart)
+      }
+      
+      const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
+      const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
+      const customerDistrict = districts[Math.floor(Math.random() * districts.length)]
+      const customerTaluka = getTalukasForDistrict(customerDistrict)[Math.floor(Math.random() * getTalukasForDistrict(customerDistrict).length)]
+      
+      const purchasePrice = Math.floor(Math.random() * 700000) + 300000
+      const lastPrice = Math.floor(purchasePrice * 1.4) + Math.floor(Math.random() * 100000)
+      
+      const vehicle = new Vehicle({
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
+        year: 2020 + Math.floor(Math.random() * 4),
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
+        vehicleYear: 2020 + Math.floor(Math.random() * 4),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
+        kilometers: `${Math.floor(Math.random() * 60000) + 10000} km`,
+        
+        purchasePrice,
+        purchaseDate,
+        ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
+        
+        purchasePaymentMethods: new Map([
+          ['cash', Math.floor(purchasePrice * 0.5)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.5)]
+        ]),
+        remainingAmountToSeller: 0,
+        
+        sellerName: `Seller ${vehicleIndex}`,
+        sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        agentPhone: agentPhones[`Agent ${(vehicleIndex % 5) + 1}`],
+        agentCommission: Math.floor(Math.random() * 70000) + 20000,
+        otherCost: Math.random() > 0.3 ? Math.floor(Math.random() * 30000) + 10000 : 0,
+        otherCostNotes: Math.random() > 0.3 ? 'Insurance ₹12000, Registration ₹18000, Documentation ₹6000' : '',
+        
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
+        district: selectedDistrict,
+        taluka: selectedTaluka,
+        pincode: String(Math.floor(Math.random() * 900000) + 100000),
+        
+        askingPrice: Math.floor(purchasePrice * 1.5),
+        lastPrice,
         modificationCost: Math.floor(Math.random() * 70000) + 25000,
         modificationNotes: `Modification completed`,
         status: 'Reserved',
         modificationComplete: true,
         
-        // Customer info (reserved)
-        customerName: `Customer ${i}`,
+        // Customer info
+        customerName: `Customer ${vehicleIndex}`,
         customerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        customerAddressLine1: `Customer Building ${i}, Street ${i}`,
+        customerEmail: `customer${vehicleIndex}@test.com`,
+        customerAddressLine1: `Customer Building ${vehicleIndex}`,
         customerDistrict: customerDistrict,
         customerTaluka: customerTaluka,
         customerPincode: String(Math.floor(Math.random() * 900000) + 100000),
@@ -365,158 +420,185 @@ const seedComprehensiveData = async () => {
         
         createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
         modifiedBy: salesUsers[Math.floor(Math.random() * salesUsers.length)]._id,
-        notes: `Test vehicle ${i} - Reserved`
+        notes: `Test vehicle ${vehicleIndex} - Reserved`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status}`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status})`)
     }
 
     // ============================================
-    // 4. SOLD VEHICLES - Full Payment (10 vehicles)
+    // 4. SOLD VEHICLES - FULL PAYMENT (10 vehicles)
+    // Mix: Current month (4), Last month (3), Older (3)
     // ============================================
-    for (let i = 31; i <= 40; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
+    console.log('\n💰 Creating sold vehicles (full payment)...')
+    for (let i = 0; i < 10; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
       const purchaseDate = randomDate(oneYearAgo, sixMonthsAgo)
-      // Mix sale dates: some in current month for testing
-      const saleDateRangeEnd = i <= 33 
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - Math.floor(Math.random() * 10)) // Current month
-        : now // Past months
-      const saleDate = randomDate(purchaseDate, saleDateRangeEnd)
+      
+      let saleDate
+      if (i < 4) {
+        // Current month sales
+        saleDate = randomDate(currentMonthStart, now)
+      } else if (i < 7) {
+        // Last month sales
+        saleDate = randomDate(lastMonthStart, lastMonthEnd)
+      } else {
+        // Older sales
+        saleDate = randomDate(sixMonthsAgo, lastMonthStart)
+      }
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
       const customerDistrict = districts[Math.floor(Math.random() * districts.length)]
       const customerTaluka = getTalukasForDistrict(customerDistrict)[Math.floor(Math.random() * getTalukasForDistrict(customerDistrict).length)]
+      
+      const purchasePrice = Math.floor(Math.random() * 600000) + 300000
+      const totalPrice = Math.floor(purchasePrice * 1.4) + Math.floor(Math.random() * 100000)
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
         year: 2018 + Math.floor(Math.random() * 6),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
         vehicleYear: 2018 + Math.floor(Math.random() * 6),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-        kilometers: `${Math.floor(Math.random() * 100000) + 10000} km`,
+        kilometers: `${Math.floor(Math.random() * 90000) + 20000} km`,
         
-        purchasePrice: Math.floor(Math.random() * 500000) + 200000,
+        purchasePrice,
         purchaseDate,
         ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 200000) + 100000],
-          ['bank_transfer', Math.floor(Math.random() * 300000) + 200000]
+          ['cash', Math.floor(purchasePrice * 0.4)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.6)]
         ]),
         remainingAmountToSeller: 0,
         
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        agentPhone: agentPhones[`Agent ${(vehicleIndex % 5) + 1}`],
         agentCommission: Math.floor(Math.random() * 50000) + 10000,
+        otherCost: Math.random() > 0.4 ? Math.floor(Math.random() * 30000) + 5000 : 0,
+        otherCostNotes: Math.random() > 0.4 ? 'Insurance ₹10000, Registration ₹15000, Documentation ₹5000' : '',
         
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
         
-        askingPrice: Math.floor(Math.random() * 600000) + 300000,
-        lastPrice: Math.floor(Math.random() * 600000) + 300000,
+        askingPrice: Math.floor(purchasePrice * 1.5),
+        lastPrice: totalPrice,
         modificationCost: Math.floor(Math.random() * 50000) + 10000,
         modificationNotes: `Modification completed`,
         status: 'Sold',
         modificationComplete: true,
         
         // Customer info
-        customerName: `Customer ${i}`,
+        customerName: `Customer ${vehicleIndex}`,
         customerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        customerEmail: `customer${i}@test.com`,
-        customerAddress: `Customer Address ${i}`,
-        customerAddressLine1: `Customer Building ${i}, Street ${i}`,
+        customerEmail: `customer${vehicleIndex}@test.com`,
+        customerAddressLine1: `Customer Building ${vehicleIndex}`,
         customerDistrict: customerDistrict,
         customerTaluka: customerTaluka,
         customerPincode: String(Math.floor(Math.random() * 900000) + 100000),
         customerAadhaar: `${Math.floor(Math.random() * 900000000000) + 100000000000}`,
         customerPAN: `ABCDE${Math.floor(Math.random() * 9000) + 1000}F`,
         customerSource: ['agent', 'walkin', 'online'][Math.floor(Math.random() * 3)],
+        
         saleDate,
         
         // Full payment
         paymentType: 'full',
-        paymentCash: Math.floor(Math.random() * 200000) + 100000,
-        paymentBankTransfer: Math.floor(Math.random() * 300000) + 200000,
-        paymentOnline: Math.floor(Math.random() * 100000) + 50000,
-        paymentLoan: 0,
+        paymentCash: Math.floor(totalPrice * 0.3),
+        paymentBankTransfer: Math.floor(totalPrice * 0.4),
+        paymentOnline: Math.floor(totalPrice * 0.2),
+        paymentLoan: Math.floor(totalPrice * 0.1),
         remainingAmount: 0,
-        saleNotes: `Full payment received for vehicle ${i}`,
+        saleNotes: `Full payment received for vehicle ${vehicleIndex}`,
         
-        // Some sold vehicles should be created by sales managers (for delivery notes testing)
+        // Mix created by purchase and sales managers
         createdBy: Math.random() > 0.5 
           ? salesUsers[Math.floor(Math.random() * salesUsers.length)]._id 
           : purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
         modifiedBy: salesUsers[Math.floor(Math.random() * salesUsers.length)]._id,
-        notes: `Test vehicle ${i} - Sold (Full Payment)`
+        notes: `Test vehicle ${vehicleIndex} - Sold (Full Payment)`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status} (Full Payment)`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status}) - Sale: ${saleDate.toLocaleDateString()}`)
     }
 
     // ============================================
-    // 5. SOLD VEHICLES - With Pending Payment from Customer (8 vehicles)
+    // 5. SOLD VEHICLES - WITH PENDING FROM CUSTOMER (8 vehicles)
+    // Mix: Current month (3), Last month (2), Older (3)
     // ============================================
-    for (let i = 41; i <= 48; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
+    console.log('\n💳 Creating sold vehicles (pending from customer)...')
+    for (let i = 0; i < 8; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
       const purchaseDate = randomDate(oneYearAgo, sixMonthsAgo)
-      // Mix sale dates: some in current month for testing
-      const saleDateRangeEnd = i <= 43 
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - Math.floor(Math.random() * 10)) // Current month
-        : new Date(now.getFullYear(), now.getMonth() - 1, 1) // Last month
-      const saleDate = randomDate(purchaseDate, saleDateRangeEnd)
-      const totalPrice = Math.floor(Math.random() * 600000) + 300000
-      const paidAmount = Math.floor(totalPrice * 0.7) // 70% paid
-      const remaining = totalPrice - paidAmount
+      
+      let saleDate
+      if (i < 3) {
+        saleDate = randomDate(currentMonthStart, now)
+      } else if (i < 5) {
+        saleDate = randomDate(lastMonthStart, lastMonthEnd)
+      } else {
+        saleDate = randomDate(sixMonthsAgo, lastMonthStart)
+      }
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
       const customerDistrict = districts[Math.floor(Math.random() * districts.length)]
       const customerTaluka = getTalukasForDistrict(customerDistrict)[Math.floor(Math.random() * getTalukasForDistrict(customerDistrict).length)]
       
+      const purchasePrice = Math.floor(Math.random() * 600000) + 300000
+      const totalPrice = Math.floor(purchasePrice * 1.4) + Math.floor(Math.random() * 100000)
+      const paidAmount = Math.floor(totalPrice * (0.6 + Math.random() * 0.3)) // 60-90% paid
+      const remaining = totalPrice - paidAmount
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
         year: 2019 + Math.floor(Math.random() * 5),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
         vehicleYear: 2019 + Math.floor(Math.random() * 5),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
         kilometers: `${Math.floor(Math.random() * 80000) + 15000} km`,
         
-        purchasePrice: Math.floor(Math.random() * 500000) + 200000,
+        purchasePrice,
         purchaseDate,
         ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 200000) + 100000],
-          ['bank_transfer', Math.floor(Math.random() * 300000) + 200000]
+          ['cash', Math.floor(purchasePrice * 0.4)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.6)]
         ]),
         remainingAmountToSeller: 0,
         pendingPaymentType: 'PENDING_FROM_CUSTOMER',
         
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        agentPhone: agentPhones[`Agent ${(vehicleIndex % 5) + 1}`],
         agentCommission: Math.floor(Math.random() * 50000) + 10000,
+        otherCost: Math.random() > 0.4 ? Math.floor(Math.random() * 30000) + 5000 : 0,
+        otherCostNotes: Math.random() > 0.4 ? 'Insurance ₹10000, Registration ₹15000' : '',
         
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
@@ -529,264 +611,262 @@ const seedComprehensiveData = async () => {
         modificationComplete: true,
         
         // Customer info
-        customerName: `Customer ${i}`,
+        customerName: `Customer ${vehicleIndex}`,
         customerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        customerEmail: `customer${i}@test.com`,
-        customerAddress: `Customer Address ${i}`,
-        customerAddressLine1: `Customer Building ${i}, Street ${i}`,
+        customerEmail: `customer${vehicleIndex}@test.com`,
+        customerAddressLine1: `Customer Building ${vehicleIndex}`,
         customerDistrict: customerDistrict,
         customerTaluka: customerTaluka,
         customerPincode: String(Math.floor(Math.random() * 900000) + 100000),
         customerAadhaar: `${Math.floor(Math.random() * 900000000000) + 100000000000}`,
         customerPAN: `ABCDE${Math.floor(Math.random() * 9000) + 1000}F`,
         customerSource: ['agent', 'walkin', 'online'][Math.floor(Math.random() * 3)],
+        
         saleDate,
         
-        // Partial payment with security cheque
+        // Partial payment
         paymentType: 'custom',
         paymentCash: Math.floor(paidAmount * 0.4),
         paymentBankTransfer: Math.floor(paidAmount * 0.4),
         paymentOnline: Math.floor(paidAmount * 0.2),
         paymentLoan: 0,
-        paymentSecurityCheque: {
-          enabled: true,
-          bankName: 'Test Bank',
-          accountNumber: `ACC${i}`,
-          chequeNumber: `CHQ${i}`,
-          amount: remaining
-        },
         remainingAmount: remaining,
-        saleNotes: `Partial payment received, security cheque for remaining amount`,
+        saleNotes: `Partial payment received, remaining: ₹${remaining.toLocaleString('en-IN')}`,
         
-        // Payment settlement history (some settled, some pending)
-        paymentSettlementHistory: Math.random() > 0.5 ? [{
+        // Add settlement history for some vehicles
+        paymentSettlementHistory: i < 3 ? [{
           settlementType: 'FROM_CUSTOMER',
-          amount: Math.floor(remaining * 0.5),
+          amount: Math.floor(remaining * 0.3),
           paymentMode: ['cash', 'bankTransfer', 'online'][Math.floor(Math.random() * 3)],
           settledBy: adminUser._id,
           settledAt: randomDate(saleDate, now),
-          notes: `Partial settlement of pending payment`
+          notes: 'Partial settlement received'
         }] : [],
         
-        // Some sold vehicles should be created by sales managers (for delivery notes testing)
-        createdBy: Math.random() > 0.5 
-          ? salesUsers[Math.floor(Math.random() * salesUsers.length)]._id 
-          : purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
+        createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
         modifiedBy: salesUsers[Math.floor(Math.random() * salesUsers.length)]._id,
-        notes: `Test vehicle ${i} - Sold (Pending Payment)`
+        notes: `Test vehicle ${vehicleIndex} - Sold (Pending Payment)`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status} (Pending Payment)`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status}) - Pending: ₹${remaining.toLocaleString('en-IN')}`)
     }
 
     // ============================================
-    // 6. SOLD VEHICLES - With Pending Payment to Seller (5 vehicles)
+    // 6. SOLD VEHICLES - WITH SECURITY CHEQUE (4 vehicles)
     // ============================================
-    for (let i = 49; i <= 53; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
+    console.log('\n📋 Creating sold vehicles (with security cheque)...')
+    for (let i = 0; i < 4; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
       const purchaseDate = randomDate(oneYearAgo, sixMonthsAgo)
-      const saleDate = randomDate(purchaseDate, new Date(now.getFullYear(), now.getMonth() - 1, 1))
-      const remainingToSeller = Math.floor(Math.random() * 100000) + 50000
+      const saleDate = randomDate(sixMonthsAgo, lastMonthStart)
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
       const customerDistrict = districts[Math.floor(Math.random() * districts.length)]
       const customerTaluka = getTalukasForDistrict(customerDistrict)[Math.floor(Math.random() * getTalukasForDistrict(customerDistrict).length)]
       
+      const purchasePrice = Math.floor(Math.random() * 700000) + 400000
+      const totalPrice = Math.floor(purchasePrice * 1.5) + Math.floor(Math.random() * 150000)
+      const securityChequeAmount = Math.floor(totalPrice * (0.2 + Math.random() * 0.2)) // 20-40%
+      const paidAmount = totalPrice - securityChequeAmount
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
-        year: 2018 + Math.floor(Math.random() * 6),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
-        vehicleYear: 2018 + Math.floor(Math.random() * 6),
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
+        year: 2020 + Math.floor(Math.random() * 4),
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
+        vehicleYear: 2020 + Math.floor(Math.random() * 4),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-        kilometers: `${Math.floor(Math.random() * 100000) + 10000} km`,
+        kilometers: `${Math.floor(Math.random() * 60000) + 10000} km`,
         
-        purchasePrice: Math.floor(Math.random() * 500000) + 200000,
+        purchasePrice,
         purchaseDate,
         ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 200000) + 100000],
-          ['bank_transfer', Math.floor(Math.random() * 300000) + 200000]
+          ['cash', Math.floor(purchasePrice * 0.5)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.5)]
         ]),
-        remainingAmountToSeller: remainingToSeller,
-        pendingPaymentType: 'PENDING_TO_SELLER',
+        remainingAmountToSeller: 0,
         
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentCommission: Math.floor(Math.random() * 50000) + 10000,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        agentPhone: agentPhones[`Agent ${(vehicleIndex % 5) + 1}`],
+        agentCommission: Math.floor(Math.random() * 70000) + 20000,
+        otherCost: Math.floor(Math.random() * 30000) + 10000,
+        otherCostNotes: 'Insurance ₹15000, Registration ₹20000, Documentation ₹8000',
         
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
         
-        askingPrice: Math.floor(Math.random() * 600000) + 300000,
-        lastPrice: Math.floor(Math.random() * 600000) + 300000,
-        modificationCost: Math.floor(Math.random() * 50000) + 10000,
+        askingPrice: totalPrice,
+        lastPrice: totalPrice,
+        modificationCost: Math.floor(Math.random() * 70000) + 25000,
         modificationNotes: `Modification completed`,
         status: 'Sold',
         modificationComplete: true,
         
         // Customer info
-        customerName: `Customer ${i}`,
+        customerName: `Customer ${vehicleIndex}`,
         customerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        customerEmail: `customer${i}@test.com`,
-        customerAddress: `Customer Address ${i}`,
-        customerAddressLine1: `Customer Building ${i}, Street ${i}`,
+        customerEmail: `customer${vehicleIndex}@test.com`,
+        customerAddressLine1: `Customer Building ${vehicleIndex}`,
         customerDistrict: customerDistrict,
         customerTaluka: customerTaluka,
         customerPincode: String(Math.floor(Math.random() * 900000) + 100000),
         customerAadhaar: `${Math.floor(Math.random() * 900000000000) + 100000000000}`,
         customerPAN: `ABCDE${Math.floor(Math.random() * 9000) + 1000}F`,
         customerSource: ['agent', 'walkin', 'online'][Math.floor(Math.random() * 3)],
+        
         saleDate,
         
-        // Full payment from customer
-        paymentType: 'full',
-        paymentCash: Math.floor(Math.random() * 200000) + 100000,
-        paymentBankTransfer: Math.floor(Math.random() * 300000) + 200000,
-        paymentOnline: Math.floor(Math.random() * 100000) + 50000,
-        paymentLoan: 0,
-        remainingAmount: 0,
-        saleNotes: `Full payment from customer, pending payment to seller`,
+        // Payment with security cheque
+        paymentType: 'custom',
+        paymentCash: Math.floor(paidAmount * 0.3),
+        paymentBankTransfer: Math.floor(paidAmount * 0.4),
+        paymentOnline: Math.floor(paidAmount * 0.2),
+        paymentLoan: Math.floor(paidAmount * 0.1),
+        remainingAmount: securityChequeAmount,
+        securityChequeAmount: securityChequeAmount,
+        saleNotes: `Payment received with security cheque of ₹${securityChequeAmount.toLocaleString('en-IN')}`,
         
-        // Payment settlement history (some settled, some pending)
-        paymentSettlementHistory: Math.random() > 0.5 ? [{
-          settlementType: 'TO_SELLER',
-          amount: Math.floor(remainingToSeller * 0.5),
-          paymentMode: ['cash', 'bankTransfer', 'online'][Math.floor(Math.random() * 3)],
-          settledBy: adminUser._id,
-          settledAt: randomDate(purchaseDate, now),
-          notes: `Partial settlement to seller`
-        }] : [],
-        
-        // Some sold vehicles should be created by sales managers (for delivery notes testing)
-        createdBy: Math.random() > 0.5 
-          ? salesUsers[Math.floor(Math.random() * salesUsers.length)]._id 
-          : purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
+        createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
         modifiedBy: salesUsers[Math.floor(Math.random() * salesUsers.length)]._id,
-        notes: `Test vehicle ${i} - Sold (Pending to Seller)`
+        notes: `Test vehicle ${vehicleIndex} - Sold (Security Cheque)`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status} (Pending to Seller)`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status}) - Security Cheque: ₹${securityChequeAmount.toLocaleString('en-IN')}`)
     }
 
     // ============================================
     // 7. PROCESSING VEHICLES (3 vehicles)
     // ============================================
-    for (let i = 54; i <= 56; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
-      const purchaseDate = randomDate(sixMonthsAgo, new Date(now.getFullYear(), now.getMonth() - 1, 1))
+    console.log('\n⚙️  Creating processing vehicles...')
+    for (let i = 0; i < 3; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
+      const purchaseDate = randomDate(sixMonthsAgo, lastMonthStart)
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
+      
+      const purchasePrice = Math.floor(Math.random() * 800000) + 400000
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
         year: 2020 + Math.floor(Math.random() * 4),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
         vehicleYear: 2020 + Math.floor(Math.random() * 4),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-        kilometers: `${Math.floor(Math.random() * 60000) + 20000} km`,
+        kilometers: `${Math.floor(Math.random() * 50000) + 5000} km`,
         
-        purchasePrice: Math.floor(Math.random() * 700000) + 300000,
+        purchasePrice,
         purchaseDate,
-        ownerType: ownerTypes[Math.floor(Math.random() * 3)],
+        ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 300000) + 200000],
-          ['bank_transfer', Math.floor(Math.random() * 500000) + 300000]
+          ['cash', Math.floor(purchasePrice * 0.5)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.5)]
         ]),
         remainingAmountToSeller: 0,
         
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        agentPhone: agentPhones[`Agent ${(vehicleIndex % 5) + 1}`],
         agentCommission: Math.floor(Math.random() * 70000) + 20000,
+        otherCost: Math.floor(Math.random() * 30000) + 10000,
+        otherCostNotes: 'Insurance ₹15000, Registration ₹20000',
         
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
         
-        askingPrice: Math.floor(Math.random() * 800000) + 400000,
-        lastPrice: Math.floor(Math.random() * 800000) + 400000,
+        askingPrice: Math.floor(purchasePrice * 1.5),
+        lastPrice: Math.floor(purchasePrice * 1.45),
         modificationCost: Math.floor(Math.random() * 70000) + 25000,
         modificationNotes: `Modification completed`,
         status: 'Processing',
         modificationComplete: true,
         
         createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
-        notes: `Test vehicle ${i} - Processing`
+        notes: `Test vehicle ${vehicleIndex} - Processing`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status}`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status})`)
     }
 
     // ============================================
-    // 8. DELETED VEHICLES (2 vehicles - soft delete)
+    // 8. DELETED VEHICLES (2 vehicles)
     // ============================================
-    for (let i = 57; i <= 58; i++) {
-      const make = makes[Math.floor(Math.random() * makes.length)]
+    console.log('\n🗑️  Creating deleted vehicles...')
+    for (let i = 0; i < 2; i++) {
+      const company = companies[Math.floor(Math.random() * companies.length)]
       const purchaseDate = randomDate(twoYearsAgo, oneYearAgo)
-      const deletedDate = randomDate(purchaseDate, now)
+      const deletedDate = randomDate(purchaseDate, sixMonthsAgo)
+      
       const selectedDistrict = districts[Math.floor(Math.random() * districts.length)]
       const selectedTaluka = getTalukasForDistrict(selectedDistrict)[Math.floor(Math.random() * getTalukasForDistrict(selectedDistrict).length)]
+      
+      const purchasePrice = Math.floor(Math.random() * 600000) + 300000
+      
       const vehicle = new Vehicle({
-        vehicleNo: generateVehicleNo(i),
-        chassisNo: generateChassisNo(i),
-        engineNo: generateEngineNo(i),
-        make,
-        model: models[make][Math.floor(Math.random() * models[make].length)],
+        vehicleNo: generateVehicleNo(vehicleIndex++),
+        chassisNo: generateChassisNo(vehicleIndex),
+        engineNo: generateEngineNo(vehicleIndex),
+        company,
+        model: models[company][Math.floor(Math.random() * models[company].length)],
         year: 2017 + Math.floor(Math.random() * 5),
-        vehicleMonth: Math.floor(Math.random() * 12) + 1, // 1-12
+        vehicleMonth: Math.floor(Math.random() * 12) + 1,
         vehicleYear: 2017 + Math.floor(Math.random() * 5),
         color: colors[Math.floor(Math.random() * colors.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
-        kilometers: `${Math.floor(Math.random() * 120000) + 20000} km`,
+        kilometers: `${Math.floor(Math.random() * 120000) + 50000} km`,
         
-        purchasePrice: Math.floor(Math.random() * 500000) + 200000,
+        purchasePrice,
         purchaseDate,
         ownerType: ownerTypes[Math.floor(Math.random() * ownerTypes.length)],
         
         purchasePaymentMethods: new Map([
-          ['cash', Math.floor(Math.random() * 200000) + 100000],
-          ['bank_transfer', Math.floor(Math.random() * 300000) + 200000]
+          ['cash', Math.floor(purchasePrice * 0.4)],
+          ['bank_transfer', Math.floor(purchasePrice * 0.6)]
         ]),
         remainingAmountToSeller: 0,
         
-        sellerName: `Seller ${i}`,
+        sellerName: `Seller ${vehicleIndex}`,
         sellerContact: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentName: `Agent ${i % 5 + 1}`,
-        agentPhone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        agentCommission: Math.floor(Math.random() * 50000) + 10000,
+        agentName: `Agent ${(vehicleIndex % 5) + 1}`,
+        // agentPhone and agentCommission will be set conditionally below based on missing fields pattern
+        otherCost: Math.random() > 0.5 ? Math.floor(Math.random() * 30000) + 5000 : 0,
+        otherCostNotes: Math.random() > 0.5 ? 'Insurance, Registration' : '',
         
-        addressLine1: `Address Line 1, Building ${i}`,
+        addressLine1: `Building ${vehicleIndex}, Street ${vehicleIndex}`,
         district: selectedDistrict,
         taluka: selectedTaluka,
         pincode: String(Math.floor(Math.random() * 900000) + 100000),
         
-        askingPrice: Math.floor(Math.random() * 600000) + 300000,
+        askingPrice: Math.floor(purchasePrice * 1.3),
         modificationCost: Math.floor(Math.random() * 50000) + 10000,
         modificationNotes: `Modification completed`,
         status: 'DELETED',
@@ -796,60 +876,62 @@ const seedComprehensiveData = async () => {
         deletedBy: adminUser._id,
         
         createdBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
-        notes: `Test vehicle ${i} - Deleted`
+        notes: `Test vehicle ${vehicleIndex} - Deleted`
       })
       
       vehicle.createdAt = purchaseDate
       await vehicle.save()
       vehicles.push(vehicle)
-      console.log(`   ✓ Created vehicle ${i}: ${vehicle.vehicleNo} - ${vehicle.status}`)
+      console.log(`   ✓ ${vehicle.vehicleNo} - ${vehicle.company} ${vehicle.model} (${vehicle.status})`)
     }
 
     // ============================================
-    // ADD PURCHASE NOTE HISTORY (for some vehicles created by purchase managers)
+    // ADD PURCHASE NOTE HISTORY
     // ============================================
     console.log('\n📄 Adding purchase note history...')
     const vehiclesForPurchaseNotes = vehicles.filter(v => 
       purchaseUsers.some(pu => pu._id.toString() === v.createdBy.toString())
-    ).slice(0, 20)
+    ).slice(0, 15)
+    
     for (const vehicle of vehiclesForPurchaseNotes) {
-      if (Math.random() > 0.3) { // 70% chance
+      if (Math.random() > 0.2) { // 80% chance
         vehicle.purchaseNoteHistory = [{
           generatedBy: purchaseUsers[Math.floor(Math.random() * purchaseUsers.length)]._id,
           generatedAt: randomDate(vehicle.createdAt, now),
           filename: `Purchase_Note_${vehicle.vehicleNo}_${Date.now()}.pdf`
         }]
         await vehicle.save()
-        console.log(`   ✓ Added purchase note history to ${vehicle.vehicleNo}`)
+        console.log(`   ✓ Added purchase note to ${vehicle.vehicleNo}`)
       }
     }
 
     // ============================================
-    // ADD DELIVERY NOTE HISTORY (for some sold vehicles created by sales managers)
+    // ADD DELIVERY NOTE HISTORY
     // ============================================
     console.log('\n📦 Adding delivery note history...')
     const soldVehiclesBySales = vehicles.filter(v => 
       v.status === 'Sold' && salesUsers.some(su => su._id.toString() === v.createdBy.toString())
-    ).slice(0, 10)
+    ).slice(0, 8)
+    
     for (const vehicle of soldVehiclesBySales) {
-      if (Math.random() > 0.4) { // 60% chance
+      if (Math.random() > 0.3) { // 70% chance
         vehicle.deliveryNoteHistory = [{
           generatedBy: salesUsers[Math.floor(Math.random() * salesUsers.length)]._id,
           generatedAt: randomDate(vehicle.saleDate || vehicle.createdAt, now),
           filename: `Delivery_Note_${vehicle.vehicleNo}_${Date.now()}.pdf`
         }]
         await vehicle.save()
-        console.log(`   ✓ Added delivery note history to ${vehicle.vehicleNo}`)
+        console.log(`   ✓ Added delivery note to ${vehicle.vehicleNo}`)
       }
     }
 
     // ============================================
-    // ADD CHASSIS/ENGINE NUMBER HISTORY (for some vehicles)
+    // ADD CHASSIS/ENGINE NUMBER HISTORY
     // ============================================
     console.log('\n🔧 Adding chassis/engine number history...')
-    const vehiclesForHistory = vehicles.slice(0, 10) // First 10 vehicles
+    const vehiclesForHistory = vehicles.slice(0, 8)
     for (const vehicle of vehiclesForHistory) {
-      if (Math.random() > 0.5) { // 50% chance
+      if (Math.random() > 0.4) { // 60% chance
         vehicle.chassisNoHistory = [{
           oldValue: `OLD${vehicle.chassisNo}`,
           newValue: vehicle.chassisNo,
@@ -867,6 +949,36 @@ const seedComprehensiveData = async () => {
       }
     }
 
+    // ============================================
+    // ADD MORE SETTLEMENT HISTORY
+    // ============================================
+    console.log('\n💵 Adding additional settlement history...')
+    const vehiclesWithPending = vehicles.filter(v => 
+      v.status === 'Sold' && (parseFloat(v.remainingAmount) || 0) > 0
+    ).slice(0, 5)
+    
+    for (const vehicle of vehiclesWithPending) {
+      if (vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0) {
+        // Add another settlement
+        const remaining = parseFloat(vehicle.remainingAmount) || 0
+        const settledAmount = Math.floor(remaining * 0.4)
+        vehicle.paymentSettlementHistory.push({
+          settlementType: 'FROM_CUSTOMER',
+          amount: settledAmount,
+          paymentMode: ['cash', 'bankTransfer', 'online'][Math.floor(Math.random() * 3)],
+          settledBy: adminUser._id,
+          settledAt: randomDate(vehicle.saleDate || vehicle.createdAt, now),
+          notes: 'Additional settlement received'
+        })
+        vehicle.remainingAmount = remaining - settledAmount
+        await vehicle.save()
+        console.log(`   ✓ Added additional settlement to ${vehicle.vehicleNo}`)
+      }
+    }
+
+    // ============================================
+    // SUMMARY
+    // ============================================
     console.log(`\n✅ Successfully created ${vehicles.length} vehicles`)
     console.log('\n📊 Summary:')
     console.log(`   - On Modification: ${vehicles.filter(v => v.status === 'On Modification').length}`)
@@ -877,6 +989,15 @@ const seedComprehensiveData = async () => {
     console.log(`   - Deleted: ${vehicles.filter(v => v.status === 'DELETED').length}`)
     console.log(`   - With Pending Payments: ${vehicles.filter(v => v.pendingPaymentType).length}`)
     console.log(`   - With Settlement History: ${vehicles.filter(v => v.paymentSettlementHistory && v.paymentSettlementHistory.length > 0).length}`)
+    console.log(`   - Current Month Purchases: ${vehicles.filter(v => {
+      const date = new Date(v.createdAt)
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+    }).length}`)
+    console.log(`   - Current Month Sales: ${vehicles.filter(v => {
+      if (v.status !== 'Sold' || !v.saleDate) return false
+      const date = new Date(v.saleDate)
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+    }).length}`)
 
     console.log('\n🔑 Login Credentials:')
     console.log('   Admin: admin@test.com / admin123')

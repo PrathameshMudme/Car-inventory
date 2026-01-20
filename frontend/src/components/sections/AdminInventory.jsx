@@ -177,7 +177,7 @@ const AdminInventory = () => {
     if (firstImage) return `${API_URL.replace('/api', '')}${firstImage.imageUrl}`
     
     // Default placeholder - use data URI instead of external service
-    const placeholderText = `${vehicle.make} ${vehicle.model || ''}`.trim() || 'Vehicle'
+    const placeholderText = `${vehicle.company} ${vehicle.model || ''}`.trim() || 'Vehicle'
     const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250"><rect width="400" height="250" fill="#e2e8f0"/><text x="50%" y="50%" font-family="Arial, sans-serif" font-size="20" fill="#64748b" text-anchor="middle" dominant-baseline="middle">${placeholderText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text></svg>`
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
   }
@@ -185,7 +185,7 @@ const AdminInventory = () => {
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = 
       vehicle.vehicleNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'All' || vehicle.status === statusFilter
@@ -227,7 +227,7 @@ const AdminInventory = () => {
 
   const tableColumns = [
     { key: 'vehicleNo', label: 'Vehicle No.', render: (v) => <strong>{formatVehicleNumber(v.vehicleNo)}</strong> },
-    { key: 'makeModel', label: 'Make/Model', render: (v) => `${v.make} ${v.model || ''}`.trim() },
+    { key: 'makeModel', label: 'Company/Model', render: (v) => `${v.company} ${v.model || ''}`.trim() },
     { key: 'year', label: 'Mfg. Date', render: (v) => formatManufacturingDate(v) },
     { key: 'purchasePrice', label: 'Purchase Price', render: (v) => formatPrice(v.purchasePrice) },
     { key: 'askingPrice', label: 'Asking Price', render: (v) => formatPrice(v.askingPrice) },
@@ -355,7 +355,7 @@ const AdminInventory = () => {
                   style={{ cursor: 'pointer' }}
                 >
                     <div className="vehicle-card-image">
-                    <img src={getVehicleImage(vehicle)} alt={`${vehicle.make} ${vehicle.model || ''}`} />
+                    <img src={getVehicleImage(vehicle)} alt={`${vehicle.company} ${vehicle.model || ''}`} />
                     <div style={{ position: 'absolute', top: 10, right: 10 }}>
                       <StatusBadge status={vehicle.status} />
                     </div>
@@ -363,16 +363,16 @@ const AdminInventory = () => {
                       <div style={{ 
                         color: 'white', 
                         textAlign: 'center',
-                        padding: '20px'
+                        padding: '12px'
                       }}>
-                        <i className="fas fa-eye" style={{ fontSize: '32px', marginBottom: '10px', display: 'block' }}></i>
-                        <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Click to View Details</p>
+                        <i className="fas fa-eye" style={{ fontSize: '24px', marginBottom: '6px', display: 'block' }}></i>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '600' }}>View Details</p>
                       </div>
                     </div>
                   </div>
                   <div className="vehicle-card-content">
                     <div className="vehicle-card-header">
-                      <h3>{vehicle.make} {vehicle.model || ''} {formatManufacturingDate(vehicle)}</h3>
+                      <h3>{vehicle.company} {vehicle.model || ''} {formatManufacturingDate(vehicle)}</h3>
                       <span className="vehicle-number">{formatVehicleNumber(vehicle.vehicleNo)}</span>
                     </div>
                     <div className="vehicle-card-specs">
@@ -425,12 +425,12 @@ const AdminInventory = () => {
           {/* Table View */}
           {viewType === 'table' && (
             <DataTable
-              columns={tableColumns}
-              data={filteredVehicles}
-              loading={false}
-              emptyMessage="No vehicles match your criteria"
-              onRowClick={handleViewDetails}
-            />
+                columns={tableColumns}
+                data={filteredVehicles}
+                loading={false}
+                emptyMessage="No vehicles match your criteria"
+                onRowClick={handleViewDetails}
+              />
           )}
         </>
       )}
@@ -491,7 +491,7 @@ const AdminInventory = () => {
               <option value="">Choose a vehicle...</option>
               {vehicles.map(v => (
                 <option key={v._id} value={v._id}>
-                  {formatVehicleNumber(v.vehicleNo)} - {v.make} {v.model || ''} {formatManufacturingDate(v)}
+                  {formatVehicleNumber(v.vehicleNo)} - {v.company} {v.model || ''} {formatManufacturingDate(v)}
                 </option>
               ))}
             </select>
@@ -504,7 +504,7 @@ const AdminInventory = () => {
         {selectedVehicle && compareVehicle && (
           <div className="before-after-container" style={{ marginTop: '30px' }}>
             <div className="vehicle-header" style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '10px' }}>
-              <h3>{selectedVehicle.make} {selectedVehicle.model || ''} {formatManufacturingDate(selectedVehicle)} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
+              <h3>{selectedVehicle.company} {selectedVehicle.model || ''} {formatManufacturingDate(selectedVehicle)} - {formatVehicleNumber(selectedVehicle.vehicleNo)}</h3>
               <span className={`badge ${getStatusBadgeClass(selectedVehicle.status)}`}>
                 {selectedVehicle.status}
               </span>

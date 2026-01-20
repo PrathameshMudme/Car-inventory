@@ -4,7 +4,8 @@
     border-radius: 16px;
     padding: 0;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
+    overflow: auto;
+    max-height: calc(100vh - 300px);
     border: 1px solid #e8ecf0;
 }
 
@@ -14,8 +15,30 @@
     border-radius: 16px !important;
     padding: 0 !important;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
-    overflow: hidden !important;
+    overflow: auto !important;
+    max-height: calc(100vh - 300px) !important;
     border: 1px solid #e8ecf0 !important;
+}
+
+/* Sticky table headers for MUI tables */
+.MuiTableContainer-root {
+    position: relative !important;
+    overflow: auto !important;
+}
+
+.MuiTableHead-root {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.MuiTableCell-head {
+    position: sticky !important;
+    top: 0 !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    z-index: 11 !important;
 }
 
 /* MUI Table Cell Font Sizes - Global Consistency */
@@ -274,6 +297,14 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.data-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    z-index: 11 !important;
 }
 
 .data-table thead::after {

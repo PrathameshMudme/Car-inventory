@@ -180,7 +180,7 @@ const PurchaseNotes = () => {
           <TableHead>
             <TableRow>
               <TableCell><strong>Vehicle No.</strong></TableCell>
-              <TableCell><strong>Make/Model</strong></TableCell>
+              <TableCell><strong>Company/Model</strong></TableCell>
               <TableCell><strong>Seller Name</strong></TableCell>
               <TableCell><strong>Purchase Date</strong></TableCell>
               <TableCell><strong>Last Generated</strong></TableCell>
@@ -196,7 +196,7 @@ const PurchaseNotes = () => {
               return (
                 <TableRow key={vehicle._id || vehicle.id}>
                   <TableCell><strong>{formatVehicleNumber(vehicle.vehicleNo)}</strong></TableCell>
-                  <TableCell>{`${vehicle.make} ${vehicle.model || ''}`.trim()}</TableCell>
+                  <TableCell>{`${vehicle.company} ${vehicle.model || ''}`.trim()}</TableCell>
                   <TableCell>{vehicle.sellerName || 'N/A'}</TableCell>
                   <TableCell>{formatDate(vehicle.purchaseDate)}</TableCell>
                   <TableCell>
@@ -309,7 +309,7 @@ const PurchaseNotes = () => {
               <>
                 <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <Chip
-                    label={`${selectedVehicle.make} ${selectedVehicle.model || ''}`.trim()}
+                    label={`${selectedVehicle.company} ${selectedVehicle.model || ''}`.trim()}
                     size="small"
                     sx={{
                       backgroundColor: 'rgba(102, 126, 234, 0.15)',

@@ -231,7 +231,7 @@ const UploadDocuments = () => {
   }
 
   return (
-    <div className="section-container">
+    <div className="section-container" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       <div className="section-header">
         <h2>Upload Pending Documents</h2>
         <p>Upload missing documents for vehicles you added. Only vehicles with pending documents are shown.</p>
@@ -265,12 +265,11 @@ const UploadDocuments = () => {
                   {vehicles.reduce((sum, v) => sum + (v.missingDocuments?.length || 0), 0)} document(s) pending
                 </div>
               </div>
-              <div className="table-container">
-                <Table>
+              <Table sx={{ minWidth: 700 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>Vehicle No</TableCell>
-                      <TableCell>Make & Model</TableCell>
+                      <TableCell>Company & Model</TableCell>
                       <TableCell>Status</TableCell>
                       <TableCell>Missing Documents</TableCell>
                       <TableCell>Added Date</TableCell>
@@ -298,7 +297,7 @@ const UploadDocuments = () => {
                             <strong>{formatVehicleNumber(vehicle.vehicleNo)}</strong>
                           </TableCell>
                           <TableCell>
-                            {vehicle.make} {vehicle.model}
+                            {vehicle.company} {vehicle.model}
                           </TableCell>
                           <TableCell>
                             <span className={`badge ${vehicle.status === 'In Stock' ? 'badge-success' : vehicle.status === 'On Modification' ? 'badge-warning' : 'badge-info'}`}>
@@ -362,7 +361,6 @@ const UploadDocuments = () => {
                     })}
                   </TableBody>
                 </Table>
-              </div>
             </div>
           )}
         </div>
@@ -372,7 +370,7 @@ const UploadDocuments = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0 }}>
-                  {formatVehicleNumber(selectedVehicle.vehicleNo)} - {selectedVehicle.make} {selectedVehicle.model}
+                  {formatVehicleNumber(selectedVehicle.vehicleNo)} - {selectedVehicle.company} {selectedVehicle.model}
                 </h3>
                 <p style={{ margin: '5px 0 0 0', color: '#666' }}>
                   Status: <span className={`badge ${selectedVehicle.status === 'In Stock' ? 'badge-success' : 'badge-warning'}`}>

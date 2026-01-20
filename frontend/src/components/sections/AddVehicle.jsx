@@ -184,7 +184,7 @@ const AddVehicle = () => {
             Vehicle Added Successfully!
           </Typography>
           <Typography variant="body2" sx={{ fontSize: '14px' }}>
-            Vehicle <strong>{formatVehicleNumber(savedVehicle.vehicleNo)}</strong> ({savedVehicle.make} {savedVehicle.model}) has been saved with status "On Modification"
+            Vehicle <strong>{formatVehicleNumber(savedVehicle.vehicleNo)}</strong> ({savedVehicle.company} {savedVehicle.model}) has been saved with status "On Modification"
           </Typography>
         </Alert>
       )}

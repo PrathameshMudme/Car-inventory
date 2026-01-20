@@ -55,12 +55,14 @@ const Login = () => {
     await performLogin(email, password)
   }
 
-  const handleQuickLogin = async (role) => {
+  const handleQuickLogin = async (role, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     try {
-      console.log('Quick login clicked for role:', role)
-      
       if (loading) {
-        console.log('Login already in progress, ignoring click')
         return
       }
 
@@ -72,13 +74,11 @@ const Login = () => {
 
       const creds = credentials[role]
       if (!creds) {
-        console.error('Invalid role for quick login:', role)
         setError(`Invalid role: ${role}`)
         showToast('Invalid login role', 'error')
         return
       }
 
-      console.log('Attempting quick login with:', creds.email)
       setEmail(creds.email)
       setPassword(creds.password)
       await performLogin(creds.email, creds.password)
@@ -156,13 +156,10 @@ const Login = () => {
             <button
               type="button"
               className="btn-quick-login btn-quick-admin"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleQuickLogin('admin')
-              }}
+              onClick={(e) => handleQuickLogin('admin', e)}
               disabled={loading}
-              title="Login as Admin"
+              style={{ pointerEvents: loading ? 'none' : 'auto', zIndex: 1 }}
+              title="Login as Admin (admin@test.com)"
             >
               <i className="fas fa-user-shield"></i>
               <span>Admin</span>
@@ -170,13 +167,10 @@ const Login = () => {
             <button
               type="button"
               className="btn-quick-login btn-quick-purchase"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleQuickLogin('purchase')
-              }}
+              onClick={(e) => handleQuickLogin('purchase', e)}
               disabled={loading}
-              title="Login as Purchase Manager"
+              style={{ pointerEvents: loading ? 'none' : 'auto', zIndex: 1 }}
+              title="Login as Purchase Manager (purchase1@test.com)"
             >
               <i className="fas fa-shopping-cart"></i>
               <span>Purchase</span>
@@ -184,13 +178,10 @@ const Login = () => {
             <button
               type="button"
               className="btn-quick-login btn-quick-sales"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleQuickLogin('sales')
-              }}
+              onClick={(e) => handleQuickLogin('sales', e)}
               disabled={loading}
-              title="Login as Sales Manager"
+              style={{ pointerEvents: loading ? 'none' : 'auto', zIndex: 1 }}
+              title="Login as Sales Manager (sales1@test.com)"
             >
               <i className="fas fa-handshake"></i>
               <span>Sales</span>

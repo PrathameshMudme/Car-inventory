@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { 
   Dialog, 
   DialogTitle, 
@@ -7,9 +7,24 @@ import {
   Button,
   Typography,
   Box,
-  Divider
+  Divider,
+  Paper,
+  Collapse,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Chip,
+  IconButton
 } from '@mui/material'
-import { Info as InfoIcon } from '@mui/icons-material'
+import { 
+  Info as InfoIcon,
+  FilterList as FilterListIcon,
+  Clear as ClearIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon
+} from '@mui/icons-material'
 import { useToast } from '../../context/ToastContext'
 import { useAuth } from '../../context/AuthContext'
 import { formatVehicleNumber } from '../../utils/formatUtils'
@@ -25,6 +40,19 @@ const AdminProfit = () => {
   const [loading, setLoading] = useState(true)
   const [selectedRow, setSelectedRow] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  
+  // Advanced filter states
+  const [dateFilter, setDateFilter] = useState('all')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [profitFilter, setProfitFilter] = useState('all')
+  const [marginFilter, setMarginFilter] = useState('all')
+  const [companyFilter, setCompanyFilter] = useState('all')
+  const [fuelTypeFilter, setFuelTypeFilter] = useState('all')
+  const [minSalePrice, setMinSalePrice] = useState('')
+  const [maxSalePrice, setMaxSalePrice] = useState('')
+  
   const { showToast } = useToast()
   const { token } = useAuth()
 
@@ -34,7 +62,7 @@ const AdminProfit = () => {
     } else {
       setLoading(false)
     }
-  }, [token, filter])
+  }, [token])
 
   const loadVehicles = async () => {
     try {
@@ -81,95 +109,184 @@ const AdminProfit = () => {
     return totalPayment
   }
 
+  // Get unique companies and fuel types for filters
+  const uniqueCompanies = useMemo(() => {
+    const companies = new Set()
+    vehicles.forEach(v => {
+      if (v.company && v.status === 'Sold') companies.add(v.company)
+    })
+    return Array.from(companies).sort()
+  }, [vehicles])
+
+  const uniqueFuelTypes = useMemo(() => {
+    const fuelTypes = new Set()
+    vehicles.forEach(v => {
+      if (v.fuelType && v.status === 'Sold') fuelTypes.add(v.fuelType)
+    })
+    return Array.from(fuelTypes).sort()
+  }, [vehicles])
+
   // Calculate profit data for each vehicle
   const calculateProfitData = () => {
-    let filteredVehicles = vehicles
+    let filteredVehicles = vehicles.filter(v => v.status === 'Sold' && v.lastPrice)
 
-    // Apply filter
-    if (filter === 'Sold Only') {
-      filteredVehicles = vehicles.filter(v => v.status === 'Sold')
-    } else if (filter === 'This Month') {
+    // Apply date filter
+    if (dateFilter === 'thisMonth') {
       const now = new Date()
       const currentMonth = now.getMonth()
       const currentYear = now.getFullYear()
-      filteredVehicles = vehicles.filter(v => {
+      filteredVehicles = filteredVehicles.filter(v => {
         if (!v.saleDate) return false
         const saleDate = new Date(v.saleDate)
         return saleDate.getMonth() === currentMonth && 
                saleDate.getFullYear() === currentYear
       })
+    } else if (dateFilter === 'last3Months') {
+      const now = new Date()
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+      filteredVehicles = filteredVehicles.filter(v => {
+        if (!v.saleDate) return false
+        return new Date(v.saleDate) >= threeMonthsAgo
+      })
+    } else if (dateFilter === 'last6Months') {
+      const now = new Date()
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+      filteredVehicles = filteredVehicles.filter(v => {
+        if (!v.saleDate) return false
+        return new Date(v.saleDate) >= sixMonthsAgo
+      })
+    } else if (dateFilter === 'lastYear') {
+      const now = new Date()
+      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1)
+      filteredVehicles = filteredVehicles.filter(v => {
+        if (!v.saleDate) return false
+        return new Date(v.saleDate) >= oneYearAgo
+      })
+    } else if (dateFilter === 'custom' && startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999) // Include entire end date
+      filteredVehicles = filteredVehicles.filter(v => {
+        if (!v.saleDate) return false
+        const saleDate = new Date(v.saleDate)
+        return saleDate >= start && saleDate <= end
+      })
     }
 
-    return filteredVehicles
-      .filter(v => v.status === 'Sold' && v.lastPrice) // Only sold vehicles with sale price
-      .map(vehicle => {
-        const purchasePrice = parseFloat(vehicle.purchasePrice) || 0
-        const modificationCost = parseFloat(vehicle.modificationCost) || 0
-        const agentCommission = parseFloat(vehicle.agentCommission) || 0
-        const salePrice = parseFloat(vehicle.lastPrice) || 0
-        
-        // Total payment received (EXCLUDING security cheque)
-        const totalPayment = calculateTotalPayment(vehicle)
-        
-        // Total cost (includes full purchasePrice, even if not fully paid to seller yet)
-        // Note: remainingAmountToSeller is already included in purchasePrice, so it's already counted in cost
-        const totalCost = purchasePrice + modificationCost + agentCommission
-        
-        // Track pending costs (amounts owed but not yet paid)
-        const pendingToSeller = parseFloat(vehicle.remainingAmountToSeller) || 0
-        
-        // Net profit = Total payment received - Total cost
-        // Note: We use totalPayment (not salePrice) because security cheque is excluded
-        // Note: Cost includes full purchasePrice (even if remainingAmountToSeller is pending)
-        const netProfit = totalPayment - totalCost
-        
-        // Margin = (Net Profit / Total Payment) * 100
-        const margin = totalPayment > 0 ? ((netProfit / totalPayment) * 100) : 0
+    // Apply company filter
+    if (companyFilter !== 'all') {
+      filteredVehicles = filteredVehicles.filter(v => v.company === companyFilter)
+    }
 
-        // Calculate settled payments for display
-        const settledFromCustomer = vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0
-          ? vehicle.paymentSettlementHistory
-              .filter(s => s.settlementType === 'FROM_CUSTOMER')
-              .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
-          : 0
+    // Apply fuel type filter
+    if (fuelTypeFilter !== 'all') {
+      filteredVehicles = filteredVehicles.filter(v => v.fuelType === fuelTypeFilter)
+    }
 
-        const settledToSeller = vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0
-          ? vehicle.paymentSettlementHistory
-              .filter(s => s.settlementType === 'TO_SELLER')
-              .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
-          : 0
+    // Calculate profit data first
+    const profitData = filteredVehicles.map(vehicle => {
+      const purchasePrice = parseFloat(vehicle.purchasePrice) || 0
+      const modificationCost = parseFloat(vehicle.modificationCost) || 0
+      const agentCommission = parseFloat(vehicle.agentCommission) || 0
+      const otherCost = parseFloat(vehicle.otherCost) || 0
+      const salePrice = parseFloat(vehicle.lastPrice) || 0
+      
+      // Total payment received (EXCLUDING security cheque)
+      const totalPayment = calculateTotalPayment(vehicle)
+      
+      // Total cost (includes full purchasePrice, even if not fully paid to seller yet)
+      // Note: remainingAmountToSeller is already included in purchasePrice, so it's already counted in cost
+      const totalCost = purchasePrice + modificationCost + agentCommission + otherCost
+      
+      // Track pending costs (amounts owed but not yet paid)
+      const pendingToSeller = parseFloat(vehicle.remainingAmountToSeller) || 0
+      
+      // Net profit = Total payment received - Total cost
+      // Note: We use totalPayment (not salePrice) because security cheque is excluded
+      // Note: Cost includes full purchasePrice (even if remainingAmountToSeller is pending)
+      const netProfit = totalPayment - totalCost
+      
+      // Margin = (Net Profit / Total Payment) * 100
+      const margin = totalPayment > 0 ? ((netProfit / totalPayment) * 100) : 0
 
-        // Check for pending payments from customer
-        const pendingFromCustomer = parseFloat(vehicle.remainingAmount) || 0
+      // Calculate settled payments for display
+      const settledFromCustomer = vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0
+        ? vehicle.paymentSettlementHistory
+            .filter(s => s.settlementType === 'FROM_CUSTOMER')
+            .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
+        : 0
 
-        return {
-          vehicleNo: vehicle.vehicleNo || 'N/A',
-          make: vehicle.make || '',
-          model: vehicle.model || '',
-          purchasePrice,
-          modificationCost,
-          agentCommission,
-          totalCost,
-          salePrice,
-          totalPayment, // Actual payment received (excluding security cheque, including settled payments from customer)
-          netProfit,
-          margin,
-          hasSecurityCheque: vehicle.paymentSecurityCheque?.enabled || false,
-          securityChequeAmount: vehicle.paymentSecurityCheque?.amount || 0,
-          settledFromCustomer, // Settled payments from customer (included in revenue)
-          pendingToSeller, // Pending amount to seller (already included in cost via purchasePrice)
-          settledToSeller, // Settled payments to seller (for display/audit, doesn't change cost)
-          pendingFromCustomer // Pending amount from customer (for icon display logic)
-        }
-      })
-      .sort((a, b) => {
-        // Sort by sale date (most recent first)
-        const vehicleA = vehicles.find(v => v.vehicleNo === a.vehicleNo)
-        const vehicleB = vehicles.find(v => v.vehicleNo === b.vehicleNo)
-        const dateA = vehicleA?.saleDate ? new Date(vehicleA.saleDate) : new Date(0)
-        const dateB = vehicleB?.saleDate ? new Date(vehicleB.saleDate) : new Date(0)
-        return dateB - dateA
-      })
+      const settledToSeller = vehicle.paymentSettlementHistory && vehicle.paymentSettlementHistory.length > 0
+        ? vehicle.paymentSettlementHistory
+            .filter(s => s.settlementType === 'TO_SELLER')
+            .reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0)
+        : 0
+
+      // Check for pending payments from customer
+      const pendingFromCustomer = parseFloat(vehicle.remainingAmount) || 0
+
+      return {
+        vehicleNo: vehicle.vehicleNo || 'N/A',
+        company: vehicle.company || '',
+        model: vehicle.model || '',
+        fuelType: vehicle.fuelType || '',
+        purchasePrice,
+        modificationCost,
+        agentCommission,
+        otherCost,
+        totalCost,
+        salePrice,
+        totalPayment, // Actual payment received (excluding security cheque, including settled payments from customer)
+        netProfit,
+        margin,
+        hasSecurityCheque: vehicle.paymentSecurityCheque?.enabled || false,
+        securityChequeAmount: vehicle.paymentSecurityCheque?.amount || 0,
+        settledFromCustomer, // Settled payments from customer (included in revenue)
+        pendingToSeller, // Pending amount to seller (already included in cost via purchasePrice)
+        settledToSeller, // Settled payments to seller (for display/audit, doesn't change cost)
+        pendingFromCustomer, // Pending amount from customer (for icon display logic)
+        saleDate: vehicle.saleDate
+      }
+    })
+
+    // Apply profit-based filters
+    let filteredProfitData = profitData
+
+    if (profitFilter === 'profitable') {
+      filteredProfitData = filteredProfitData.filter(item => item.netProfit > 0)
+    } else if (profitFilter === 'loss') {
+      filteredProfitData = filteredProfitData.filter(item => item.netProfit < 0)
+    }
+
+    // Apply margin filters
+    if (marginFilter === 'high') {
+      filteredProfitData = filteredProfitData.filter(item => item.margin > 20)
+    } else if (marginFilter === 'low') {
+      filteredProfitData = filteredProfitData.filter(item => item.margin < 10 && item.margin >= 0)
+    } else if (marginFilter === 'negative') {
+      filteredProfitData = filteredProfitData.filter(item => item.margin < 0)
+    }
+
+    // Apply sale price range filter
+    if (minSalePrice) {
+      const min = parseFloat(minSalePrice)
+      if (!isNaN(min)) {
+        filteredProfitData = filteredProfitData.filter(item => item.salePrice >= min)
+      }
+    }
+    if (maxSalePrice) {
+      const max = parseFloat(maxSalePrice)
+      if (!isNaN(max)) {
+        filteredProfitData = filteredProfitData.filter(item => item.salePrice <= max)
+      }
+    }
+
+    // Sort by sale date (most recent first)
+    return filteredProfitData.sort((a, b) => {
+      const dateA = a.saleDate ? new Date(a.saleDate) : new Date(0)
+      const dateB = b.saleDate ? new Date(b.saleDate) : new Date(0)
+      return dateB - dateA
+    })
   }
 
   const formatPrice = (price) => {
@@ -192,7 +309,7 @@ const AdminProfit = () => {
     return `₹${amount.toLocaleString('en-IN')}`
   }
 
-  const profitData = calculateProfitData()
+  const profitData = calculateProfitData() || []
 
   // Calculate summary totals
   const summary = profitData.reduce((acc, item) => {
@@ -205,6 +322,29 @@ const AdminProfit = () => {
   const overallMargin = summary.totalRevenue > 0 
     ? ((summary.netProfit / summary.totalRevenue) * 100).toFixed(1)
     : '0.0'
+
+  const clearFilters = () => {
+    setDateFilter('all')
+    setStartDate('')
+    setEndDate('')
+    setProfitFilter('all')
+    setMarginFilter('all')
+    setCompanyFilter('all')
+    setFuelTypeFilter('all')
+    setMinSalePrice('')
+    setMaxSalePrice('')
+  }
+
+  const getActiveFiltersCount = () => {
+    let count = 0
+    if (dateFilter !== 'all') count++
+    if (profitFilter !== 'all') count++
+    if (marginFilter !== 'all') count++
+    if (companyFilter !== 'all') count++
+    if (fuelTypeFilter !== 'all') count++
+    if (minSalePrice || maxSalePrice) count++
+    return count
+  }
 
   const handleDownload = async (format = 'pdf') => {
     if (!token) {
@@ -296,16 +436,37 @@ const AdminProfit = () => {
           <p>Detailed profit analysis per vehicle</p>
         </div>
         <div className="header-actions">
-          <select
-            className="filter-select"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option>All Vehicles</option>
-            <option>Sold Only</option>
-            <option>This Month</option>
-          </select>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              endIcon={showFilters ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              onClick={() => setShowFilters(!showFilters)}
+              sx={{
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#764ba2',
+                  backgroundColor: 'rgba(102, 126, 234, 0.08)'
+                }
+              }}
+            >
+              Filters
+              {getActiveFiltersCount() > 0 && (
+                <Chip
+                  label={getActiveFiltersCount()}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    height: '20px',
+                    backgroundColor: '#667eea',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: 600
+                  }}
+                />
+              )}
+            </Button>
             <button className="btn btn-secondary" onClick={() => handleDownload('pdf')}>
               <i className="fas fa-download"></i> Download PDF
             </button>
@@ -315,6 +476,159 @@ const AdminProfit = () => {
           </div>
         </div>
       </div>
+
+      {/* Advanced Filters Panel */}
+      <Collapse in={showFilters}>
+        <Paper
+          elevation={2}
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 2,
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
+            border: '1px solid #e0e0e0'
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#2c3e50' }}>
+              <FilterListIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+              Filter Options
+            </Typography>
+            {getActiveFiltersCount() > 0 && (
+              <Button
+                size="small"
+                startIcon={<ClearIcon />}
+                onClick={clearFilters}
+                sx={{ color: '#e74c3c' }}
+              >
+                Clear All
+              </Button>
+            )}
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+            {/* Date Filter */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Time Period</InputLabel>
+              <Select
+                value={dateFilter}
+                label="Time Period"
+                onChange={(e) => setDateFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Time</MenuItem>
+                <MenuItem value="thisMonth">This Month</MenuItem>
+                <MenuItem value="last3Months">Last 3 Months</MenuItem>
+                <MenuItem value="last6Months">Last 6 Months</MenuItem>
+                <MenuItem value="lastYear">Last Year</MenuItem>
+                <MenuItem value="custom">Custom Range</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Custom Date Range */}
+            {dateFilter === 'custom' && (
+              <>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Start Date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="End Date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </>
+            )}
+
+            {/* Profit Filter */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Profit Status</InputLabel>
+              <Select
+                value={profitFilter}
+                label="Profit Status"
+                onChange={(e) => setProfitFilter(e.target.value)}
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="profitable">Profitable Only</MenuItem>
+                <MenuItem value="loss">Loss-Making Only</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Margin Filter */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Margin Range</InputLabel>
+              <Select
+                value={marginFilter}
+                label="Margin Range"
+                onChange={(e) => setMarginFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Margins</MenuItem>
+                <MenuItem value="high">High Margin (&gt;20%)</MenuItem>
+                <MenuItem value="low">Low Margin (&lt;10%)</MenuItem>
+                <MenuItem value="negative">Negative Margin</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Company Filter */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Company</InputLabel>
+              <Select
+                value={companyFilter}
+                label="Company"
+                onChange={(e) => setCompanyFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Companies</MenuItem>
+                {uniqueCompanies.map(company => (
+                  <MenuItem key={company} value={company}>{company}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Fuel Type Filter */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Fuel Type</InputLabel>
+              <Select
+                value={fuelTypeFilter}
+                label="Fuel Type"
+                onChange={(e) => setFuelTypeFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Fuel Types</MenuItem>
+                {uniqueFuelTypes.map(fuelType => (
+                  <MenuItem key={fuelType} value={fuelType}>{fuelType}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Sale Price Range */}
+            <TextField
+              fullWidth
+              size="small"
+              label="Min Sale Price (₹)"
+              type="number"
+              value={minSalePrice}
+              onChange={(e) => setMinSalePrice(e.target.value)}
+              inputProps={{ min: 0 }}
+            />
+            <TextField
+              fullWidth
+              size="small"
+              label="Max Sale Price (₹)"
+              type="number"
+              value={maxSalePrice}
+              onChange={(e) => setMaxSalePrice(e.target.value)}
+              inputProps={{ min: 0 }}
+            />
+          </Box>
+        </Paper>
+      </Collapse>
 
       <div className="profit-summary">
         <div className="profit-card">
@@ -344,10 +658,8 @@ const AdminProfit = () => {
           <i className="fas fa-chart-line"></i>
           <h3>No Profit Data Available</h3>
           <p>
-            {filter === 'Sold Only' 
-              ? 'No sold vehicles found' 
-              : filter === 'This Month'
-              ? 'No vehicles sold this month'
+            {getActiveFiltersCount() > 0
+              ? 'No vehicles match the selected filters. Try adjusting your filter criteria.'
               : 'No sold vehicles with sale price found'}
           </p>
         </div>
@@ -359,11 +671,12 @@ const AdminProfit = () => {
               <TableCell>Purchase Price</TableCell>
               <TableCell>Modifications</TableCell>
               <TableCell>Commission</TableCell>
+              <TableCell>Other Cost</TableCell>
               <TableCell>Total Cost</TableCell>
               <TableCell>Sale Price</TableCell>
               <TableCell>Payment Received</TableCell>
               <TableCell>Net Profit</TableCell>
-              <TableCell>Margin %</TableCell>
+              <TableCell align="center">Margin %</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -375,6 +688,7 @@ const AdminProfit = () => {
                 <TableCell>{formatPrice(row.purchasePrice)}</TableCell>
                 <TableCell>{formatPrice(row.modificationCost)}</TableCell>
                 <TableCell>{formatPrice(row.agentCommission)}</TableCell>
+                <TableCell>{formatPrice(row.otherCost || 0)}</TableCell>
                 <TableCell>
                   <strong>{formatPrice(row.totalCost)}</strong>
                 </TableCell>
@@ -418,14 +732,16 @@ const AdminProfit = () => {
                   </div>
                 </TableCell>
                 <TableCell style={{ 
-                  color: row.margin >= 0 ? '#28a745' : '#dc3545'
+                  color: row.margin >= 0 ? '#28a745' : '#dc3545',
+                  textAlign: 'center',
+                  fontWeight: 600
                 }}>
                   {row.margin.toFixed(1)}%
                 </TableCell>
               </TableRow>
             ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
       )}
 
       {/* Payment Details Modal */}
@@ -450,7 +766,7 @@ const AdminProfit = () => {
                 </Typography>
                 {(selectedRow.make || selectedRow.model) && (
                   <Typography variant="body2" color="text.secondary">
-                    {[selectedRow.make, selectedRow.model].filter(Boolean).join(' ')}
+                    {[selectedRow.company, selectedRow.model].filter(Boolean).join(' ')}
                   </Typography>
                 )}
               </Box>

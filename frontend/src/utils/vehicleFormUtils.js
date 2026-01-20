@@ -190,7 +190,7 @@ export const validateVehicleForm = (formData, purchasePaymentModes, showToast, i
       vehicleNo: 'Vehicle Number',
       chassisNo: 'Chassis Number',
       engineNo: 'Engine Number',
-      make: 'Make',
+      company: 'Company',
       model: 'Model',
       color: 'Color',
       kilometers: 'Kilometers',

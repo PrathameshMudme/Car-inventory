@@ -22,6 +22,7 @@ const StyledTable = styled(Table)({
   borderCollapse: 'separate',
   borderSpacing: 0,
   margin: 0,
+  minWidth: 'max-content',
 })
 
 const StyledTableHead = styled(TableHead)(({ theme }) => ({
@@ -532,7 +533,34 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 const StyledTableComponent = ({ children, ...props }) => {
   return (
-    <StyledTableContainer component={Paper} elevation={0}>
+    <StyledTableContainer 
+      component={Paper} 
+      elevation={0}
+      sx={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: '100%',
+        flex: '1 1 0%',
+        minHeight: 0,
+        overflowX: 'auto',
+        overflowY: 'auto',
+        '&::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#f1f3f5',
+          borderRadius: '10px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#cbd5e0',
+          borderRadius: '10px',
+          '&:hover': {
+            background: '#667eea',
+          },
+        },
+      }}
+    >
       <StyledTable {...props}>
         {children}
       </StyledTable>

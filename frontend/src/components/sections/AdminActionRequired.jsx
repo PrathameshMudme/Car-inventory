@@ -150,7 +150,9 @@ const AdminActionRequired = () => {
     modificationCost: '',
     modificationNotes: '',
     agentPhone: '',
-    agentCommission: ''
+    agentCommission: '',
+    otherCost: '',
+    otherCostNotes: ''
   })
   const [postModificationImages, setPostModificationImages] = useState({
     front: [], back: [], right_side: [], left_side: [],
@@ -408,8 +410,8 @@ const AdminActionRequired = () => {
       
       // Add form fields
       Object.entries(formData).forEach(([key, value]) => {
-        // Handle payment fields (modificationCost, agentCommission) - send 0 for empty values (for calculations)
-        if (key === 'modificationCost' || key === 'agentCommission') {
+        // Handle payment fields (modificationCost, agentCommission, otherCost) - send 0 for empty values (for calculations)
+        if (key === 'modificationCost' || key === 'agentCommission' || key === 'otherCost') {
           if (value === '' || value === null || value === undefined || value === 'NIL') {
             formDataToSend.append(key, '0') // Send 0 for calculations
           } else {
@@ -449,12 +451,22 @@ const AdminActionRequired = () => {
         throw new Error(error.message || 'Failed to update vehicle')
       }
 
-      showToast('Vehicle updated successfully! Status will change to "In Stock" if all fields are complete.', 'success')
+      const result = await response.json()
+      
+      // Show appropriate message based on status change
+      if (result.vehicle && result.vehicle.status === 'In Stock') {
+        showToast(result.message || 'Vehicle updated successfully! Status changed to "In Stock" as all modification fields are complete.', 'success')
+      } else {
+        showToast('Vehicle updated successfully! Complete all required fields to change status to "In Stock".', 'success')
+      }
+      
       setShowEditModal(false)
       setSelectedVehicle(null)
       setDocuments({})
       setNewDocuments({})
-      loadVehicles()
+      
+      // Reload vehicles to refresh the list (vehicle will disappear if status changed to "In Stock")
+      await loadVehicles()
     } catch (error) {
       console.error('Error updating vehicle:', error)
       showToast(error.message || 'Failed to update vehicle', 'error')
@@ -504,7 +516,7 @@ const AdminActionRequired = () => {
         />
       ) : (
         <DataTable
-          columns={[
+            columns={[
             { 
               key: 'vehicleNo', 
               label: 'Vehicle No.', 
@@ -512,8 +524,8 @@ const AdminActionRequired = () => {
             },
             { 
               key: 'makeModel', 
-              label: 'Make/Model', 
-              render: (v) => `${v.make || 'N/A'} ${v.model || ''}`.trim() 
+              label: 'Company/Model', 
+              render: (v) => `${v.company || 'N/A'} ${v.model || ''}`.trim() 
             },
             { 
               key: 'purchasePrice', 
@@ -602,7 +614,7 @@ const AdminActionRequired = () => {
                     {formatVehicleNumber(selectedVehicle.vehicleNo) || 'N/A'}
                   </Typography>
                   <Typography variant="body1" sx={{ color: '#64748b', fontSize: '15px' }}>
-                    {selectedVehicle.make || 'N/A'} {selectedVehicle.model || ''} • Purchase: {formatPrice(selectedVehicle.purchasePrice)}
+                    {selectedVehicle.company || 'N/A'} {selectedVehicle.model || ''} • Purchase: {formatPrice(selectedVehicle.purchasePrice)}
                   </Typography>
                 </Box>
               </Box>
@@ -674,6 +686,29 @@ const AdminActionRequired = () => {
                     onChange={handleInputChange}
                     placeholder="Enter agent phone number"
                     required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormTextField
+                    label="Other Cost (₹)"
+                    name="otherCost"
+                    type="number"
+                    value={formData.otherCost}
+                    onChange={handleInputChange}
+                    placeholder="NIL"
+                    inputProps={{ min: 0 }}
+                    helperText="Additional costs like insurance, registration, etc."
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormTextField
+                    label="Other Cost Notes"
+                    name="otherCostNotes"
+                    value={formData.otherCostNotes}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Insurance ₹5000, Registration ₹2000"
+                    multiline
+                    rows={2}
                   />
                 </Grid>
               </Grid>
